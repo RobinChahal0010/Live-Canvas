@@ -10,7 +10,7 @@
 - 👥 Private breakout rooms
 - ⏪ Board history replay
 - 📌 Version history & restore
-- ⚡ Low-latency synchronization
+- Low-latency synchronization
 
 ## 🏗️ Tech Stack
 
