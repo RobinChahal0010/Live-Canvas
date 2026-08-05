@@ -4,7 +4,7 @@
 
 ## ✨ Features
 
-- 🖍️ Real-time whiteboard collaboration
+-  Real-time whiteboard collaboration
 - 📝 Sticky notes & freehand drawing
 - 👍 Idea voting
 - 👥 Private breakout rooms
