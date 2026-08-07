@@ -55,7 +55,7 @@ header{
 
     align-items:center;
 
-    background:rgba(255,255,255,.55);
+    background:var(--card);
 
     backdrop-filter:blur(16px);
 
@@ -83,7 +83,7 @@ header{
 
     font-size:28px;
 
-    color:#2563eb;
+    color:var(--primary);
 
 }
 
@@ -158,7 +158,7 @@ header{
 
     border-radius:18px;
 
-    background:white;
+    background:var(--card);
 
     box-shadow:0 8px 20px rgba(0,0,0,.08);
 
