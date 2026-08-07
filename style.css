@@ -168,7 +168,7 @@ header{
 
     border:none;
 
-    background:#2563eb;
+    background:var(--primary);
 
     color:white;
 
@@ -188,7 +188,7 @@ header{
 
     transform:translateY(-3px);
 
-    background:#1d4ed8;
+    filter:brightness(.9);
 
 }
 
@@ -206,7 +206,7 @@ header{
 
     gap:10px;
 
-    background:#f8fafc;
+    background:var(--bg);
 
     padding:10px 15px;
 
@@ -270,7 +270,7 @@ main{
 
 .card{
 
-    background:white;
+    background:var(--card);
 
     border-radius:18px;
 
@@ -284,7 +284,7 @@ main{
 
     margin-bottom:18px;
 
-    color:#2563eb;
+    color:var(--primary);
 
 }
 
@@ -328,7 +328,7 @@ main{
 
     padding:12px;
 
-    border:1px solid #d1d5db;
+    border:1px solid var(--border);
 
     border-radius:10px;
 
@@ -340,7 +340,7 @@ main{
 
 #searchNote:focus{
 
-    border-color:#2563eb;
+    border-color:var(--primary);
 
 }
 
@@ -430,7 +430,7 @@ main{
 
 .canvas-header{
 
-    background:white;
+    background:var(--card);
     padding:20px;
     border-radius:18px;
     box-shadow:0 8px 20px rgba(0,0,0,.08);
@@ -439,7 +439,7 @@ main{
 
 .canvas-header h2{
 
-    color:#2563eb;
+    color:var(--primary);
     margin-bottom:8px;
     font-size:28px;
 
@@ -447,14 +447,14 @@ main{
 
 .canvas-header p{
 
-    color:#64748b;
+    color:var(--secondary);
     font-size:15px;
 
 }
 
 .canvas-wrapper{
 
-    background:white;
+    background:var(--card);
 
     border-radius:18px;
 
@@ -510,7 +510,7 @@ main{
 
     font-weight:600;
 
-    color:#2563eb;
+    color:var(--primary);
 
 }
 
@@ -523,8 +523,7 @@ footer{
 
     margin-top:40px;
 
-    background:white;
-
+    background:var(--card);
     text-align:center;
 
     padding:18px;
@@ -535,7 +534,7 @@ footer{
 
 footer p{
 
-    color:#64748b;
+    color:var(--secondary);
 
     font-size:15px;
 
@@ -613,92 +612,6 @@ button:active{
 
 }
 
-
-/* ===========================
-   DARK MODE
-=========================== */
-
-.dark{
-
-    background:#0f172a;
-
-    color:white;
-
-}
-
-.dark header{
-
-    background:#1e293b;
-
-}
-
-.dark .toolbar{
-
-    background:#1e293b;
-
-}
-
-.dark .card{
-
-    background:#1e293b;
-
-    color:white;
-
-}
-
-.dark .canvas-header{
-
-    background:#1e293b;
-
-    color:white;
-
-}
-
-.dark .canvas-wrapper{
-
-    background:#1e293b;
-
-}
-
-.dark footer{
-
-    background:#1e293b;
-
-}
-
-.dark #drawingBoard{
-
-    background:white;
-
-}
-
-.dark input{
-
-    background:#334155;
-
-    color:white;
-
-    border:none;
-
-}
-
-.dark .toolbar label{
-
-    background:#334155;
-
-}
-
-.dark .canvas-header p{
-
-    color:#cbd5e1;
-
-}
-
-.dark footer p{
-
-    color:#cbd5e1;
-
-}
 
 
 /* ===========================
