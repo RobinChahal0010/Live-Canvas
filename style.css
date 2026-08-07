@@ -1,6 +1,20 @@
-/* ===========================
-   GOOGLE FONT & RESET
-=========================== */
+:root{
+    --bg: #eef2ff;
+    --card: #ffffff;
+    --text: #1e293b;
+    --primary: #2563eb;
+    --secondary: #64748b;
+    --border: #dbeafe;
+}
+
+.dark{
+    --bg: #0f172a;
+    --card: #1e293b;
+    --text: #f8fafc;
+    --primary: #3b82f6;
+    --secondary: #cbd5e1;
+    --border: #334155;
+}
 
 *{
     margin:0;
@@ -16,18 +30,14 @@ body{
 
     font-family:'Poppins',sans-serif;
 
-    background:linear-gradient(
-            135deg,
-            #eef2ff,
-            #dbeafe,
-            #f8fafc
-    );
+    background:var(--bg);
 
     min-height:100vh;
 
-    color:#1e293b;
-}
+    color:var(--text);
 
+    transition:.4s;
+}
 
 /* ===========================
    HEADER
