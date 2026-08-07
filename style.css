@@ -1,19 +1,102 @@
 :root{
-    --bg: #eef2ff;
-    --card: #ffffff;
-    --text: #1e293b;
-    --primary: #2563eb;
-    --secondary: #64748b;
-    --border: #dbeafe;
+    --bg:#eef2ff;
+    --card:#ffffff;
+    --text:#1e293b;
+    --primary:#2563eb;
+    --secondary:#64748b;
+    --border:#dbeafe;
 }
 
+/* Dark Theme */
 .dark{
-    --bg: #0f172a;
-    --card: #1e293b;
-    --text: #f8fafc;
-    --primary: #3b82f6;
-    --secondary: #cbd5e1;
-    --border: #334155;
+    --bg:#0f172a;
+    --card:#1e293b;
+    --text:#f8fafc;
+    --primary:#3b82f6;
+    --secondary:#cbd5e1;
+    --border:#334155;
+}
+
+/* Purple Theme */
+.purple{
+    --bg:#f5f3ff;
+    --card:#ffffff;
+    --text:#312e81;
+    --primary:#7c3aed;
+    --secondary:#6d28d9;
+    --border:#ddd6fe;
+}
+
+/* Green Theme */
+.green{
+    --bg:#ecfdf5;
+    --card:#ffffff;
+    --text:#14532d;
+    --primary:#16a34a;
+    --secondary:#15803d;
+    --border:#bbf7d0;
+}
+
+/* Ocean Theme */
+.ocean{
+    --bg:#ecfeff;
+    --card:#ffffff;
+    --text:#164e63;
+    --primary:#0891b2;
+    --secondary:#0e7490;
+    --border:#a5f3fc;
+}
+
+/* ===========================
+   Theme Picker
+=========================== */
+
+.theme-picker{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.theme-color{
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    cursor:pointer;
+    border:2px solid #ffffff;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+    transition:transform .25s ease, box-shadow .25s ease;
+}
+
+.theme-color:hover{
+    transform:scale(1.2);
+    box-shadow:0 4px 12px rgba(0,0,0,.25);
+}
+
+/* Selected Theme */
+.theme-color.active{
+    border:3px solid #ffffff;
+    box-shadow:0 0 0 3px var(--primary);
+}
+
+/* Theme Colors */
+.blue{
+    background:#2563eb;
+}
+
+.dark-theme{
+    background:#111827;
+}
+
+.purple{
+    background:#7c3aed;
+}
+
+.green{
+    background:#16a34a;
+}
+
+.ocean{
+    background:#0891b2;
 }
 
 *{
@@ -36,7 +119,9 @@ body{
 
     color:var(--text);
 
-    transition:.4s;
+    transition:
+    background .4s ease,
+    color .4s ease;
 }
 
 /* ===========================
@@ -105,33 +190,7 @@ header{
 
 }
 
-.header-right button{
 
-    border:none;
-
-    background:#2563eb;
-
-    color:white;
-
-    padding:12px 22px;
-
-    border-radius:12px;
-
-    cursor:pointer;
-
-    font-size:15px;
-
-    transition:.3s;
-
-}
-
-.header-right button:hover{
-
-    background:#1d4ed8;
-
-    transform:translateY(-3px);
-
-}
 
 
 /* ===========================
@@ -361,7 +420,9 @@ main{
 
 .note{
 
-    background:#fff8b5;
+    background:#FEF08A;
+
+    color:#111827;
 
     padding:14px;
 
@@ -472,9 +533,9 @@ main{
 
 #drawingBoard{
 
-    background:white;
+    background:var(--card);
 
-    border:2px dashed #cbd5e1;
+    border:2px dashed var(--border);
 
     border-radius:14px;
 
@@ -500,7 +561,7 @@ main{
 
     padding-bottom:8px;
 
-    border-bottom:1px solid #e5e7eb;
+    border-bottom:1px solid var(--border);
 
     font-size:15px;
 
@@ -553,7 +614,7 @@ footer p{
 
 ::-webkit-scrollbar-thumb{
 
-    background:#2563eb;
+    background:var(--primary);
     border-radius:20px;
 
 }
