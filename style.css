@@ -1,0 +1,848 @@
+/* ===========================
+   GOOGLE FONT & RESET
+=========================== */
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+body{
+
+    font-family:'Poppins',sans-serif;
+
+    background:linear-gradient(
+            135deg,
+            #eef2ff,
+            #dbeafe,
+            #f8fafc
+    );
+
+    min-height:100vh;
+
+    color:#1e293b;
+}
+
+
+/* ===========================
+   HEADER
+=========================== */
+
+header{
+
+    width:100%;
+
+    padding:18px 40px;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    background:rgba(255,255,255,.55);
+
+    backdrop-filter:blur(16px);
+
+    box-shadow:0 5px 18px rgba(0,0,0,.08);
+
+    position:sticky;
+
+    top:0;
+
+    z-index:999;
+
+}
+
+.logo{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+}
+
+.logo i{
+
+    font-size:28px;
+
+    color:#2563eb;
+
+}
+
+.logo h2{
+
+    font-size:28px;
+
+    font-weight:700;
+
+    letter-spacing:1px;
+
+}
+
+.header-right{
+
+    display:flex;
+
+    gap:15px;
+
+}
+
+.header-right button{
+
+    border:none;
+
+    background:#2563eb;
+
+    color:white;
+
+    padding:12px 22px;
+
+    border-radius:12px;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    transition:.3s;
+
+}
+
+.header-right button:hover{
+
+    background:#1d4ed8;
+
+    transform:translateY(-3px);
+
+}
+
+
+/* ===========================
+   TOOLBAR
+=========================== */
+
+.toolbar{
+
+    margin:25px auto;
+
+    width:95%;
+
+    display:flex;
+
+    flex-wrap:wrap;
+
+    gap:15px;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:20px;
+
+    border-radius:18px;
+
+    background:white;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+}
+
+.toolbar button{
+
+    border:none;
+
+    background:#2563eb;
+
+    color:white;
+
+    padding:12px 18px;
+
+    border-radius:12px;
+
+    cursor:pointer;
+
+    font-size:15px;
+
+    transition:.3s;
+
+}
+
+.toolbar button:hover{
+
+    transform:translateY(-3px);
+
+    background:#1d4ed8;
+
+}
+
+.toolbar button i{
+
+    margin-right:8px;
+
+}
+
+.toolbar label{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    background:#f8fafc;
+
+    padding:10px 15px;
+
+    border-radius:10px;
+
+}
+
+.toolbar input[type="range"]{
+
+    width:120px;
+
+}
+
+.toolbar input[type="color"]{
+
+    border:none;
+
+    width:45px;
+
+    height:40px;
+
+    background:none;
+
+    cursor:pointer;
+
+}
+
+
+/* ===========================
+   MAIN LAYOUT
+=========================== */
+
+main{
+
+    width:95%;
+
+    margin:auto;
+
+    display:grid;
+
+    grid-template-columns:320px 1fr;
+
+    gap:25px;
+
+}
+
+
+/* ===========================
+   SIDEBAR
+=========================== */
+
+.sidebar{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:20px;
+
+}
+
+.card{
+
+    background:white;
+
+    border-radius:18px;
+
+    padding:22px;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+}
+
+.card h3{
+
+    margin-bottom:18px;
+
+    color:#2563eb;
+
+}
+
+.card h3 i{
+
+    margin-right:8px;
+
+}
+
+#addNoteBtn{
+
+    width:100%;
+
+    border:none;
+
+    background:#10b981;
+
+    color:white;
+
+    padding:12px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    margin-bottom:15px;
+
+    transition:.3s;
+
+}
+
+#addNoteBtn:hover{
+
+    background:#059669;
+
+}
+
+#searchNote{
+
+    width:100%;
+
+    padding:12px;
+
+    border:1px solid #d1d5db;
+
+    border-radius:10px;
+
+    outline:none;
+
+    margin-bottom:20px;
+
+}
+
+#searchNote:focus{
+
+    border-color:#2563eb;
+
+}
+
+
+/* ===========================
+   NOTES
+=========================== */
+
+#notesContainer{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+}
+
+.note{
+
+    background:#fff8b5;
+
+    padding:14px;
+
+    border-radius:12px;
+
+    box-shadow:0 5px 12px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+}
+
+.note:hover{
+
+    transform:translateY(-4px);
+
+}
+
+.note textarea{
+
+    width:100%;
+
+    border:none;
+
+    outline:none;
+
+    background:transparent;
+
+    resize:none;
+
+    font-size:15px;
+
+    font-family:Poppins;
+
+    min-height:80px;
+
+}
+
+.note button{
+
+    margin-top:10px;
+
+    border:none;
+
+    background:#ef4444;
+
+    color:white;
+
+    padding:8px 12px;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+}
+/* ===========================
+   CANVAS SECTION
+=========================== */
+
+.canvas-section{
+
+    display:flex;
+    flex-direction:column;
+    gap:20px;
+
+}
+
+.canvas-header{
+
+    background:white;
+    padding:20px;
+    border-radius:18px;
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+}
+
+.canvas-header h2{
+
+    color:#2563eb;
+    margin-bottom:8px;
+    font-size:28px;
+
+}
+
+.canvas-header p{
+
+    color:#64748b;
+    font-size:15px;
+
+}
+
+.canvas-wrapper{
+
+    background:white;
+
+    border-radius:18px;
+
+    padding:20px;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.08);
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    overflow:auto;
+
+}
+
+#drawingBoard{
+
+    background:white;
+
+    border:2px dashed #cbd5e1;
+
+    border-radius:14px;
+
+    cursor:crosshair;
+
+    max-width:100%;
+    height:auto;
+
+}
+
+
+/* ===========================
+   STATISTICS
+=========================== */
+
+.card p{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin:14px 0;
+
+    padding-bottom:8px;
+
+    border-bottom:1px solid #e5e7eb;
+
+    font-size:15px;
+
+}
+
+.card span{
+
+    font-weight:600;
+
+    color:#2563eb;
+
+}
+
+
+/* ===========================
+   FOOTER
+=========================== */
+
+footer{
+
+    margin-top:40px;
+
+    background:white;
+
+    text-align:center;
+
+    padding:18px;
+
+    box-shadow:0 -5px 15px rgba(0,0,0,.05);
+
+}
+
+footer p{
+
+    color:#64748b;
+
+    font-size:15px;
+
+}
+
+
+/* ===========================
+   SCROLLBAR
+=========================== */
+
+::-webkit-scrollbar{
+
+    width:10px;
+
+}
+
+::-webkit-scrollbar-thumb{
+
+    background:#2563eb;
+    border-radius:20px;
+
+}
+
+::-webkit-scrollbar-track{
+
+    background:#edf2f7;
+
+}
+
+
+/* ===========================
+   BUTTON ANIMATION
+=========================== */
+
+button{
+
+    transition:.3s ease;
+
+}
+
+button:hover{
+
+    transform:translateY(-3px);
+
+    box-shadow:0 8px 18px rgba(37,99,235,.25);
+
+}
+
+button:active{
+
+    transform:scale(.96);
+
+}
+
+
+/* ===========================
+   CARD HOVER
+=========================== */
+
+.card,
+.canvas-wrapper,
+.canvas-header{
+
+    transition:.35s;
+
+}
+
+.card:hover,
+.canvas-wrapper:hover,
+.canvas-header:hover{
+
+    transform:translateY(-5px);
+
+    box-shadow:0 15px 30px rgba(0,0,0,.12);
+
+}
+
+
+/* ===========================
+   DARK MODE
+=========================== */
+
+.dark{
+
+    background:#0f172a;
+
+    color:white;
+
+}
+
+.dark header{
+
+    background:#1e293b;
+
+}
+
+.dark .toolbar{
+
+    background:#1e293b;
+
+}
+
+.dark .card{
+
+    background:#1e293b;
+
+    color:white;
+
+}
+
+.dark .canvas-header{
+
+    background:#1e293b;
+
+    color:white;
+
+}
+
+.dark .canvas-wrapper{
+
+    background:#1e293b;
+
+}
+
+.dark footer{
+
+    background:#1e293b;
+
+}
+
+.dark #drawingBoard{
+
+    background:white;
+
+}
+
+.dark input{
+
+    background:#334155;
+
+    color:white;
+
+    border:none;
+
+}
+
+.dark .toolbar label{
+
+    background:#334155;
+
+}
+
+.dark .canvas-header p{
+
+    color:#cbd5e1;
+
+}
+
+.dark footer p{
+
+    color:#cbd5e1;
+
+}
+
+
+/* ===========================
+   RESPONSIVE
+=========================== */
+
+@media(max-width:1200px){
+
+    main{
+
+        grid-template-columns:280px 1fr;
+
+    }
+
+}
+
+@media(max-width:992px){
+
+    main{
+
+        grid-template-columns:1fr;
+
+    }
+
+    .sidebar{
+
+        order:2;
+
+    }
+
+    .canvas-section{
+
+        order:1;
+
+    }
+
+}
+
+@media(max-width:768px){
+
+    header{
+
+        padding:18px;
+
+        flex-direction:column;
+
+        gap:15px;
+
+    }
+
+    .toolbar{
+
+        justify-content:center;
+
+    }
+
+    .toolbar button{
+
+        width:140px;
+
+    }
+
+    .toolbar label{
+
+        width:100%;
+
+        justify-content:center;
+
+    }
+
+}
+
+@media(max-width:600px){
+
+    .logo h2{
+
+        font-size:22px;
+
+    }
+
+    .toolbar{
+
+        padding:15px;
+
+    }
+
+    .toolbar button{
+
+        width:100%;
+
+    }
+
+    #drawingBoard{
+
+        width:100%;
+
+        height:420px;
+
+    }
+
+}
+
+@media(max-width:450px){
+
+    header{
+
+        padding:15px;
+
+    }
+
+    .canvas-header h2{
+
+        font-size:22px;
+
+    }
+
+    .card{
+
+        padding:18px;
+
+    }
+
+}
+
+
+/* ===========================
+   FADE ANIMATION
+=========================== */
+
+@keyframes fadeUp{
+
+    from{
+
+        opacity:0;
+        transform:translateY(20px);
+
+    }
+
+    to{
+
+        opacity:1;
+        transform:translateY(0);
+
+    }
+
+}
+
+header,
+.toolbar,
+.card,
+.canvas-header,
+.canvas-wrapper,
+footer{
+
+    animation:fadeUp .7s ease;
+
+}
