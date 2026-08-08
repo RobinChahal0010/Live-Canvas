@@ -910,3 +910,747 @@ footer{
     color:var(--primary);
 
 }
+/* =====================================================
+   LIVE CANVAS PREMIUM NOTEBOOK
+===================================================== */
+
+.canvas-section {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: #f5f5f7;
+    overflow: hidden;
+}
+
+
+/* =====================================================
+   TOP BAR
+===================================================== */
+
+.canvas-topbar {
+    height: 64px;
+    background: rgba(255,255,255,0.94);
+    border-bottom: 1px solid #e7e7eb;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 0 22px;
+}
+
+.document-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.document-icon {
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #f1efff;
+    color: #6754d9;
+
+    border-radius: 11px;
+}
+
+.document-info input {
+    border: none;
+    outline: none;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    background: transparent;
+    color: #202333;
+
+    width: 180px;
+}
+
+.document-info small {
+    display: block;
+    color: #999;
+    font-size: 10px;
+}
+
+
+/* =====================================================
+   COLLABORATORS
+===================================================== */
+
+.collaborators {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.avatar {
+    width: 31px;
+    height: 31px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+
+    border: 2px solid white;
+}
+
+.avatar.purple {
+    background: #8067dc;
+}
+
+.avatar.pink {
+    background: #e86b91;
+}
+
+.avatar.orange {
+    background: #e59a62;
+}
+
+.avatar.more {
+    background: #eee;
+    color: #555;
+}
+
+.share-btn {
+    margin-left: 12px;
+
+    border: none;
+    background: #6754d9;
+    color: white;
+
+    padding: 9px 16px;
+    border-radius: 9px;
+
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.more-btn {
+    border: none;
+    background: transparent;
+
+    font-size: 18px;
+    cursor: pointer;
+    color: #555;
+}
+
+
+/* =====================================================
+   TOOLBAR
+===================================================== */
+
+.canvas-toolbar {
+    height: 58px;
+
+    background: white;
+    border-bottom: 1px solid #e6e6eb;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 18px;
+    gap: 5px;
+}
+
+.tool {
+    width: 38px;
+    height: 38px;
+
+    border: none;
+    background: transparent;
+
+    border-radius: 9px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #53545c;
+
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.tool:hover {
+    background: #f1f0f8;
+}
+
+.tool.active-tool {
+    background: #eeeafe;
+    color: #624cd4;
+}
+
+.toolbar-divider {
+    width: 1px;
+    height: 25px;
+    background: #e4e4e7;
+    margin: 0 8px;
+}
+
+.toolbar-spacer {
+    flex: 1;
+}
+
+
+/* =====================================================
+   COLOR
+===================================================== */
+
+.color-control {
+    width: 30px;
+    height: 30px;
+
+    border-radius: 50%;
+
+    overflow: hidden;
+
+    cursor: pointer;
+
+    border: 2px solid #eee;
+}
+
+.color-control input {
+    width: 100%;
+    height: 100%;
+
+    border: none;
+    padding: 0;
+
+    cursor: pointer;
+}
+
+
+/* =====================================================
+   BRUSH SIZE
+===================================================== */
+
+.size-control {
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+
+    color: #777;
+
+    padding: 0 7px;
+}
+
+.size-control input {
+    width: 75px;
+}
+
+
+/* =====================================================
+   ZOOM
+===================================================== */
+
+.zoom-control {
+    display: flex;
+    align-items: center;
+
+    gap: 5px;
+
+    border: 1px solid #e4e4e7;
+    border-radius: 9px;
+
+    padding: 3px 5px;
+}
+
+.zoom-control button {
+    width: 27px;
+    height: 27px;
+
+    border: none;
+    background: transparent;
+
+    cursor: pointer;
+
+    font-size: 18px;
+}
+
+#zoomValue {
+    min-width: 45px;
+    text-align: center;
+    font-size: 12px;
+}
+
+
+/* =====================================================
+   NOTEBOOK AREA
+===================================================== */
+
+.notebook-area {
+    flex: 1;
+
+    overflow: auto;
+
+    padding: 35px 40px 80px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            #ffffff 0%,
+            #f4f4f7 70%
+        );
+}
+
+
+/* =====================================================
+   NOTEBOOK PAGE
+===================================================== */
+
+.notebook-page {
+    position: relative;
+
+    width: min(1000px, 95%);
+
+    min-height: 700px;
+
+    background: #fffdf5;
+
+    border-radius: 4px;
+
+    box-shadow:
+        0 12px 40px rgba(0,0,0,0.10),
+        0 2px 5px rgba(0,0,0,0.06);
+
+    overflow: hidden;
+
+    transform-origin: top center;
+}
+
+
+/* =====================================================
+   PAPER
+===================================================== */
+
+.paper-background {
+    position: absolute;
+    inset: 0;
+
+    background-color: #fffdf5;
+
+    background-image:
+        linear-gradient(
+            rgba(120, 155, 190, 0.18) 1px,
+            transparent 1px
+        );
+
+    background-size:
+        100% 28px;
+
+    pointer-events: none;
+}
+
+
+/* LEFT RED MARGIN */
+
+.paper-background::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    bottom: 0;
+
+    left: 95px;
+
+    width: 1px;
+
+    background: rgba(236, 100, 110, 0.35);
+}
+
+
+/* CANVAS */
+
+#drawingBoard {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    background: transparent;
+
+    cursor: crosshair;
+
+    touch-action: none;
+
+    z-index: 2;
+}
+
+
+/* OBJECTS */
+
+.object-layer {
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+
+    z-index: 3;
+}
+
+
+/* =====================================================
+   PAGE CONTROLS
+===================================================== */
+
+.page-controls {
+    margin-top: 20px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    background: white;
+
+    border: 1px solid #e4e4e8;
+
+    border-radius: 10px;
+
+    padding: 5px 8px;
+
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.page-btn {
+    width: 32px;
+    height: 32px;
+
+    border: none;
+
+    background: transparent;
+
+    border-radius: 7px;
+
+    cursor: pointer;
+}
+
+.page-btn:hover {
+    background: #f1effb;
+}
+
+#pageNumber {
+    font-size: 12px;
+    color: #555;
+}
+
+
+/* =====================================================
+   ADD PAGE
+===================================================== */
+
+.add-page-btn {
+    margin-top: 12px;
+
+    padding: 11px 22px;
+
+    border-radius: 10px;
+
+    border: 1px dashed #9c8de7;
+
+    background: #faf9ff;
+
+    color: #6754d9;
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.add-page-btn:hover {
+    background: #f0edff;
+}
+
+
+/* =====================================================
+   EXTEND PAGE
+===================================================== */
+
+.extend-page-btn {
+    margin-top: 10px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #999;
+
+    cursor: pointer;
+
+    font-size: 12px;
+}
+
+.extend-page-btn:hover {
+    color: #6754d9;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 900px) {
+
+    .document-info small {
+        display: none;
+    }
+
+    .size-control {
+        display: none;
+    }
+
+    .notebook-area {
+        padding: 20px 10px 60px;
+    }
+
+    .notebook-page {
+        width: 100%;
+    }
+
+}
+/* =========================================================
+   CANVAS TOOLBAR
+========================================================= */
+
+.canvas-toolbar {
+    height: 58px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 5px;
+
+    padding: 0 14px;
+
+    background: rgba(255, 255, 255, 0.92);
+
+    border-bottom: 1px solid #e8e8ef;
+
+    box-shadow:
+        0 2px 10px rgba(20, 20, 50, 0.05);
+
+    backdrop-filter: blur(14px);
+
+    position: relative;
+    z-index: 50;
+}
+
+
+/* TOOL BUTTON */
+
+.canvas-toolbar .tool {
+    width: 38px;
+    height: 38px;
+
+    border: none;
+
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: #4b5563;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 15px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.15s ease;
+}
+
+
+.canvas-toolbar .tool:hover {
+
+    background: #f1f3f8;
+
+    color: #4f46e5;
+
+}
+
+
+.canvas-toolbar .tool:active {
+
+    transform: scale(0.92);
+
+}
+
+
+/* ACTIVE TOOL */
+
+.canvas-toolbar .tool.active-tool {
+
+    background: #eeeaff;
+
+    color: #4f46e5;
+
+}
+
+
+/* DIVIDER */
+
+.toolbar-divider {
+
+    width: 1px;
+
+    height: 28px;
+
+    background: #e5e7eb;
+
+    margin: 0 7px;
+
+}
+
+
+/* SPACER */
+
+.toolbar-spacer {
+
+    flex: 1;
+
+}
+
+
+/* COLOR PICKER */
+
+.color-tool {
+
+    width: 38px;
+    height: 38px;
+
+    border-radius: 9px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    background: #f5f6fa;
+
+}
+
+
+.color-tool input {
+
+    width: 23px;
+    height: 23px;
+
+    padding: 0;
+
+    border: none;
+
+    background: transparent;
+
+    cursor: pointer;
+
+}
+
+
+/* BRUSH SLIDER */
+
+.brush-slider {
+
+    width: 85px;
+
+    accent-color: #4f46e5;
+
+    cursor: pointer;
+
+}
+
+
+/* ZOOM */
+
+#zoomValue {
+
+    min-width: 48px;
+
+    text-align: center;
+
+    font-size: 13px;
+
+    font-weight: 500;
+
+    color: #555;
+
+}
+
+
+/* DARK MODE */
+
+body.dark .canvas-toolbar {
+
+    background: rgba(25, 27, 35, 0.94);
+
+    border-color: #333640;
+
+}
+
+
+body.dark .canvas-toolbar .tool {
+
+    color: #c8cad3;
+
+}
+
+
+body.dark .canvas-toolbar .tool:hover {
+
+    background: #30333e;
+
+    color: #a78bfa;
+
+}
+
+
+body.dark .canvas-toolbar .tool.active-tool {
+
+    background: #39325c;
+
+    color: #b8a5ff;
+
+}
+
+
+body.dark .toolbar-divider {
+
+    background: #3b3e49;
+
+}
+
+
+body.dark #zoomValue {
+
+    color: #ddd;
+
+}
