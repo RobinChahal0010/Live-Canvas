@@ -98,6 +98,25 @@
 .ocean{
     background:#0891b2;
 }
+.theme-blue{
+    background:#2563eb;
+}
+
+.theme-dark{
+    background:#111827;
+}
+
+.theme-purple{
+    background:#7c3aed;
+}
+
+.theme-green{
+    background:#16a34a;
+}
+
+.theme-ocean{
+    background:#0891b2;
+}
 
 *{
     margin:0;
