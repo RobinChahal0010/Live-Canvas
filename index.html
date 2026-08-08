@@ -1,142 +1,288 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
     <title>LiveCanvas</title>
+
+    <link rel="icon" type="image/png" href="assets/icon.png">
 
     <!-- CSS -->
     <link rel="stylesheet" href="style.css">
 
+
     <!-- Google Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
 
     <!-- Icons -->
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
 </head>
+
 
 <body>
 
-<!-- ================= HEADER ================= -->
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
 
 <header>
 
+    <!-- LOGO -->
+
     <div class="logo">
+
         <i class="fa-solid fa-pen-ruler"></i>
+
         <h2>LiveCanvas</h2>
+
     </div>
+
+
+    <!-- HEADER RIGHT -->
 
     <div class="header-right">
 
-    <div class="theme-picker">
 
-        <div class="theme-color blue" data-theme="" title="Light"></div>
+        <!-- THEME PICKER -->
 
-        <div class="theme-color dark-theme" data-theme="dark" title="Dark"></div>
+        <div class="theme-picker">
 
-        <div class="theme-color purple" data-theme="purple" title="Purple"></div>
+            <div
+                class="theme-color blue"
+                data-theme=""
+                title="Light">
+            </div>
 
-        <div class="theme-color green" data-theme="green" title="Green"></div>
 
-        <div class="theme-color ocean" data-theme="ocean" title="Ocean"></div>
+            <div
+                class="theme-color dark-theme"
+                data-theme="dark"
+                title="Dark">
+            </div>
+
+
+            <div
+                class="theme-color purple"
+                data-theme="purple"
+                title="Purple">
+            </div>
+
+
+            <div
+                class="theme-color green"
+                data-theme="green"
+                title="Green">
+            </div>
+
+
+            <div
+                class="theme-color ocean"
+                data-theme="ocean"
+                title="Ocean">
+            </div>
+
+        </div>
+
+
+        <!-- AUTHENTICATION -->
+
+        <div class="auth-section">
+
+            <span id="welcomeUser"></span>
+
+
+            <button id="loginHeaderBtn">
+
+                <i class="fa-solid fa-right-to-bracket"></i>
+
+                Login
+
+            </button>
+
+
+            <button id="signupHeaderBtn">
+
+                <i class="fa-solid fa-user-plus"></i>
+
+                Signup
+
+            </button>
+
+
+            <button id="logoutBtn">
+
+                <i class="fa-solid fa-right-from-bracket"></i>
+
+                Logout
+
+            </button>
+
+        </div>
+
 
     </div>
-
-</div>
 
 </header>
 
 
-<!-- ================= TOOLBAR ================= -->
 
-<section class="toolbar">
+<!-- =====================================================
+     TOOLBAR
+===================================================== -->
+
+<div class="toolbar">
+
 
     <button id="drawBtn">
+
         <i class="fa-solid fa-pencil"></i>
+
         Draw
+
     </button>
 
+
     <button id="eraserBtn">
+
         <i class="fa-solid fa-eraser"></i>
+
         Eraser
+
     </button>
+
 
     <label>
 
         <i class="fa-solid fa-palette"></i>
 
-        <input type="color"
-               id="colorPicker"
-               value="#2563eb">
+        <input
+            type="color"
+            id="colorPicker"
+            value="#2563eb">
 
     </label>
+
 
     <label>
 
         <i class="fa-solid fa-sliders"></i>
 
-        <input type="range"
-               id="brushSize"
-               min="1"
-               max="20"
-               value="5">
+        <input
+            type="range"
+            id="brushSize"
+            min="1"
+            max="20"
+            value="5">
 
     </label>
 
+
     <button id="undoBtn">
+
         <i class="fa-solid fa-rotate-left"></i>
+
         Undo
+
     </button>
+
 
     <button id="redoBtn">
+
         <i class="fa-solid fa-rotate-right"></i>
+
         Redo
+
     </button>
+
 
     <button id="clearBtn">
+
         <i class="fa-solid fa-trash"></i>
+
         Clear
+
     </button>
+
 
     <button id="saveBtn">
+
         <i class="fa-solid fa-floppy-disk"></i>
+
         Save
+
     </button>
+
 
     <button id="loadBtn">
+
         <i class="fa-solid fa-folder-open"></i>
+
         Load
+
     </button>
 
-</section>
+
+</div>
 
 
-<!-- ================= MAIN ================= -->
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
 
 <main>
 
-    <!-- ========= LEFT PANEL ========= -->
+
+    <!-- =================================================
+         LEFT SIDEBAR
+    ================================================== -->
 
     <aside class="sidebar">
+
+
+        <!-- STICKY NOTES -->
 
         <div class="card">
 
             <h3>
+
                 <i class="fa-solid fa-note-sticky"></i>
+
                 Sticky Notes
+
             </h3>
 
+
             <button id="addNoteBtn">
+
                 + Add Note
+
             </button>
 
+
             <input
-                    type="text"
-                    id="searchNote"
-                    placeholder="Search Notes">
+                type="text"
+                id="searchNote"
+                placeholder="Search Notes">
+
 
             <div id="notesContainer">
 
@@ -145,58 +291,95 @@
         </div>
 
 
+
+        <!-- STATISTICS -->
+
         <div class="card">
 
             <h3>
+
                 <i class="fa-solid fa-chart-column"></i>
+
                 Statistics
+
             </h3>
 
-            <p>Total Notes :
-                <span id="totalNotes">0</span>
+
+            <p>
+
+                Total Notes :
+
+                <span id="totalNotes">
+                    0
+                </span>
+
             </p>
 
-            <p>Canvas Saves :
-                <span id="saveCount">0</span>
+
+            <p>
+
+                Canvas Saves :
+
+                <span id="saveCount">
+                    0
+                </span>
+
             </p>
 
-            <p>Theme :
+
+            <p>
+
+                Theme :
+
                 <span id="themeStatus">
                     Light
                 </span>
+
             </p>
 
         </div>
+
 
     </aside>
 
 
 
-    <!-- ========= CANVAS ========= -->
+    <!-- =================================================
+         CANVAS
+    ================================================== -->
 
     <section class="canvas-section">
+
 
         <div class="canvas-header">
 
             <h2>
+
                 Collaborative Whiteboard
+
             </h2>
 
+
             <p>
+
                 Draw • Brainstorm • Plan
+
             </p>
 
         </div>
 
+
+
         <div class="canvas-wrapper">
 
             <canvas
-                    id="drawingBoard"
-                    width="1000"
-                    height="600">
+                id="drawingBoard"
+                width="1000"
+                height="600">
             </canvas>
 
         </div>
+
 
     </section>
 
@@ -205,7 +388,9 @@
 
 
 
-<!-- ================= FOOTER ================= -->
+<!-- =====================================================
+     FOOTER
+===================================================== -->
 
 <footer>
 
@@ -221,9 +406,13 @@
 </footer>
 
 
-<!-- ================= JS ================= -->
+
+<!-- =====================================================
+     JAVASCRIPT
+===================================================== -->
 
 <script src="script.js"></script>
 
 </body>
+
 </html>

@@ -1,0 +1,321 @@
+* {
+
+    margin: 0;
+
+    padding: 0;
+
+    box-sizing: border-box;
+
+}
+
+
+body {
+
+    font-family: 'Poppins', sans-serif;
+
+    min-height: 100vh;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    background: #eef2ff;
+
+}
+
+
+/* =========================
+   AUTH CONTAINER
+========================= */
+
+.auth-container {
+
+    width: 100%;
+
+    min-height: 100vh;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    padding: 20px;
+
+}
+
+
+/* =========================
+   AUTH CARD
+========================= */
+
+.auth-card {
+
+    width: 400px;
+
+    background: white;
+
+    padding: 35px;
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 15px 40px rgba(0, 0, 0, 0.12);
+
+}
+
+
+/* =========================
+   LOGO
+========================= */
+
+.auth-logo {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 10px;
+
+    margin-bottom: 25px;
+
+}
+
+
+.auth-logo i {
+
+    font-size: 30px;
+
+    color: #2563eb;
+
+}
+
+
+.auth-logo h2 {
+
+    font-size: 25px;
+
+    color: #1e293b;
+
+}
+
+
+/* =========================
+   HEADING
+========================= */
+
+.auth-card h1 {
+
+    text-align: center;
+
+    color: #1e293b;
+
+    font-size: 26px;
+
+    margin-bottom: 8px;
+
+}
+
+
+.subtitle {
+
+    text-align: center;
+
+    color: #64748b;
+
+    font-size: 14px;
+
+    margin-bottom: 25px;
+
+}
+
+
+/* =========================
+   INPUT
+========================= */
+
+.input-group {
+
+    margin-bottom: 16px;
+
+}
+
+
+.input-group label {
+
+    display: block;
+
+    color: #334155;
+
+    font-size: 14px;
+
+    font-weight: 500;
+
+    margin-bottom: 7px;
+
+}
+
+
+.input-group input {
+
+    width: 100%;
+
+    padding: 13px;
+
+    border: 1px solid #dbeafe;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    font-family: 'Poppins', sans-serif;
+
+    font-size: 14px;
+
+    transition: 0.3s;
+
+}
+
+
+.input-group input:focus {
+
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.1);
+
+}
+
+
+/* =========================
+   BUTTON
+========================= */
+
+.auth-card button {
+
+    width: 100%;
+
+    padding: 13px;
+
+    margin-top: 8px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: #2563eb;
+
+    color: white;
+
+    font-family: 'Poppins', sans-serif;
+
+    font-size: 15px;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+
+}
+
+
+.auth-card button:hover {
+
+    background: #1d4ed8;
+
+    transform: translateY(-2px);
+
+}
+
+
+.auth-card button i {
+
+    margin-right: 8px;
+
+}
+
+
+/* =========================
+   SWITCH
+========================= */
+
+.switch-text {
+
+    text-align: center;
+
+    margin-top: 22px;
+
+    color: #64748b;
+
+    font-size: 14px;
+
+}
+
+
+.switch-text a {
+
+    color: #2563eb;
+
+    text-decoration: none;
+
+    font-weight: 600;
+
+}
+
+
+.switch-text a:hover {
+
+    text-decoration: underline;
+
+}
+
+
+/* =========================
+   BACK
+========================= */
+
+.back-text {
+
+    text-align: center;
+
+    margin-top: 15px;
+
+}
+
+
+.back-text a {
+
+    color: #64748b;
+
+    text-decoration: none;
+
+    font-size: 13px;
+
+}
+
+
+.back-text a:hover {
+
+    color: #2563eb;
+
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media(max-width: 500px) {
+
+    .auth-card {
+
+        width: 100%;
+
+        padding: 25px;
+
+    }
+
+}

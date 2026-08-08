@@ -830,3 +830,53 @@ footer{
     animation:fadeUp .7s ease;
 
 }
+
+
+
+/* ===========================
+   AUTH BUTTONS
+=========================== */
+
+.auth-section{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+}
+
+.auth-section button{
+
+    border:none;
+
+    padding:10px 16px;
+
+    border-radius:10px;
+
+    cursor:pointer;
+
+    background:var(--primary);
+
+    color:white;
+
+    font-family:'Poppins',sans-serif;
+
+    font-size:14px;
+
+}
+
+.auth-section button:hover{
+
+    transform:translateY(-2px);
+
+}
+
+#welcomeUser{
+
+    font-weight:600;
+
+    color:var(--primary);
+
+}
