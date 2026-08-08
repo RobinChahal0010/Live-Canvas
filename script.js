@@ -1,3 +1,82 @@
+/* =========================================
+   LIVE ROOM
+========================================= */
+
+const urlParams = new URLSearchParams(window.location.search);
+
+const roomId = urlParams.get("room");
+
+console.log("Current Room ID:", roomId);
+
+let socket = null;
+
+let currentUsername = "Guest";
+
+
+/* =========================================
+   CONNECT TO ROOM
+========================================= */
+
+if (roomId && typeof io !== "undefined") {
+
+    socket = io();
+
+    socket.on("connect", () => {
+
+        console.log(
+            "Connected to LiveCanvas server:",
+            socket.id
+        );
+
+        socket.emit(
+            "join-room",
+            roomId,
+            currentUsername
+        );
+
+    });
+
+    socket.on("room-joined", (data) => {
+
+        console.log(
+            "Joined room:",
+            data.roomId
+        );
+
+        console.log(
+            "Users in room:",
+            data.userCount
+        );
+
+    });
+
+    socket.on("user-joined", (data) => {
+
+        console.log(
+            `${data.username} joined the room`
+        );
+
+        console.log(
+            "Users:",
+            data.userCount
+        );
+
+    });
+
+    socket.on("user-left", (data) => {
+
+        console.log(
+            `${data.username} left the room`
+        );
+
+        console.log(
+            "Users:",
+            data.userCount
+        );
+
+    });
+
+}
 // ============================================================
 // LIVE CANVAS
 // Complete Application JavaScript

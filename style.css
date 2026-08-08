@@ -1654,3 +1654,150 @@ body.dark #zoomValue {
     color: #ddd;
 
 }
+/* =========================================
+   ROOM PAGE
+========================================= */
+
+.room-page {
+
+    min-height: 100vh;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: #f6f7fb;
+
+}
+
+
+.room-card {
+
+    width: 420px;
+
+    padding: 40px;
+
+    background: white;
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.10);
+
+    text-align: center;
+
+}
+
+
+.room-card h1 {
+
+    margin-bottom: 8px;
+
+}
+
+
+.room-card p {
+
+    color: #777;
+
+    margin-bottom: 30px;
+
+}
+
+
+.room-card button {
+
+    width: 100%;
+
+    padding: 13px;
+
+    margin-top: 10px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    font-size: 15px;
+
+}
+
+
+#soloBtn {
+
+    background: #2563eb;
+
+    color: white;
+
+}
+
+
+#createRoomBtn {
+
+    background: #111827;
+
+    color: white;
+
+}
+
+
+#joinRoomBtn {
+
+    background: #f1f3f7;
+
+    color: #222;
+
+}
+
+
+.divider {
+
+    margin: 25px 0;
+
+    color: #aaa;
+
+    font-size: 12px;
+
+}
+
+
+.join-section,
+.created-room {
+
+    display: none;
+
+    margin-top: 20px;
+
+}
+
+
+.join-section input,
+.created-room input {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 12px;
+
+    border: 1px solid #ddd;
+
+    border-radius: 8px;
+
+    margin-bottom: 8px;
+
+}
+
+
+.created-room {
+
+    padding: 15px;
+
+    background: #f7f7ff;
+
+    border-radius: 12px;
+
+}
