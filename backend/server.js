@@ -21,84 +21,157 @@ app.get("/", (req, res) => {
 
 app.use(express.static(path.join(__dirname, "..")));
 
+const adjectives = [
+    "Pixel",
+    "Neon",
+    "Quantum",
+    "Cyber",
+    "Digital",
+    "Creative",
+    "Binary",
+    "Logic"
+];
 
+const animals = [
+    "Panda",
+    "Fox",
+    "Falcon",
+    "Tiger",
+    "Wolf",
+    "Penguin",
+    "Koala",
+    "Otter",
+    "Phoenix"
+];
+
+function generateUsername() {
+
+    const adjective =
+        adjectives[
+            Math.floor(
+                Math.random() * adjectives.length
+            )
+        ];
+
+    const animal =
+        animals[
+            Math.floor(
+                Math.random() * animals.length
+            )
+        ];
+
+    const number =
+        Math.floor(
+            10 + Math.random() * 90
+        );
+
+    return `${adjective}${animal}${number}`;
+}
 /* =========================================
    SOCKET CONNECTION
 ========================================= */
+
+// ============================================================
+// SOCKET CONNECTION
+// ============================================================
 
 io.on("connection", (socket) => {
 
     console.log("User connected:", socket.id);
 
 
-    /* JOIN ROOM */
+    // ========================================================
+    // JOIN ROOM
+    // ========================================================
 
     socket.on("join-room", (roomId, username) => {
+        if (!roomId || !roomId.trim()) {
+        return;
+    }
 
+        // Generate random name if no name provided
+        if (!username || username.trim() === "") {
+            username = generateUsername();
+        }
+
+        // Store username on socket
+        socket.username = username;
+        socket.roomId = roomId;
+
+        // Join room
         socket.join(roomId);
 
-        socket.data.roomId = roomId;
-        socket.data.username = username || "Guest";
-
-
         console.log(
-            `${socket.data.username} joined room ${roomId}`
+            `${username} joined room ${roomId}`
         );
 
 
-        /* Get users currently inside room */
+        // Get users currently inside room
+        const room =
+            io.sockets.adapter.rooms.get(roomId);
 
-        const room = io.sockets.adapter.rooms.get(roomId);
+        const userCount =
+            room ? room.size : 1;
 
-        const userCount = room ? room.size : 1;
 
-
-        /* Tell current user */
-
+        // Tell current user
         socket.emit("room-joined", {
 
             roomId: roomId,
+            username: username,
             userCount: userCount
 
         });
 
 
-        /* Tell everyone else */
-
-        socket.to(roomId).emit("user-joined", {
-
-            username: socket.data.username,
-            userCount: userCount
-
-        });
+        // Tell everyone else
+        socket.to(roomId).emit(
+            "user-joined",
+            {
+                username: username,
+                userCount: userCount
+            }
+        );
 
     });
 
 
-    /* DISCONNECT */
+    // ========================================================
+    // USER DISCONNECT
+    // ========================================================
 
     socket.on("disconnect", () => {
 
-        const roomId = socket.data.roomId;
-
-        if (!roomId) return;
-
-
-        const room = io.sockets.adapter.rooms.get(roomId);
-
-        const userCount = room ? room.size : 0;
-
-
-        socket.to(roomId).emit("user-left", {
-
-            username: socket.data.username,
-            userCount: userCount
-
-        });
-
-
         console.log(
-            `${socket.data.username} left room ${roomId}`
+            "User disconnected:",
+            socket.id
+        );
+
+        if (!socket.roomId) {
+            return;
+        }
+
+
+        const room =
+            io.sockets.adapter.rooms.get(
+                socket.roomId
+            );
+
+        const userCount =
+            room ? room.size : 0;
+
+
+        socket.to(
+            socket.roomId
+        ).emit(
+            "user-left",
+            {
+                username:
+                    socket.username || "Unknown User",
+
+                userCount:
+                    userCount
+            }
         );
 
     });
