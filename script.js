@@ -2,79 +2,180 @@
    LIVE ROOM
 ========================================= */
 
-const urlParams = new URLSearchParams(window.location.search);
+const urlParams =
+    new URLSearchParams(window.location.search);
 
-const roomId = urlParams.get("room");
+const roomId =
+    urlParams.get("room");
 
-console.log("Current Room ID:", roomId);
+console.log(
+    "Current Room ID:",
+    roomId
+);
 
 let socket = null;
 
-let currentUsername = "Guest";
+let currentUsername =
+    sessionStorage.getItem("roomUsername") ||
+    "Guest";
 
 
-/* =========================================
-   CONNECT TO ROOM
-========================================= */
+// ============================================================
+// ROOM AUTHENTICATION
+// ============================================================
 
-if (roomId && typeof io !== "undefined") {
+let roomAuthenticated = true;
+
+if (roomId) {
+
+    const loggedInUser =
+        JSON.parse(
+            localStorage.getItem("loggedInUser")
+        );
+
+    // Room requires login
+    if (!loggedInUser) {
+
+        roomAuthenticated = false;
+
+        alert(
+            "Please login to enter a collaborative room."
+        );
+
+        window.location.href =
+            "login.html?redirect=" +
+            encodeURIComponent(
+                window.location.pathname +
+                window.location.search
+            );
+
+    } else {
+
+        // Logged-in user's name
+        currentUsername =
+            sessionStorage.getItem("roomUsername") ||
+            loggedInUser.name ||
+            "Guest";
+
+    }
+}
+
+
+// ============================================================
+// CONNECT TO ROOM
+// ============================================================
+
+if (
+    roomId &&
+    roomAuthenticated &&
+    typeof io !== "undefined"
+) {
 
     socket = io();
 
-    socket.on("connect", () => {
 
-        console.log(
-            "Connected to LiveCanvas server:",
-            socket.id
-        );
+    // ========================================================
+    // CONNECTED
+    // ========================================================
 
-        socket.emit(
-            "join-room",
-            roomId,
-            currentUsername
-        );
+    socket.on(
+        "connect",
+        () => {
 
-    });
+            console.log(
+                "Connected to LiveCanvas server:",
+                socket.id
+            );
 
-    socket.on("room-joined", (data) => {
+            socket.emit(
+                "join-room",
+                roomId,
+                currentUsername
+            );
 
-        console.log(
-            "Joined room:",
-            data.roomId
-        );
+        }
+    );
 
-        console.log(
-            "Users in room:",
-            data.userCount
-        );
 
-    });
+    // ========================================================
+    // ROOM JOINED
+    // ========================================================
 
-    socket.on("user-joined", (data) => {
+    socket.on(
+        "room-joined",
+        data => {
 
-        console.log(
-            `${data.username} joined the room`
-        );
+            console.log(
+                "Joined room:",
+                data.roomId
+            );
 
-        console.log(
-            "Users:",
-            data.userCount
-        );
+            console.log(
+                "Users in room:",
+                data.userCount
+            );
 
-    });
+        }
+    );
 
-    socket.on("user-left", (data) => {
 
-        console.log(
-            `${data.username} left the room`
-        );
+    // ========================================================
+    // USER JOINED
+    // ========================================================
 
-        console.log(
-            "Users:",
-            data.userCount
-        );
+    socket.on(
+        "user-joined",
+        data => {
 
-    });
+            console.log(
+                `${data.username} joined the room`
+            );
+
+            console.log(
+                "Users:",
+                data.userCount
+            );
+
+        }
+    );
+
+
+    // ========================================================
+    // USER LEFT
+    // ========================================================
+
+    socket.on(
+        "user-left",
+        data => {
+
+            console.log(
+                `${data.username} left the room`
+            );
+
+            console.log(
+                "Users:",
+                data.userCount
+            );
+
+        }
+    );
+
+
+    // ========================================================
+    // CONNECTION ERROR
+    // ========================================================
+
+    socket.on(
+        "connect_error",
+        error => {
+
+            console.error(
+                "Room connection failed:",
+                error
+            );
+
+        }
+    );
 
 }
 // ============================================================
