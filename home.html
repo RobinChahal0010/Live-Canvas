@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Canvas - Welcome</title>
+    <link rel="icon" type="image/png" href="assets/icon.png">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #f7f6f2;
+            --purple: #9b00e8;
+            --pink: #ff007f;
+            --orange: #ff7518;
+            --green: #00c957;
+        }
+
+        * {
+            cursor: none !important;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0;
+            transform: scale(0);
+            animation: popIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .shape-purple {
+            background-color: #9900ff;
+            width: 450px;
+            height: 450px;
+            top: -150px;
+            left: -150px;
+            animation-delay: 0.1s;
+        }
+
+        .shape-pink {
+            background-color: #ff0080;
+            width: 650px;
+            height: 650px;
+            top: -420px;
+            left: calc(50% - 250px);
+            animation-delay: 0.3s;
+        }
+
+        .shape-orange {
+            background-color: #ff6600;
+            width: 900px;
+            height: 900px;
+            bottom: -620px;
+            left: calc(32% - 450px);
+            animation-delay: 0.5s;
+        }
+
+        .shape-green {
+            background-color: #00cc66;
+            width: 550px;
+            height: 550px;
+            bottom: -220px;
+            right: -150px;
+            animation-delay: 0.7s;
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Eyes */
+        .eyes-container {
+            position: absolute;
+            display: flex;
+            gap: 25px;
+        }
+
+        .shape-purple .eyes-container {
+            bottom: 60px;
+            right: 40px;
+            transform: rotate(-25deg);
+            gap: 20px;
+        }
+        
+        .shape-purple .eye {
+            width: 105px;
+            height: 105px;
+        }
+        
+        .shape-purple .pupil {
+            width: 45px;
+            height: 45px;
+        }
+
+        .shape-pink .eyes-container {
+            bottom: 50px;
+            left: calc(50% - 142px);
+        }
+
+        .shape-orange .eyes-container {
+            top: 120px;
+            left: calc(50% - 142px);
+        }
+
+        .shape-green .eyes-container {
+            top: 120px;
+            left: 70px;
+            transform: rotate(-30deg);
+        }
+
+        .eye {
+            width: 130px;
+            height: 130px;
+            background-color: white;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .pupil {
+            width: 50px;
+            height: 50px;
+            background-color: #111;
+            border-radius: 50%;
+            position: absolute;
+            transition: transform 0.05s linear;
+        }
+
+        /* Center Content */
+        .content {
+            z-index: 10;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .title {
+            font-family: 'Segoe Script', 'Brush Script MT', cursive;
+            font-size: 6rem;
+            color: #111;
+            margin: 0 0 -15px 0;
+            font-weight: normal;
+        }
+
+        .tagline {
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 5px;
+            color: #333;
+            text-transform: uppercase;
+            margin: 0 0 40px 0;
+            font-weight: 600;
+        }
+
+        .letter {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.4s forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+
+        /* Custom Cursor */
+        .custom-cursor {
+            position: fixed;
+            pointer-events: none;
+            z-index: 99999;
+            display: flex;
+            align-items: flex-start;
+            margin-left: -2px;
+            margin-top: -2px;
+            color: #111;
+            transition: color 0.2s ease;
+        }
+
+        .cursor-pointer {
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            width: 32px;
+            height: 32px;
+        }
+
+        .cursor-label {
+            background-color: currentColor;
+            color: white;
+            padding: 5px 14px;
+            border-radius: 8px;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            margin-left: 2px;
+            margin-top: 18px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            border: 2px solid white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        .custom-cursor.show-label .cursor-label {
+            opacity: 1;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Decorative Shapes -->
+    <div class="shape shape-purple" data-color="#9900ff" data-name="Boop">
+        <div class="eyes-container">
+            <div class="eye"><div class="pupil"></div></div>
+            <div class="eye"><div class="pupil"></div></div>
+        </div>
+    </div>
+    
+    <div class="shape shape-pink" data-color="#ff0080" data-name="Bubble">
+        <div class="eyes-container">
+            <div class="eye"><div class="pupil"></div></div>
+            <div class="eye"><div class="pupil"></div></div>
+        </div>
+    </div>
+    
+    <div class="shape shape-orange" data-color="#ff6600" data-name="Squash">
+        <div class="eyes-container">
+            <div class="eye"><div class="pupil"></div></div>
+            <div class="eye"><div class="pupil"></div></div>
+        </div>
+    </div>
+    
+    <div class="shape shape-green" data-color="#00cc66" data-name="Bean">
+        <div class="eyes-container">
+            <div class="eye"><div class="pupil"></div></div>
+            <div class="eye"><div class="pupil"></div></div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        <h1 class="title" id="titleText">Live Canvas</h1>
+        <p class="tagline" id="taglineText">Work Collaboratively With Your Team</p>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="custom-cursor" id="customCursor">
+        <svg class="cursor-pointer" viewBox="0 0 24 24" fill="none">
+            <path d="M4.15 2.5 L20.35 11.2 L12.8 12.8 L11.2 20.35 Z" fill="currentColor" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <div class="cursor-label" id="cursorLabel">Name</div>
+    </div>
+
+    <script>
+        // Letter-by-letter animation function
+        function animateText(elementId, delayOffset = 0) {
+            const element = document.getElementById(elementId);
+            const text = element.innerText;
+            element.innerText = '';
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const span = document.createElement('span');
+                
+                if (char === ' ') {
+                    span.innerHTML = '&nbsp;';
+                } else {
+                    span.innerText = char;
+                }
+                
+                span.className = 'letter';
+                span.style.animationDelay = `${delayOffset + (i * 0.05)}s`;
+                element.appendChild(span);
+            }
+        }
+        
+        // Word-by-word animation function
+        function animateWords(elementId, delayOffset = 0) {
+            const element = document.getElementById(elementId);
+            const text = element.innerText;
+            element.innerText = '';
+            
+            const words = text.split(' ');
+            for (let i = 0; i < words.length; i++) {
+                const span = document.createElement('span');
+                span.innerText = words[i];
+                span.className = 'letter';
+                span.style.animationDelay = `${delayOffset + (i * 0.15)}s`;
+                element.appendChild(span);
+                
+                if (i < words.length - 1) {
+                    element.appendChild(document.createTextNode(' '));
+                }
+            }
+        }
+
+        // Initialize text animations
+        document.addEventListener('DOMContentLoaded', () => {
+            // Delay title animation slightly after the first shapes
+            animateText('titleText', 0.6);
+            // Delay tagline animation word by word after title
+            animateWords('taglineText', 1.2);
+        });
+
+        // Eyes following cursor and custom cursor movement logic
+        const customCursor = document.getElementById('customCursor');
+        const cursorLabel = document.getElementById('cursorLabel');
+        
+        document.addEventListener('mousemove', (e) => {
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+            
+            // Move custom cursor
+            customCursor.style.left = `${mouseX}px`;
+            customCursor.style.top = `${mouseY}px`;
+
+            const eyes = document.querySelectorAll('.eye');
+            
+            eyes.forEach(eye => {
+                const rect = eye.getBoundingClientRect();
+                const eyeCenterX = rect.left + rect.width / 2;
+                const eyeCenterY = rect.top + rect.height / 2;
+                
+                const deltaX = mouseX - eyeCenterX;
+                const deltaY = mouseY - eyeCenterY;
+                
+                const angle = Math.atan2(deltaY, deltaX);
+                
+                // Max radius the pupil can travel (approximate based on eye width)
+                const maxDistance = (rect.width / 2) * 0.5;
+                const distance = Math.min(maxDistance, Math.hypot(deltaX, deltaY) / 10);
+                
+                const pupilX = Math.cos(angle) * distance;
+                const pupilY = Math.sin(angle) * distance;
+                
+                const pupil = eye.querySelector('.pupil');
+                pupil.style.transform = `translate(${pupilX}px, ${pupilY}px)`;
+            });
+        });
+        
+        // Custom cursor hover logic for shapes
+        const shapes = document.querySelectorAll('.shape');
+        shapes.forEach(shape => {
+            shape.addEventListener('mouseenter', () => {
+                const color = shape.getAttribute('data-color');
+                const name = shape.getAttribute('data-name');
+                
+                customCursor.style.color = color;
+                cursorLabel.innerText = name;
+                customCursor.classList.add('show-label');
+            });
+            
+            shape.addEventListener('mouseleave', () => {
+                customCursor.classList.remove('show-label');
+            });
+        });
+    </script>
+</body>
+</html>
