@@ -1,19 +1,40 @@
 // ============================================================
-// LIVE CANVAS ROOM
+// LIVE CANVAS - ROOM SELECTION
 // ============================================================
 
-const soloBtn = document.getElementById("soloBtn");
-const createRoomBtn = document.getElementById("createRoomBtn");
-const joinRoomBtn = document.getElementById("joinRoomBtn");
+// ============================================================
+// ELEMENTS
+// ============================================================
 
-const joinSection = document.getElementById("joinSection");
-const roomCode = document.getElementById("roomCode");
-const joinBtn = document.getElementById("joinBtn");
+const soloBtn =
+    document.getElementById("soloBtn");
 
-const createdRoom = document.getElementById("createdRoom");
-const roomLink = document.getElementById("roomLink");
-const copyRoomBtn = document.getElementById("copyRoomBtn");
-const enterRoomBtn = document.getElementById("enterRoomBtn");
+const createRoomBtn =
+    document.getElementById("createRoomBtn");
+
+const joinRoomBtn =
+    document.getElementById("joinRoomBtn");
+
+const joinSection =
+    document.getElementById("joinSection");
+
+const roomCode =
+    document.getElementById("roomCode");
+
+const joinBtn =
+    document.getElementById("joinBtn");
+
+const createdRoom =
+    document.getElementById("createdRoom");
+
+const roomLink =
+    document.getElementById("roomLink");
+
+const copyRoomBtn =
+    document.getElementById("copyRoomBtn");
+
+const enterRoomBtn =
+    document.getElementById("enterRoomBtn");
 
 
 // ============================================================
@@ -30,16 +51,24 @@ function getLoggedInUser() {
 
     } catch (error) {
 
+        console.error(
+            "Could not read loggedInUser:",
+            error
+        );
+
         return null;
-
     }
-
 }
 
 
+// ============================================================
+// REQUIRE LOGIN
+// ============================================================
+
 function requireLogin() {
 
-    const user = getLoggedInUser();
+    const user =
+        getLoggedInUser();
 
     if (!user) {
 
@@ -59,52 +88,51 @@ function requireLogin() {
 
 
 // ============================================================
-// GET ROOM USERNAME
+// GENERATE ROOM ID
 // ============================================================
 
-function getRoomUsername() {
+function generateRoomId() {
 
-    const user = getLoggedInUser();
+    return Math.random()
+        .toString(36)
+        .substring(2, 8)
+        .toUpperCase();
 
-    if (!user) {
-        return "";
-    }
-
-    const username = prompt(
-        "Choose your room name (optional):",
-        user.name || ""
-    );
-
-    if (
-        username === null ||
-        username.trim() === ""
-    ) {
-
-        // Backend will generate random name
-        return "";
-
-    }
-
-    return username.trim();
 }
 
 
 // ============================================================
-// SOLO
+// SOLO ROOM
 // ============================================================
 
 if (soloBtn) {
 
-    soloBtn.addEventListener("click", () => {
+    soloBtn.addEventListener(
+        "click",
+        () => {
 
-        if (!requireLogin()) {
-            return;
+            if (!requireLogin()) {
+                return;
+            }
+
+            // No room ID = solo mode
+            sessionStorage.removeItem(
+                "roomId"
+            );
+
+            sessionStorage.removeItem(
+                "roomUsername"
+            );
+
+            console.log(
+                "Starting Solo Canvas"
+            );
+
+            window.location.href =
+                "index.html";
+
         }
-
-        // Login required even for Solo
-        window.location.href = "index.html";
-
-    });
+    );
 
 }
 
@@ -115,66 +143,82 @@ if (soloBtn) {
 
 if (createRoomBtn) {
 
-    createRoomBtn.addEventListener("click", () => {
+    createRoomBtn.addEventListener(
+        "click",
+        () => {
 
-        if (!requireLogin()) {
-            return;
+            if (!requireLogin()) {
+                return;
+            }
+
+            const roomId =
+                generateRoomId();
+
+            // Let backend generate random name
+            sessionStorage.setItem(
+                "roomUsername",
+                ""
+            );
+
+            sessionStorage.setItem(
+                "roomId",
+                roomId
+            );
+
+            console.log(
+                "Created Room:",
+                roomId
+            );
+
+            if (createdRoom) {
+
+                createdRoom.style.display =
+                    "block";
+
+            }
+
+            if (roomLink) {
+
+                roomLink.value =
+                    roomId;
+
+            }
+
         }
-
-        const roomId =
-            Math.random()
-                .toString(36)
-                .substring(2, 8)
-                .toUpperCase();
-
-        // Empty username
-        // Backend will generate random username
-        sessionStorage.setItem(
-            "roomUsername",
-            ""
-        );
-
-        sessionStorage.setItem(
-            "roomId",
-            roomId
-        );
-
-        if (createdRoom) {
-            createdRoom.style.display = "block";
-        }
-
-        // Show ONLY room code
-        if (roomLink) {
-            roomLink.value = roomId;
-        }
-
-        console.log(
-            "Created Room:",
-            roomId
-        );
-
-    });
+    );
 
 }
 
 
 // ============================================================
-// JOIN ROOM BUTTON
+// SHOW JOIN SECTION
 // ============================================================
 
 if (joinRoomBtn) {
 
-    joinRoomBtn.addEventListener("click", () => {
+    joinRoomBtn.addEventListener(
+        "click",
+        () => {
 
-        if (!requireLogin()) {
-            return;
+            if (!requireLogin()) {
+                return;
+            }
+
+            if (joinSection) {
+
+                joinSection.style.display =
+                    "block";
+
+            }
+
+            if (roomCode) {
+
+                roomCode.focus();
+
+            }
+
         }
-
-        if (joinSection) {
-            joinSection.style.display = "block";
-        }
-
-    });
+    );
 
 }
 
@@ -185,54 +229,58 @@ if (joinRoomBtn) {
 
 if (joinBtn) {
 
-    joinBtn.addEventListener("click", () => {
+    joinBtn.addEventListener(
+        "click",
+        () => {
 
-        if (!requireLogin()) {
-            return;
-        }
+            if (!requireLogin()) {
+                return;
+            }
 
-        const code =
-            roomCode.value
-                .trim()
-                .toUpperCase();
+            if (!roomCode) {
+                return;
+            }
+
+            const code =
+                roomCode.value
+                    .trim()
+                    .toUpperCase();
 
 
-        // Validate room code
-        if (!code) {
+            // Validate
+            if (!code) {
 
-            alert(
-                "Please enter a room code."
+                alert(
+                    "Please enter a room code."
+                );
+
+                return;
+            }
+
+
+            // Let backend generate random name
+            sessionStorage.setItem(
+                "roomUsername",
+                ""
             );
 
-            return;
+            sessionStorage.setItem(
+                "roomId",
+                code
+            );
+
+            console.log(
+                "Joining Room:",
+                code
+            );
+
+
+            // Open canvas
+            window.location.href =
+                `index.html?room=${encodeURIComponent(code)}`;
+
         }
-
-
-        // Empty username
-        // Backend generates random name
-        sessionStorage.setItem(
-            "roomUsername",
-            ""
-        );
-
-
-        sessionStorage.setItem(
-            "roomId",
-            code
-        );
-
-
-        console.log(
-            "Joining Room:",
-            code
-        );
-
-
-        // Enter room
-        window.location.href =
-            `index.html?room=${encodeURIComponent(code)}`;
-
-    });
+    );
 
 }
 
@@ -248,11 +296,19 @@ if (copyRoomBtn) {
         async () => {
 
             const roomId =
-                sessionStorage.getItem("roomId");
+                sessionStorage.getItem(
+                    "roomId"
+                );
 
             if (!roomId) {
+
+                alert(
+                    "No room available."
+                );
+
                 return;
             }
+
 
             try {
 
@@ -263,12 +319,16 @@ if (copyRoomBtn) {
                 copyRoomBtn.textContent =
                     "Copied ✓";
 
-                setTimeout(() => {
 
-                    copyRoomBtn.textContent =
-                        "Copy Code";
+                setTimeout(
+                    () => {
 
-                }, 1500);
+                        copyRoomBtn.textContent =
+                            "Copy Code";
+
+                    },
+                    1500
+                );
 
             } catch (error) {
 
@@ -277,12 +337,24 @@ if (copyRoomBtn) {
                     error
                 );
 
+                // Fallback
+                if (roomLink) {
+
+                    roomLink.select();
+
+                    document.execCommand(
+                        "copy"
+                    );
+
+                }
+
             }
 
         }
     );
 
 }
+
 
 // ============================================================
 // ENTER CREATED ROOM
@@ -293,6 +365,10 @@ if (enterRoomBtn) {
     enterRoomBtn.addEventListener(
         "click",
         () => {
+
+            if (!requireLogin()) {
+                return;
+            }
 
             const roomId =
                 sessionStorage.getItem(
@@ -308,6 +384,12 @@ if (enterRoomBtn) {
 
                 return;
             }
+
+
+            console.log(
+                "Entering Room:",
+                roomId
+            );
 
 
             window.location.href =

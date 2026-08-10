@@ -67,9 +67,7 @@ function generateUsername() {
 
     return `${adjective}${animal}${number}`;
 }
-/* =========================================
-   SOCKET CONNECTION
-========================================= */
+
 
 // ============================================================
 // SOCKET CONNECTION
@@ -91,9 +89,9 @@ socket.on("join-room", (roomId, username) => {
     }
 
     // Generate random username if none provided
-    if (!username || username.trim() === "") {
+    
         username = generateUsername();
-    }
+    
 
     // Store user information
     socket.username = username;
@@ -129,6 +127,23 @@ socket.on("join-room", (roomId, username) => {
             username: username,
             userCount: userCount
         }
+    );
+
+});
+
+// ============================================================
+// CANVAS DRAW SYNC
+// ============================================================
+
+socket.on("canvas-draw", (data) => {
+
+    if (!socket.roomId) {
+        return;
+    }
+
+    socket.to(socket.roomId).emit(
+        "canvas-draw",
+        data
     );
 
 });
