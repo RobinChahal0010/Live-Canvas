@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Canvas - Welcome</title>
     <link rel="icon" type="image/png" href="assets/icon.png">
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600&display=swap" rel="stylesheet">
-    
+
     <style>
         :root {
             --bg-color: #f7f6f2;
@@ -20,11 +21,18 @@
             --green: #00c957;
         }
 
-        * {
-            cursor: none !important;
+        *,
+        html,
+        body,
+        .shape,
+        .content,
+        .title,
+        .tagline {
+            cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='), none !important;
         }
 
-        body, html {
+        body,
+        html {
             margin: 0;
             padding: 0;
             width: 100%;
@@ -44,7 +52,8 @@
             opacity: 0;
             transform: scale(0);
             animation: popIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            pointer-events: auto;
         }
 
         .shape-purple {
@@ -84,8 +93,15 @@
         }
 
         @keyframes popIn {
-            0% { opacity: 0; transform: scale(0); }
-            100% { opacity: 1; transform: scale(1); }
+            0% {
+                opacity: 0;
+                transform: scale(0);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         /* Eyes */
@@ -101,12 +117,12 @@
             transform: rotate(-25deg);
             gap: 20px;
         }
-        
+
         .shape-purple .eye {
             width: 105px;
             height: 105px;
         }
-        
+
         .shape-purple .pupil {
             width: 45px;
             height: 45px;
@@ -137,7 +153,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
         .pupil {
@@ -205,7 +221,7 @@
         }
 
         .cursor-pointer {
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
             width: 32px;
             height: 32px;
         }
@@ -223,44 +239,60 @@
             white-space: nowrap;
             opacity: 0;
             transition: opacity 0.2s ease-in-out;
-            border: 2px solid white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            border: 2px solid var(--bg-color);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
         }
 
         .custom-cursor.show-label .cursor-label {
             opacity: 1;
         }
-
     </style>
 </head>
+
 <body>
 
     <!-- Decorative Shapes -->
     <div class="shape shape-purple" data-color="#9900ff" data-name="Boop">
         <div class="eyes-container">
-            <div class="eye"><div class="pupil"></div></div>
-            <div class="eye"><div class="pupil"></div></div>
+            <div class="eye">
+                <div class="pupil"></div>
+            </div>
+            <div class="eye">
+                <div class="pupil"></div>
+            </div>
         </div>
     </div>
-    
+
     <div class="shape shape-pink" data-color="#ff0080" data-name="Bubble">
         <div class="eyes-container">
-            <div class="eye"><div class="pupil"></div></div>
-            <div class="eye"><div class="pupil"></div></div>
+            <div class="eye">
+                <div class="pupil"></div>
+            </div>
+            <div class="eye">
+                <div class="pupil"></div>
+            </div>
         </div>
     </div>
-    
+
     <div class="shape shape-orange" data-color="#ff6600" data-name="Squash">
         <div class="eyes-container">
-            <div class="eye"><div class="pupil"></div></div>
-            <div class="eye"><div class="pupil"></div></div>
+            <div class="eye">
+                <div class="pupil"></div>
+            </div>
+            <div class="eye">
+                <div class="pupil"></div>
+            </div>
         </div>
     </div>
-    
+
     <div class="shape shape-green" data-color="#00cc66" data-name="Bean">
         <div class="eyes-container">
-            <div class="eye"><div class="pupil"></div></div>
-            <div class="eye"><div class="pupil"></div></div>
+            <div class="eye">
+                <div class="pupil"></div>
+            </div>
+            <div class="eye">
+                <div class="pupil"></div>
+            </div>
         </div>
     </div>
 
@@ -273,7 +305,8 @@
     <!-- Custom Cursor -->
     <div class="custom-cursor" id="customCursor">
         <svg class="cursor-pointer" viewBox="0 0 24 24" fill="none">
-            <path d="M4.15 2.5 L20.35 11.2 L12.8 12.8 L11.2 20.35 Z" fill="currentColor" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M4.15 2.5 L20.35 11.2 L12.8 12.8 L11.2 20.35 Z" fill="currentColor" stroke="white"
+                stroke-width="1.5" stroke-linejoin="round" />
         </svg>
         <div class="cursor-label" id="cursorLabel">Name</div>
     </div>
@@ -284,29 +317,29 @@
             const element = document.getElementById(elementId);
             const text = element.innerText;
             element.innerText = '';
-            
+
             for (let i = 0; i < text.length; i++) {
                 const char = text[i];
                 const span = document.createElement('span');
-                
+
                 if (char === ' ') {
                     span.innerHTML = '&nbsp;';
                 } else {
                     span.innerText = char;
                 }
-                
+
                 span.className = 'letter';
                 span.style.animationDelay = `${delayOffset + (i * 0.05)}s`;
                 element.appendChild(span);
             }
         }
-        
+
         // Word-by-word animation function
         function animateWords(elementId, delayOffset = 0) {
             const element = document.getElementById(elementId);
             const text = element.innerText;
             element.innerText = '';
-            
+
             const words = text.split(' ');
             for (let i = 0; i < words.length; i++) {
                 const span = document.createElement('span');
@@ -314,7 +347,7 @@
                 span.className = 'letter';
                 span.style.animationDelay = `${delayOffset + (i * 0.15)}s`;
                 element.appendChild(span);
-                
+
                 if (i < words.length - 1) {
                     element.appendChild(document.createTextNode(' '));
                 }
@@ -332,55 +365,57 @@
         // Eyes following cursor and custom cursor movement logic
         const customCursor = document.getElementById('customCursor');
         const cursorLabel = document.getElementById('cursorLabel');
-        
+
         document.addEventListener('mousemove', (e) => {
             const mouseX = e.clientX;
             const mouseY = e.clientY;
-            
+
             // Move custom cursor
             customCursor.style.left = `${mouseX}px`;
             customCursor.style.top = `${mouseY}px`;
 
             const eyes = document.querySelectorAll('.eye');
-            
+
             eyes.forEach(eye => {
                 const rect = eye.getBoundingClientRect();
                 const eyeCenterX = rect.left + rect.width / 2;
                 const eyeCenterY = rect.top + rect.height / 2;
-                
+
                 const deltaX = mouseX - eyeCenterX;
                 const deltaY = mouseY - eyeCenterY;
-                
+
                 const angle = Math.atan2(deltaY, deltaX);
-                
+
                 // Max radius the pupil can travel (approximate based on eye width)
                 const maxDistance = (rect.width / 2) * 0.5;
                 const distance = Math.min(maxDistance, Math.hypot(deltaX, deltaY) / 10);
-                
+
                 const pupilX = Math.cos(angle) * distance;
                 const pupilY = Math.sin(angle) * distance;
-                
+
                 const pupil = eye.querySelector('.pupil');
                 pupil.style.transform = `translate(${pupilX}px, ${pupilY}px)`;
             });
         });
-        
+
         // Custom cursor hover logic for shapes
         const shapes = document.querySelectorAll('.shape');
         shapes.forEach(shape => {
             shape.addEventListener('mouseenter', () => {
                 const color = shape.getAttribute('data-color');
                 const name = shape.getAttribute('data-name');
-                
+
                 customCursor.style.color = color;
+                cursorLabel.style.backgroundColor = color;
                 cursorLabel.innerText = name;
                 customCursor.classList.add('show-label');
             });
-            
+
             shape.addEventListener('mouseleave', () => {
                 customCursor.classList.remove('show-label');
             });
         });
     </script>
 </body>
+
 </html>
