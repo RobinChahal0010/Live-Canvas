@@ -79,61 +79,59 @@ io.on("connection", (socket) => {
 
     console.log("User connected:", socket.id);
 
+// ========================================================
+// JOIN ROOM
+// ========================================================
 
-    // ========================================================
-    // JOIN ROOM
-    // ========================================================
+socket.on("join-room", (roomId, username) => {
 
-    socket.on("join-room", (roomId, username) => {
-        if (!roomId || !roomId.trim()) {
+    // Validate room ID
+    if (!roomId || !roomId.trim()) {
         return;
     }
 
-        // Generate random name if no name provided
-        if (!username || username.trim() === "") {
-            username = generateUsername();
-        }
+    // Generate random username if none provided
+    if (!username || username.trim() === "") {
+        username = generateUsername();
+    }
 
-        // Store username on socket
-        socket.username = username;
-        socket.roomId = roomId;
+    // Store user information
+    socket.username = username;
+    socket.roomId = roomId;
 
-        // Join room
-        socket.join(roomId);
+    // Join room
+    socket.join(roomId);
 
-        console.log(
-            `${username} joined room ${roomId}`
-        );
+    console.log(
+        `${username} joined room ${roomId}`
+    );
 
+    // Get users currently inside room
+    const room =
+        io.sockets.adapter.rooms.get(roomId);
 
-        // Get users currently inside room
-        const room =
-            io.sockets.adapter.rooms.get(roomId);
+    const userCount =
+        room ? room.size : 1;
 
-        const userCount =
-            room ? room.size : 1;
+    // Tell current user
+    socket.emit("room-joined", {
 
-
-        // Tell current user
-        socket.emit("room-joined", {
-
-            roomId: roomId,
-            username: username,
-            userCount: userCount
-
-        });
-
-
-        // Tell everyone else
-        socket.to(roomId).emit(
-            "user-joined",
-            {
-                username: username,
-                userCount: userCount
-            }
-        );
+        roomId: roomId,
+        username: username,
+        userCount: userCount
 
     });
+
+    // Tell everyone else
+    socket.to(roomId).emit(
+        "user-joined",
+        {
+            username: username,
+            userCount: userCount
+        }
+    );
+
+});
 
 
     // ========================================================

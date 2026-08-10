@@ -85,7 +85,6 @@ console.log("Logged In User:", loggedInUser);
 
 let currentUsername =
     sessionStorage.getItem("roomUsername") ||
-    loggedInUser?.name ||
     "";
 
 console.log("Room Username:", currentUsername);
