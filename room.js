@@ -112,6 +112,9 @@ if (soloBtn) {
 // ============================================================
 // CREATE ROOM
 // ============================================================
+// ============================================================
+// CREATE ROOM
+// ============================================================
 
 if (createRoomBtn) {
 
@@ -121,19 +124,24 @@ if (createRoomBtn) {
             return;
         }
 
+        const user = getLoggedInUser();
+
+        const username = prompt(
+            "Choose your room name (optional):",
+            user.name || ""
+        );
+
         const roomUsername =
-            getRoomUsername();
+            username && username.trim()
+                ? username.trim()
+                : "";
 
-
-        // Generate room ID
         const roomId =
             Math.random()
                 .toString(36)
                 .substring(2, 8)
                 .toUpperCase();
 
-
-        // Save room information
         sessionStorage.setItem(
             "roomId",
             roomId
@@ -144,20 +152,14 @@ if (createRoomBtn) {
             roomUsername
         );
 
-
-        // Show created room
         if (createdRoom) {
             createdRoom.style.display = "block";
         }
 
-
+        // ONLY ROOM CODE SHOW
         if (roomLink) {
-
-            roomLink.value =
-                `${window.location.origin}/index.html?room=${roomId}`;
-
+            roomLink.value = roomId;
         }
-
 
         console.log(
             "Created Room:",
@@ -202,26 +204,27 @@ if (joinBtn) {
             return;
         }
 
-
         const code =
             roomCode.value
                 .trim()
                 .toUpperCase();
 
-
+        // Check room code first
         if (!code) {
 
-            alert(
-                "Please enter a room code."
-            );
+            alert("Please enter a room code.");
 
             return;
         }
 
+        const user =
+            getLoggedInUser();
 
-        const roomUsername =
-            getRoomUsername();
-
+        const username =
+            prompt(
+                "Choose your room name (optional):",
+                user.name || ""
+            );
 
         // Save room information
         sessionStorage.setItem(
@@ -231,17 +234,17 @@ if (joinBtn) {
 
         sessionStorage.setItem(
             "roomUsername",
-            roomUsername
+            username && username.trim()
+                ? username.trim()
+                : ""
         );
-
 
         console.log(
             "Joining Room:",
             code
         );
 
-
-        // Open collaborative canvas
+        // Enter room
         window.location.href =
             `index.html?room=${encodeURIComponent(code)}`;
 
@@ -251,7 +254,7 @@ if (joinBtn) {
 
 
 // ============================================================
-// COPY ROOM LINK
+// COPY ROOM CODE
 // ============================================================
 
 if (copyRoomBtn) {
@@ -260,14 +263,17 @@ if (copyRoomBtn) {
         "click",
         async () => {
 
-            if (!roomLink || !roomLink.value) {
+            const roomId =
+                sessionStorage.getItem("roomId");
+
+            if (!roomId) {
                 return;
             }
 
             try {
 
                 await navigator.clipboard.writeText(
-                    roomLink.value
+                    roomId
                 );
 
                 copyRoomBtn.textContent =
@@ -276,7 +282,7 @@ if (copyRoomBtn) {
                 setTimeout(() => {
 
                     copyRoomBtn.textContent =
-                        "Copy Link";
+                        "Copy Code";
 
                 }, 1500);
 
@@ -293,7 +299,6 @@ if (copyRoomBtn) {
     );
 
 }
-
 
 // ============================================================
 // ENTER CREATED ROOM
