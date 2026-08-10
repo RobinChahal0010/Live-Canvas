@@ -158,6 +158,49 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        @keyframes btnPop {
+            0% {
+                opacity: 0;
+                transform: scale(0.85) translateY(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        /* Retro Yellow Pill CTA Button */
+        .hero-btn {
+            display: inline-block;
+            margin-top: -15px;
+            padding: 9px 28px;
+            background-color: #ffc800;
+            color: #111111;
+            font-family: 'Segoe Script', 'Brush Script MT', cursive;
+            font-size: 1.35rem;
+            font-weight: 700;
+            text-decoration: none;
+            border: 2.5px solid #111111;
+            border-radius: 999px;
+            box-shadow: 3px 4px 0px #111111;
+            opacity: 0;
+            animation: btnPop 0.5s ease-out 1.7s forwards;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+            position: relative;
+            z-index: 20;
+        }
+
+        .hero-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 6px 0px #111111;
+            background-color: #ffd226;
+        }
+
+        .hero-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 2px 2px 0px #111111;
+        }
+
         /* ================================================
            SECTION 2: ABOUT LIVE CANVAS
         ================================================ */
@@ -381,6 +424,277 @@
         }
 
         /* ================================================
+           SECTION 4: SHARE / COLLABORATE
+        ================================================ */
+        #section4 {
+            width: 100%;
+            min-height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 8% 50px;
+            background-color: var(--bg-color);
+            position: relative;
+            z-index: 5;
+        }
+
+        .section4-container {
+            max-width: 1240px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 36px;
+        }
+
+        .section4-content {
+            flex: 1;
+            max-width: 540px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .section4-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3.4rem;
+            font-weight: 700;
+            line-height: 1.08;
+            color: #111111;
+            margin-bottom: 16px;
+            letter-spacing: -0.03em;
+        }
+
+        .section4-description {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 400;
+            line-height: 1.55;
+            color: #7c7c7c;
+            margin-bottom: 0;
+            max-width: 440px;
+            letter-spacing: -0.01em;
+        }
+
+        .section4-media {
+            flex: 1;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .illustration2-card {
+            width: 100%;
+            max-width: 540px;
+            border-radius: 20px;
+            overflow: hidden;
+            transition: transform 0.4s ease;
+        }
+
+        .illustration2-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: contain;
+        }
+
+        @media (max-width: 960px) {
+            #section4 { padding: 40px 5%; }
+            .section4-container {
+                flex-direction: column-reverse;
+                text-align: center;
+                gap: 40px;
+            }
+            .section4-content { align-items: center; max-width: 100%; }
+            .section4-title   { font-size: 3rem; }
+            .section4-description { max-width: 100%; }
+            .section4-media   { justify-content: center; }
+        }
+
+        /* ================================================
+           FOOTER
+        ================================================ */
+        .footer-wrapper {
+            padding: 0 20px 20px;
+        }
+
+        .site-footer {
+            background: #4f52e8;
+            width: 100%;
+            padding: 90px 8% 100px;
+            min-height: 380px;
+            font-family: 'Outfit', sans-serif;
+            position: relative;
+            overflow: visible;
+            border-radius: 30px;
+            border: 5px solid #f0ebe0;
+        }
+
+        .footer-top {
+            display: flex;
+            gap: 60px;
+            flex-wrap: wrap;
+        }
+
+        .footer-col {
+            flex: 1;
+            min-width: 180px;
+        }
+
+        .footer-badge {
+            display: inline-block;
+            background: #fff;
+            color: #111;
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 5px 14px;
+            border-radius: 999px;
+            margin-bottom: 18px;
+            letter-spacing: 0.01em;
+        }
+
+        .footer-heading {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.15;
+            margin: 0 0 14px;
+            letter-spacing: -0.02em;
+        }
+
+        .footer-subtext {
+            font-size: 0.88rem;
+            color: rgba(255,255,255,0.65);
+            margin-bottom: 22px;
+            line-height: 1.5;
+        }
+
+        .footer-link {
+            display: inline-block;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 400;
+            text-decoration: none;
+            margin-bottom: 6px;
+            transition: opacity 0.2s ease;
+        }
+
+        .footer-link:hover {
+            opacity: 0.85;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .footer-social a {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1rem;
+            text-decoration: none;
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .footer-social a:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Stickers */
+        .footer-sticker {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            overflow: hidden;
+            border-radius: 14px;
+            filter: drop-shadow(0 6px 14px rgba(0,0,0,0.22));
+            transform: var(--rot, rotate(0deg));
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 10;
+        }
+
+        .footer-sticker:hover {
+            transform: scale(1.14) var(--rot, rotate(0deg));
+        }
+
+        .footer-sticker.dragging {
+            transition: none;
+            transform: scale(1.18) var(--rot, rotate(0deg));
+            z-index: 100;
+            filter: drop-shadow(0 10px 24px rgba(0,0,0,0.35));
+        }
+
+        .footer-sticker img {
+            width: 360px;
+            height: 360px;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Crop positions & randomized initial rotation angles for all 9 stickers */
+        .sticker-1 { --rot: rotate(-14deg); height: 102px; }
+        .sticker-1 img { object-position: 0 0; }         /* Good Work */
+
+        .sticker-2 { --rot: rotate(11deg); }
+        .sticker-2 img { object-position: -120px 0; }    /* Monitor */
+
+        .sticker-3 { --rot: rotate(-7deg); }
+        .sticker-3 img { object-position: -240px 0; }    /* OK hand */
+
+        .sticker-4 { --rot: rotate(16deg); width: 106px; }
+        .sticker-4 img { object-position: 0 -102px; }    /* Coffee cup */
+
+        .sticker-5 { --rot: rotate(-12deg); }
+        .sticker-5 img { object-position: -120px -120px; } /* FRIYAY */
+
+        .sticker-6 { --rot: rotate(8deg); }
+        .sticker-6 img { object-position: -240px -120px; }/* SUPER */
+
+        .sticker-7 { --rot: rotate(-18deg); }
+        .sticker-7 img { object-position: 0 -240px; }    /* AWESOME WORK */
+
+        .sticker-8 { --rot: rotate(13deg); }
+        .sticker-8 img { object-position: -120px -240px; }/* SNACK BREAK */
+
+        .sticker-9 { --rot: rotate(-9deg); }
+        .sticker-9 img { object-position: -240px -240px; }/* Mail notification */
+
+        /* Playfully randomized & scattered initial positions inside footer */
+        .sticker-pos-1 { top: 60px;  left: 4%; }
+        .sticker-pos-2 { top: 220px; left: 16%; }
+        .sticker-pos-3 { top: 75px;  left: 32%; }
+        .sticker-pos-4 { top: 235px; left: 42%; }
+        .sticker-pos-5 { top: 50px;  left: 56%; }
+        .sticker-pos-6 { top: 240px; left: 66%; }
+        .sticker-pos-7 { top: 40px;  left: 80%; }
+        .sticker-pos-8 { top: 245px; left: 6%; }
+        .sticker-pos-9 { top: 230px; left: 84%; }
+
+        @media (max-width: 700px) {
+            .footer-top { flex-direction: column; gap: 36px; }
+            .footer-sticker { width: 75px; height: 75px; }
+            .footer-sticker.sticker-1 { height: 64px; }
+            .footer-sticker img { width: 225px; height: 225px; }
+            .sticker-1 img { object-position: 0 0; }
+            .sticker-2 img { object-position: -75px 0; }
+            .sticker-3 img { object-position: -150px 0; }
+            .sticker-4 img { object-position: 0 -75px; }
+            .sticker-5 img { object-position: -75px -75px; }
+            .sticker-6 img { object-position: -150px -75px; }
+            .sticker-7 img { object-position: 0 -150px; }
+            .sticker-8 img { object-position: -75px -150px; }
+            .sticker-9 img { object-position: -150px -150px; }
+        }
+
+        /* ================================================
            CUSTOM CURSOR
         ================================================ */
         .custom-cursor {
@@ -453,6 +767,7 @@
         <div class="hero-content">
             <h1 class="title" id="titleText">Live Canvas</h1>
             <p class="tagline" id="taglineText">Work Collaboratively With Your Team</p>
+            <a href="index.html" class="hero-btn" data-color="#ffc800" data-name="Launch">Start Now</a>
         </div>
 
     </section>
@@ -494,6 +809,73 @@
             </div>
         </div>
     </section>
+
+    <!-- ============================
+         SECTION 4: SHARE & COLLABORATE
+    ============================= -->
+    <section id="section4">
+        <div class="section4-container">
+            <div class="section4-content reveal-left">
+                <h2 class="section4-title">Share it. Ship it. Together.</h2>
+                <p class="section4-description">
+                    Collaboration is at the heart of Live Canvas. Invite your team in real time, share canvases instantly, and watch your ideas grow together — no back-and-forth, no friction, just flow.
+                </p>
+            </div>
+            <div class="section4-media reveal-right">
+                <div class="illustration2-card" data-name="Share">
+                    <img src="assets/illustration2.png" alt="Live Canvas Share" class="illustration2-img">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================
+         FOOTER
+    ============================= -->
+    <div class="footer-wrapper">
+        <footer class="site-footer">
+            <div class="footer-top">
+                <!-- Col 1: About -->
+                <div class="footer-col">
+                    <span class="footer-badge">about us</span>
+                    <h3 class="footer-heading">Live Canvas</h3>
+                    <p class="footer-subtext">A real-time collaborative canvas built for teams, creators, and thinkers everywhere.</p>
+                </div>
+
+                <!-- Col 2: Links -->
+                <div class="footer-col">
+                    <span class="footer-badge">navigate</span>
+                    <h3 class="footer-heading">Quick Links</h3>
+                    <a href="index.html" class="footer-link" style="display:block;">Open Canvas</a>
+                    <a href="login.html" class="footer-link" style="display:block;">Login</a>
+                    <a href="signup.html" class="footer-link" style="display:block;">Sign Up</a>
+                </div>
+
+                <!-- Col 3: College Project -->
+                <div class="footer-col">
+                    <span class="footer-badge">college project</span>
+                    <h3 class="footer-heading">Built With</h3>
+                    <p class="footer-subtext">Powered by Node.js, Express, Socket.io &amp; HTML5 Canvas API. Created for real-time team collaboration &amp; ideation.</p>
+                    <div class="footer-social">
+                        <a href="https://github.com/RobinChahal0010/Live-Canvas" target="_blank" title="GitHub Project" aria-label="GitHub">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Draggable Stickers (all 9 stickers with custom rotations) -->
+            <div class="footer-sticker sticker-1 sticker-pos-1"><img src="assets/stickers.png" alt="Good Work sticker" draggable="false"></div>
+            <div class="footer-sticker sticker-2 sticker-pos-2"><img src="assets/stickers.png" alt="Monitor sticker" draggable="false"></div>
+            <div class="footer-sticker sticker-3 sticker-pos-3"><img src="assets/stickers.png" alt="OK hand sticker" draggable="false"></div>
+            <div class="footer-sticker sticker-4 sticker-pos-4"><img src="assets/stickers.png" alt="Coffee cup sticker" draggable="false"></div>
+            <div class="footer-sticker sticker-5 sticker-pos-5"><img src="assets/stickers.png" alt="FRIYAY sticker" draggable="false"></div>
+            <div class="footer-sticker sticker-6 sticker-pos-6"><img src="assets/stickers.png" alt="SUPER sticker" draggable="false"></div>
+            <div class="footer-sticker sticker-7 sticker-pos-7"><img src="assets/stickers.png" alt="AWESOME WORK sticker" draggable="false"></div>
+            <div class="footer-sticker sticker-8 sticker-pos-8"><img src="assets/stickers.png" alt="SNACK BREAK sticker" draggable="false"></div>
+            <div class="footer-sticker sticker-9 sticker-pos-9"><img src="assets/stickers.png" alt="Mail notification sticker" draggable="false"></div>
+        </footer>
+    </div>
 
     <!-- Custom Cursor -->
     <div class="custom-cursor" id="customCursor">
@@ -595,8 +977,8 @@
         }, { threshold: 0.05 });
         resetObserver.observe(section1);
 
-        // Show label for Section 2 & 3 items (no color change)
-        document.querySelectorAll('#section2 [data-name], #section3 [data-name]').forEach(item => {
+        // Show label for Section 2, 3, 4 items (no color change)
+        document.querySelectorAll('#section2 [data-name], #section3 [data-name], #section4 [data-name]').forEach(item => {
             item.addEventListener('mouseenter', () => {
                 const n = item.getAttribute('data-name');
                 if (n) {
@@ -610,7 +992,7 @@
             });
         });
 
-        // ── Scroll reveal for Sections 2 & 3 ────────────
+        // ── Scroll reveal for Sections 2, 3, 4 ────────────
         const revealObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -622,8 +1004,63 @@
 
         document.querySelectorAll(
             '#section2 .reveal-left, #section2 .reveal-right,' +
-            '#section3 .reveal-left, #section3 .reveal-right'
+            '#section3 .reveal-left, #section3 .reveal-right,' +
+            '#section4 .reveal-left, #section4 .reveal-right'
         ).forEach(el => revealObserver.observe(el));
+
+        // ── Draggable stickers with boundary clamping ──────
+        document.querySelectorAll('.footer-sticker').forEach(sticker => {
+            let isDragging = false;
+            let offsetX = 0, offsetY = 0;
+
+            sticker.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                sticker.classList.add('dragging');
+                const parent = sticker.offsetParent || document.querySelector('.site-footer');
+                const parentRect = parent.getBoundingClientRect();
+                const rect = sticker.getBoundingClientRect();
+
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+
+                // Calculate current position relative to footer container
+                let initialLeft = rect.left - parentRect.left;
+                let initialTop = rect.top - parentRect.top;
+
+                sticker.style.position = 'absolute';
+                sticker.style.left = initialLeft + 'px';
+                sticker.style.top = initialTop + 'px';
+                sticker.style.right = 'auto';
+                sticker.style.bottom = 'auto';
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const parent = sticker.offsetParent || document.querySelector('.site-footer');
+                const parentRect = parent.getBoundingClientRect();
+
+                let newLeft = e.clientX - parentRect.left - offsetX;
+                let newTop = e.clientY - parentRect.top - offsetY;
+
+                // Strict boundary clamping so stickers stay 100% inside footer
+                const maxLeft = Math.max(0, parentRect.width - sticker.offsetWidth);
+                const maxTop = Math.max(0, parentRect.height - sticker.offsetHeight);
+
+                newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+                newTop = Math.max(0, Math.min(newTop, maxTop));
+
+                sticker.style.left = newLeft + 'px';
+                sticker.style.top = newTop + 'px';
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    sticker.classList.remove('dragging');
+                }
+            });
+        });
     </script>
 
 </body>
