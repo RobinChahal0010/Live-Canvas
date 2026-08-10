@@ -10,168 +10,124 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --bg-color: #f7f6f2;
-            --purple: #9b00e8;
-            --pink: #ff007f;
-            --orange: #ff7518;
-            --green: #00c957;
         }
 
-        *,
-        html,
-        body,
-        .shape,
-        .content,
-        .title,
-        .tagline {
+        * {
             cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='), none !important;
-        }
-
-        body,
-        html {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
             width: 100%;
-            height: 100%;
+            min-height: 100%;
+            overflow-x: hidden;
+            overflow-y: auto;
+            scroll-behavior: smooth;
             background-color: var(--bg-color);
-            overflow: hidden;
+            font-family: 'Outfit', 'Source Sans Pro', sans-serif;
+        }
+
+        /* ================================================
+           HERO SECTION
+        ================================================ */
+        #section1 {
+            width: 100%;
+            height: 100vh;
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            position: relative;
+            overflow: hidden;
+            background-color: var(--bg-color);
         }
 
+        /* Decorative shapes */
         .shape {
             position: absolute;
             border-radius: 50%;
             opacity: 0;
             transform: scale(0);
             animation: popIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            pointer-events: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
         .shape-purple {
             background-color: #9900ff;
-            width: 450px;
-            height: 450px;
-            top: -150px;
-            left: -150px;
+            width: 450px; height: 450px;
+            top: -150px; left: -150px;
             animation-delay: 0.1s;
         }
 
         .shape-pink {
             background-color: #ff0080;
-            width: 650px;
-            height: 650px;
-            top: -420px;
-            left: calc(50% - 250px);
+            width: 650px; height: 650px;
+            top: -420px; left: calc(50% - 250px);
             animation-delay: 0.3s;
         }
 
         .shape-orange {
             background-color: #ff6600;
-            width: 900px;
-            height: 900px;
-            bottom: -620px;
-            left: calc(32% - 450px);
+            width: 900px; height: 900px;
+            bottom: -620px; left: calc(32% - 450px);
             animation-delay: 0.5s;
         }
 
         .shape-green {
             background-color: #00cc66;
-            width: 550px;
-            height: 550px;
-            bottom: -220px;
-            right: -150px;
+            width: 550px; height: 550px;
+            bottom: -220px; right: -150px;
             animation-delay: 0.7s;
         }
 
         @keyframes popIn {
-            0% {
-                opacity: 0;
-                transform: scale(0);
-            }
-
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
+            0%   { opacity: 0; transform: scale(0); }
+            100% { opacity: 1; transform: scale(1); }
         }
 
-        /* Eyes */
+        /* Eyes inside hero shapes */
         .eyes-container {
             position: absolute;
             display: flex;
             gap: 25px;
         }
 
-        .shape-purple .eyes-container {
-            bottom: 60px;
-            right: 40px;
-            transform: rotate(-25deg);
-            gap: 20px;
-        }
-
-        .shape-purple .eye {
-            width: 105px;
-            height: 105px;
-        }
-
-        .shape-purple .pupil {
-            width: 45px;
-            height: 45px;
-        }
-
-        .shape-pink .eyes-container {
-            bottom: 50px;
-            left: calc(50% - 142px);
-        }
-
-        .shape-orange .eyes-container {
-            top: 120px;
-            left: calc(50% - 142px);
-        }
-
-        .shape-green .eyes-container {
-            top: 120px;
-            left: 70px;
-            transform: rotate(-30deg);
-        }
+        .shape-purple .eyes-container { bottom: 60px; right: 40px; transform: rotate(-25deg); gap: 20px; }
+        .shape-purple .eye            { width: 105px; height: 105px; }
+        .shape-purple .pupil          { width: 45px;  height: 45px; }
+        .shape-pink   .eyes-container { bottom: 50px; left: calc(50% - 142px); }
+        .shape-orange .eyes-container { top: 120px;   left: calc(50% - 142px); }
+        .shape-green  .eyes-container { top: 120px;   left: 70px; transform: rotate(-30deg); }
 
         .eye {
-            width: 130px;
-            height: 130px;
-            background-color: white;
+            width: 130px; height: 130px;
+            background: white;
             border-radius: 50%;
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
         .pupil {
-            width: 50px;
-            height: 50px;
-            background-color: #111;
+            width: 50px; height: 50px;
+            background: #111;
             border-radius: 50%;
             position: absolute;
             transition: transform 0.05s linear;
         }
 
-        /* Center Content */
-        .content {
+        /* Hero text */
+        .hero-content {
             z-index: 10;
             text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            display: flex; flex-direction: column; align-items: center;
         }
 
         .title {
@@ -183,7 +139,6 @@
         }
 
         .tagline {
-            font-family: 'Source Sans Pro', sans-serif;
             font-size: 1.1rem;
             letter-spacing: 5px;
             color: #333;
@@ -200,222 +155,476 @@
         }
 
         @keyframes fadeInUp {
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ================================================
+           SECTION 2: ABOUT LIVE CANVAS
+        ================================================ */
+        #section2 {
+            width: 100%;
+            min-height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 100px 8% 50px;
+            background-color: var(--bg-color);
+            position: relative;
+            z-index: 5;
+        }
+
+        .section2-container {
+            max-width: 1240px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 36px;
+        }
+
+        .section2-content {
+            flex: 1;
+            max-width: 540px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .section2-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3.4rem;
+            font-weight: 700;
+            line-height: 1.08;
+            color: #111111;
+            margin-bottom: 16px;
+            letter-spacing: -0.03em;
+        }
+
+        .section2-description {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 400;
+            line-height: 1.55;
+            color: #7c7c7c;
+            margin-bottom: 0;
+            max-width: 440px;
+            letter-spacing: -0.01em;
+        }
+
+        .section2-media {
+            flex: 1;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .puzzle-card {
+            width: 100%;
+            max-width: 540px;
+            border-radius: 20px;
+            overflow: hidden;
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .puzzle-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: contain;
+        }
+
+        @media (max-width: 960px) {
+            #section2 {
+                padding: 60px 5%;
+            }
+            .section2-container {
+                flex-direction: column-reverse;
+                text-align: center;
+                gap: 40px;
+            }
+            .section2-content {
+                align-items: center;
+                max-width: 100%;
+            }
+            .section2-title {
+                font-size: 3rem;
+            }
+            .section2-description {
+                max-width: 100%;
+            }
+            .section2-media {
+                justify-content: center;
             }
         }
 
+        /* ================================================
+           SCROLL REVEAL ANIMATIONS
+        ================================================ */
+        .reveal-left,
+        .reveal-right,
+        .reveal-up {
+            opacity: 0;
+            transition: opacity 1.1s cubic-bezier(0.22, 1, 0.36, 1),
+                        transform 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+        }
 
-        /* Custom Cursor */
+        .reveal-left  { transform: translateX(-70px); }
+        .reveal-right { transform: translateX( 70px); }
+        .reveal-up    { transform: translateY( 50px); }
+
+        .reveal-left.in-view,
+        .reveal-right.in-view,
+        .reveal-up.in-view {
+            opacity: 1;
+            transform: translate(0);
+        }
+
+        .reveal-right.in-view { transition-delay: 0.25s; }
+
+        /* ================================================
+           SECTION 3: ILLUSTRATION
+        ================================================ */
+        #section3 {
+            width: 100%;
+            min-height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 8% 50px;
+            background-color: var(--bg-color);
+            position: relative;
+            z-index: 5;
+        }
+
+        .section3-container {
+            max-width: 1240px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 36px;
+        }
+
+        .section3-media {
+            flex: 1;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .illustration-card {
+            width: 100%;
+            max-width: 540px;
+            border-radius: 20px;
+            overflow: hidden;
+            transition: transform 0.4s ease;
+        }
+
+        .illustration-img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: contain;
+        }
+
+        .section3-content {
+            flex: 1;
+            max-width: 540px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .section3-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3.4rem;
+            font-weight: 700;
+            line-height: 1.08;
+            color: #111111;
+            margin-bottom: 16px;
+            letter-spacing: -0.03em;
+        }
+
+        .section3-description {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 400;
+            line-height: 1.55;
+            color: #7c7c7c;
+            margin-bottom: 0;
+            max-width: 440px;
+            letter-spacing: -0.01em;
+        }
+
+        @media (max-width: 960px) {
+            #section3 {
+                padding: 60px 5%;
+            }
+            .section3-container {
+                flex-direction: column;
+                text-align: center;
+                gap: 40px;
+            }
+            .section3-content {
+                align-items: center;
+                max-width: 100%;
+            }
+            .section3-title {
+                font-size: 3rem;
+            }
+            .section3-description {
+                max-width: 100%;
+            }
+            .section3-media {
+                justify-content: center;
+            }
+        }
+
+        /* ================================================
+           CUSTOM CURSOR
+        ================================================ */
         .custom-cursor {
             position: fixed;
             pointer-events: none;
             z-index: 99999;
             display: flex;
             align-items: flex-start;
-            margin-left: -2px;
-            margin-top: -2px;
             color: #111;
             transition: color 0.2s ease;
         }
 
         .cursor-pointer {
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-            width: 32px;
-            height: 32px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            width: 32px; height: 32px;
         }
 
         .cursor-label {
-            background-color: currentColor;
-            color: white;
             padding: 5px 14px;
             border-radius: 8px;
-            font-family: 'Source Sans Pro', sans-serif;
-            font-size: 15px;
-            font-weight: 600;
-            margin-left: 2px;
-            margin-top: 18px;
+            font-size: 15px; font-weight: 600;
+            margin-left: 2px; margin-top: 18px;
             white-space: nowrap;
             opacity: 0;
-            transition: opacity 0.2s ease-in-out;
+            transition: opacity 0.2s ease;
             border: 2px solid var(--bg-color);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            color: white;
         }
 
-        .custom-cursor.show-label .cursor-label {
-            opacity: 1;
-        }
+        .custom-cursor.show-label .cursor-label { opacity: 1; }
     </style>
 </head>
 
 <body>
 
-    <!-- Decorative Shapes -->
-    <div class="shape shape-purple" data-color="#9900ff" data-name="Boop">
-        <div class="eyes-container">
-            <div class="eye">
-                <div class="pupil"></div>
-            </div>
-            <div class="eye">
-                <div class="pupil"></div>
+    <!-- ============================
+         HERO SECTION (SECTION 1)
+    ============================= -->
+    <section id="section1">
+
+        <div class="shape shape-purple" data-color="#9900ff" data-name="Boop">
+            <div class="eyes-container">
+                <div class="eye"><div class="pupil"></div></div>
+                <div class="eye"><div class="pupil"></div></div>
             </div>
         </div>
-    </div>
 
-    <div class="shape shape-pink" data-color="#ff0080" data-name="Bubble">
-        <div class="eyes-container">
-            <div class="eye">
-                <div class="pupil"></div>
-            </div>
-            <div class="eye">
-                <div class="pupil"></div>
+        <div class="shape shape-pink" data-color="#ff0080" data-name="Bubble">
+            <div class="eyes-container">
+                <div class="eye"><div class="pupil"></div></div>
+                <div class="eye"><div class="pupil"></div></div>
             </div>
         </div>
-    </div>
 
-    <div class="shape shape-orange" data-color="#ff6600" data-name="Squash">
-        <div class="eyes-container">
-            <div class="eye">
-                <div class="pupil"></div>
-            </div>
-            <div class="eye">
-                <div class="pupil"></div>
+        <div class="shape shape-orange" data-color="#ff6600" data-name="Squash">
+            <div class="eyes-container">
+                <div class="eye"><div class="pupil"></div></div>
+                <div class="eye"><div class="pupil"></div></div>
             </div>
         </div>
-    </div>
 
-    <div class="shape shape-green" data-color="#00cc66" data-name="Bean">
-        <div class="eyes-container">
-            <div class="eye">
-                <div class="pupil"></div>
-            </div>
-            <div class="eye">
-                <div class="pupil"></div>
+        <div class="shape shape-green" data-color="#00cc66" data-name="Bean">
+            <div class="eyes-container">
+                <div class="eye"><div class="pupil"></div></div>
+                <div class="eye"><div class="pupil"></div></div>
             </div>
         </div>
-    </div>
 
-    <!-- Main Content -->
-    <div class="content">
-        <h1 class="title" id="titleText">Live Canvas</h1>
-        <p class="tagline" id="taglineText">Work Collaboratively With Your Team</p>
-    </div>
+        <div class="hero-content">
+            <h1 class="title" id="titleText">Live Canvas</h1>
+            <p class="tagline" id="taglineText">Work Collaboratively With Your Team</p>
+        </div>
+
+    </section>
+
+    <!-- ============================
+         SECTION 2: ABOUT LIVE CANVAS
+    ============================= -->
+    <section id="section2">
+        <div class="section2-container">
+            <div class="section2-content reveal-left">
+                <h2 class="section2-title">Any tool. Any idea. Any canvas you want.</h2>
+                <p class="section2-description">
+                    The most intuitive real-time collaborative workspace for teams and creators. Brainstorm, sketch, draw, and build together seamlessly on an endless canvas.
+                </p>
+            </div>
+            <div class="section2-media reveal-right">
+                <div class="puzzle-card" data-name="Collaboration">
+                    <img src="assets/puzzle.png" alt="Live Canvas Collaboration" class="puzzle-img">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================
+         SECTION 3: ILLUSTRATION
+    ============================= -->
+    <section id="section3">
+        <div class="section3-container">
+            <div class="section3-media reveal-left">
+                <div class="illustration-card" data-name="Ideation">
+                    <img src="assets/illustration.png" alt="Live Canvas Ideation" class="illustration-img">
+                </div>
+            </div>
+            <div class="section3-content reveal-right">
+                <h2 class="section3-title">Think it. Sketch it. Ship it.</h2>
+                <p class="section3-description">
+                    From rough wireframes to polished diagrams, Live Canvas gives every idea a place to breathe. Drag, drop, draw, and connect your thoughts at the speed of imagination.
+                </p>
+            </div>
+        </div>
+    </section>
 
     <!-- Custom Cursor -->
     <div class="custom-cursor" id="customCursor">
         <svg class="cursor-pointer" viewBox="0 0 24 24" fill="none">
-            <path d="M4.15 2.5 L20.35 11.2 L12.8 12.8 L11.2 20.35 Z" fill="currentColor" stroke="white"
-                stroke-width="1.5" stroke-linejoin="round" />
+            <path d="M4.15 2.5 L20.35 11.2 L12.8 12.8 L11.2 20.35 Z"
+                  fill="currentColor" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
         </svg>
-        <div class="cursor-label" id="cursorLabel">Name</div>
+        <div class="cursor-label" id="cursorLabel"></div>
     </div>
 
     <script>
-        // Letter-by-letter animation function
-        function animateText(elementId, delayOffset = 0) {
-            const element = document.getElementById(elementId);
-            const text = element.innerText;
-            element.innerText = '';
-
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                const span = document.createElement('span');
-
-                if (char === ' ') {
-                    span.innerHTML = '&nbsp;';
-                } else {
-                    span.innerText = char;
-                }
-
-                span.className = 'letter';
-                span.style.animationDelay = `${delayOffset + (i * 0.05)}s`;
-                element.appendChild(span);
-            }
+        /* ── Text animations ───────────────────────────── */
+        function animateLetters(id, delay = 0) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const txt = el.innerText;
+            el.innerText = '';
+            [...txt].forEach((ch, i) => {
+                const s = document.createElement('span');
+                s.innerHTML = ch === ' ' ? '&nbsp;' : ch;
+                s.className = 'letter';
+                s.style.animationDelay = `${delay + i * 0.05}s`;
+                el.appendChild(s);
+            });
         }
 
-        // Word-by-word animation function
-        function animateWords(elementId, delayOffset = 0) {
-            const element = document.getElementById(elementId);
-            const text = element.innerText;
-            element.innerText = '';
-
-            const words = text.split(' ');
-            for (let i = 0; i < words.length; i++) {
-                const span = document.createElement('span');
-                span.innerText = words[i];
-                span.className = 'letter';
-                span.style.animationDelay = `${delayOffset + (i * 0.15)}s`;
-                element.appendChild(span);
-
-                if (i < words.length - 1) {
-                    element.appendChild(document.createTextNode(' '));
-                }
-            }
+        function animateWords(id, delay = 0) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const words = el.innerText.split(' ');
+            el.innerText = '';
+            words.forEach((w, i) => {
+                const s = document.createElement('span');
+                s.innerText = w;
+                s.className = 'letter';
+                s.style.animationDelay = `${delay + i * 0.15}s`;
+                el.appendChild(s);
+                if (i < words.length - 1) el.appendChild(document.createTextNode(' '));
+            });
         }
 
-        // Initialize text animations
         document.addEventListener('DOMContentLoaded', () => {
-            // Delay title animation slightly after the first shapes
-            animateText('titleText', 0.6);
-            // Delay tagline animation word by word after title
+            animateLetters('titleText', 0.6);
             animateWords('taglineText', 1.2);
         });
 
-        // Eyes following cursor and custom cursor movement logic
-        const customCursor = document.getElementById('customCursor');
-        const cursorLabel = document.getElementById('cursorLabel');
+        /* ── Custom cursor ─────────────────────────────── */
+        const cursor = document.getElementById('customCursor');
+        const label  = document.getElementById('cursorLabel');
 
         document.addEventListener('mousemove', (e) => {
-            const mouseX = e.clientX;
-            const mouseY = e.clientY;
+            cursor.style.left = `${e.clientX}px`;
+            cursor.style.top  = `${e.clientY}px`;
 
-            // Move custom cursor
-            customCursor.style.left = `${mouseX}px`;
-            customCursor.style.top = `${mouseY}px`;
-
-            const eyes = document.querySelectorAll('.eye');
-
-            eyes.forEach(eye => {
-                const rect = eye.getBoundingClientRect();
-                const eyeCenterX = rect.left + rect.width / 2;
-                const eyeCenterY = rect.top + rect.height / 2;
-
-                const deltaX = mouseX - eyeCenterX;
-                const deltaY = mouseY - eyeCenterY;
-
-                const angle = Math.atan2(deltaY, deltaX);
-
-                // Max radius the pupil can travel (approximate based on eye width)
-                const maxDistance = (rect.width / 2) * 0.5;
-                const distance = Math.min(maxDistance, Math.hypot(deltaX, deltaY) / 10);
-
-                const pupilX = Math.cos(angle) * distance;
-                const pupilY = Math.sin(angle) * distance;
-
+            // Eye tracking for ALL .eye elements on page
+            document.querySelectorAll('.eye').forEach(eye => {
+                const r  = eye.getBoundingClientRect();
+                const cx = r.left + r.width  / 2;
+                const cy = r.top  + r.height / 2;
+                const dx = e.clientX - cx;
+                const dy = e.clientY - cy;
+                const angle = Math.atan2(dy, dx);
+                const maxD  = r.width / 2 * 0.45;
+                const dist  = Math.min(maxD, Math.hypot(dx, dy) / 10);
                 const pupil = eye.querySelector('.pupil');
-                pupil.style.transform = `translate(${pupilX}px, ${pupilY}px)`;
+                if (pupil) {
+                    pupil.style.transform =
+                        `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
+                }
             });
         });
 
-        // Custom cursor hover logic for shapes
-        const shapes = document.querySelectorAll('.shape');
-        shapes.forEach(shape => {
+        // Colour changes ONLY for Section 1 shapes
+        document.querySelectorAll('#section1 .shape').forEach(shape => {
             shape.addEventListener('mouseenter', () => {
-                const color = shape.getAttribute('data-color');
-                const name = shape.getAttribute('data-name');
-
-                customCursor.style.color = color;
-                cursorLabel.style.backgroundColor = color;
-                cursorLabel.innerText = name;
-                customCursor.classList.add('show-label');
+                const c = shape.getAttribute('data-color');
+                const n = shape.getAttribute('data-name');
+                if (c) {
+                    cursor.style.color = c;
+                    label.style.backgroundColor = c;
+                    label.innerText = n || '';
+                    cursor.classList.add('show-label');
+                }
             });
-
             shape.addEventListener('mouseleave', () => {
-                customCursor.classList.remove('show-label');
+                cursor.classList.remove('show-label');
             });
         });
-    </script>
-</body>
 
+        // Reset cursor to black when scrolling out of Section 1
+        const section1 = document.getElementById('section1');
+        const resetObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) {
+                    cursor.style.color = '#111';
+                    cursor.classList.remove('show-label');
+                }
+            });
+        }, { threshold: 0.05 });
+        resetObserver.observe(section1);
+
+        // Show label for Section 2 & 3 items (no color change)
+        document.querySelectorAll('#section2 [data-name], #section3 [data-name]').forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                const n = item.getAttribute('data-name');
+                if (n) {
+                    label.style.backgroundColor = '#111';
+                    label.innerText = n;
+                    cursor.classList.add('show-label');
+                }
+            });
+            item.addEventListener('mouseleave', () => {
+                cursor.classList.remove('show-label');
+            });
+        });
+
+        // ── Scroll reveal for Sections 2 & 3 ────────────
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('in-view');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+
+        document.querySelectorAll(
+            '#section2 .reveal-left, #section2 .reveal-right,' +
+            '#section3 .reveal-left, #section3 .reveal-right'
+        ).forEach(el => revealObserver.observe(el));
+    </script>
+
+</body>
 </html>
