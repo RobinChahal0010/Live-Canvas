@@ -1,65 +1,113 @@
-/* =========================================
-   LIVE ROOM
-========================================= */
+// ============================================================
+// LIVE CANVAS ROOM
+// ============================================================
 
 const urlParams =
-    new URLSearchParams(window.location.search);
+new URLSearchParams(window.location.search);
 
 const roomId =
-    urlParams.get("room");
+urlParams.get("room");
 
-console.log(
-    "Current Room ID:",
-    roomId
+console.log("================================");
+console.log("LIVE CANVAS");
+console.log("Current URL:", window.location.href);
+console.log("Current Room ID:", roomId);
+console.log("================================");
+
+// ============================================================
+// AUTHENTICATION
+// ============================================================
+
+const loggedInUser =
+JSON.parse(
+    localStorage.getItem("loggedInUser")
 );
 
-let socket = null;
+const welcomeUser =
+document.getElementById("welcomeUser");
 
-let currentUsername =
-    sessionStorage.getItem("roomUsername") ||
-    "Guest";
+const loginHeaderBtn =
+document.getElementById("loginHeaderBtn");
 
+const signupHeaderBtn =
+document.getElementById("signupHeaderBtn");
+
+const logoutBtn =
+document.getElementById("logoutBtn");
 
 // ============================================================
-// ROOM AUTHENTICATION
+// HEADER AUTH UI
 // ============================================================
 
-let roomAuthenticated = true;
+if (loggedInUser) {
 
-if (roomId) {
+    if (welcomeUser) {
+        welcomeUser.textContent =
+            `Hi, ${loggedInUser.name} 👋`;
+    }
 
-    const loggedInUser =
-        JSON.parse(
-            localStorage.getItem("loggedInUser")
-        );
+    if (loginHeaderBtn) {
+        loginHeaderBtn.style.display = "none";
+    }
 
-    // Room requires login
-    if (!loggedInUser) {
+    if (signupHeaderBtn) {
+        signupHeaderBtn.style.display = "none";
+    }
 
-        roomAuthenticated = false;
+    if (logoutBtn) {
+        logoutBtn.style.display = "block";
+    }
 
-        alert(
-            "Please login to enter a collaborative room."
-        );
+} else {
 
-        window.location.href =
-            "login.html?redirect=" +
-            encodeURIComponent(
-                window.location.pathname +
-                window.location.search
-            );
+    if (welcomeUser) {
+        welcomeUser.textContent = "";
+    }
 
-    } else {
+    if (loginHeaderBtn) {
+        loginHeaderBtn.style.display = "block";
+    }
 
-        // Logged-in user's name
-        currentUsername =
-            sessionStorage.getItem("roomUsername") ||
-            loggedInUser.name ||
-            "Guest";
+    if (signupHeaderBtn) {
+        signupHeaderBtn.style.display = "block";
+    }
 
+    if (logoutBtn) {
+        logoutBtn.style.display = "none";
     }
 }
 
+console.log("Logged In User:", loggedInUser);
+
+// ============================================================
+// ROOM USERNAME
+// ============================================================
+
+let currentUsername =
+    sessionStorage.getItem("roomUsername") ||
+    loggedInUser?.name ||
+    "";
+
+console.log("Room Username:", currentUsername);
+
+// ============================================================
+// ROOM AUTH CHECK
+// ============================================================
+
+if (roomId && !loggedInUser) {
+
+    console.log(
+        "Room detected but user is NOT logged in."
+    );
+
+    const redirectUrl =
+        window.location.pathname +
+        window.location.search;
+
+    window.location.href =
+        "login.html?redirect=" +
+        encodeURIComponent(redirectUrl);
+}
 
 // ============================================================
 // CONNECT TO ROOM
@@ -67,116 +115,96 @@ if (roomId) {
 
 if (
     roomId &&
-    roomAuthenticated &&
-    typeof io !== "undefined"
+    loggedInUser &&
+    typeof io === "function"
 ) {
 
-    socket = io();
-
-
-    // ========================================================
-    // CONNECTED
-    // ========================================================
-
-    socket.on(
-        "connect",
-        () => {
-
-            console.log(
-                "Connected to LiveCanvas server:",
-                socket.id
-            );
-
-            socket.emit(
-                "join-room",
-                roomId,
-                currentUsername
-            );
-
-        }
+    console.log(
+        "Connecting to room:",
+        roomId
     );
 
+    const socket = io();
 
-    // ========================================================
-    // ROOM JOINED
-    // ========================================================
+    socket.on("connect", () => {
 
-    socket.on(
-        "room-joined",
-        data => {
+        console.log(
+            "Connected to server:",
+            socket.id
+        );
 
-            console.log(
-                "Joined room:",
-                data.roomId
+        socket.emit(
+            "join-room",
+            roomId,
+            currentUsername
+        );
+
+    });
+
+    socket.on("room-joined", data => {
+
+        console.log(
+            "Successfully joined room:",
+            data.roomId
+        );
+
+        console.log(
+            "Username:",
+            data.username
+        );
+
+        console.log(
+            "Users in room:",
+            data.userCount
+        );
+
+        if (data.username) {
+
+            sessionStorage.setItem(
+                "roomUsername",
+                data.username
             );
 
-            console.log(
-                "Users in room:",
-                data.userCount
-            );
-
+            currentUsername =
+                data.username;
         }
-    );
 
+    });
 
-    // ========================================================
-    // USER JOINED
-    // ========================================================
+    socket.on("user-joined", data => {
 
-    socket.on(
-        "user-joined",
-        data => {
+        console.log(
+            `${data.username} joined the room`
+        );
 
-            console.log(
-                `${data.username} joined the room`
-            );
+        console.log(
+            "Users:",
+            data.userCount
+        );
 
-            console.log(
-                "Users:",
-                data.userCount
-            );
+    });
 
-        }
-    );
+    socket.on("user-left", data => {
 
+        console.log(
+            `${data.username} left the room`
+        );
 
-    // ========================================================
-    // USER LEFT
-    // ========================================================
+        console.log(
+            "Users:",
+            data.userCount
+        );
 
-    socket.on(
-        "user-left",
-        data => {
+    });
 
-            console.log(
-                `${data.username} left the room`
-            );
+    socket.on("connect_error", error => {
 
-            console.log(
-                "Users:",
-                data.userCount
-            );
+        console.error(
+            "Socket connection failed:",
+            error
+        );
 
-        }
-    );
-
-
-    // ========================================================
-    // CONNECTION ERROR
-    // ========================================================
-
-    socket.on(
-        "connect_error",
-        error => {
-
-            console.error(
-                "Room connection failed:",
-                error
-            );
-
-        }
-    );
-
+    });
 }
 // ============================================================
 // LIVE CANVAS
@@ -251,74 +279,14 @@ if (savedTheme) {
 // AUTHENTICATION
 // ============================================================
 
-const loginHeaderBtn =
-    document.getElementById("loginHeaderBtn");
-
-const signupHeaderBtn =
-    document.getElementById("signupHeaderBtn");
-
-const logoutBtn =
-    document.getElementById("logoutBtn");
-
-const welcomeUser =
-    document.getElementById("welcomeUser");
 
 
-const loggedInUser =
-    JSON.parse(
-        localStorage.getItem(
-            "loggedInUser"
-        )
-    );
 
 
-if (loggedInUser) {
 
-    if (welcomeUser) {
-        welcomeUser.textContent =
-            `Hi, ${loggedInUser.name} 👋`;
-    }
-
-    if (loginHeaderBtn) {
-        loginHeaderBtn.style.display =
-            "none";
-    }
-
-    if (signupHeaderBtn) {
-        signupHeaderBtn.style.display =
-            "none";
-    }
-
-    if (logoutBtn) {
-        logoutBtn.style.display =
-            "block";
-    }
-
-} else {
-
-    if (welcomeUser) {
-        welcomeUser.textContent = "";
-    }
-
-    if (loginHeaderBtn) {
-        loginHeaderBtn.style.display =
-            "block";
-    }
-
-    if (signupHeaderBtn) {
-        signupHeaderBtn.style.display =
-            "block";
-    }
-
-    if (logoutBtn) {
-        logoutBtn.style.display =
-            "none";
-    }
-
-}
-
-
-// Login
+// ============================================================
+// HEADER BUTTONS
+// ============================================================
 
 if (loginHeaderBtn) {
 
@@ -334,9 +302,6 @@ if (loginHeaderBtn) {
 
 }
 
-
-// Signup
-
 if (signupHeaderBtn) {
 
     signupHeaderBtn.addEventListener(
@@ -351,9 +316,6 @@ if (signupHeaderBtn) {
 
 }
 
-
-// Logout
-
 if (logoutBtn) {
 
     logoutBtn.addEventListener(
@@ -364,6 +326,10 @@ if (logoutBtn) {
                 "loggedInUser"
             );
 
+            sessionStorage.removeItem(
+                "roomUsername"
+            );
+
             window.location.href =
                 "index.html";
 
@@ -371,7 +337,6 @@ if (logoutBtn) {
     );
 
 }
-
 
 // ============================================================
 // CANVAS
