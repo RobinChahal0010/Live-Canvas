@@ -112,9 +112,6 @@ if (soloBtn) {
 // ============================================================
 // CREATE ROOM
 // ============================================================
-// ============================================================
-// CREATE ROOM
-// ============================================================
 
 if (createRoomBtn) {
 
@@ -124,39 +121,29 @@ if (createRoomBtn) {
             return;
         }
 
-        const user = getLoggedInUser();
-
-        const username = prompt(
-            "Choose your room name (optional):",
-            user.name || ""
-        );
-
-        const roomUsername =
-            username && username.trim()
-                ? username.trim()
-                : "";
-
         const roomId =
             Math.random()
                 .toString(36)
                 .substring(2, 8)
                 .toUpperCase();
 
+        // Empty username
+        // Backend will generate random username
         sessionStorage.setItem(
-            "roomId",
-            roomId
+            "roomUsername",
+            ""
         );
 
         sessionStorage.setItem(
-            "roomUsername",
-            roomUsername
+            "roomId",
+            roomId
         );
 
         if (createdRoom) {
             createdRoom.style.display = "block";
         }
 
-        // ONLY ROOM CODE SHOW
+        // Show ONLY room code
         if (roomLink) {
             roomLink.value = roomId;
         }
@@ -209,40 +196,37 @@ if (joinBtn) {
                 .trim()
                 .toUpperCase();
 
-        // Check room code first
+
+        // Validate room code
         if (!code) {
 
-            alert("Please enter a room code.");
+            alert(
+                "Please enter a room code."
+            );
 
             return;
         }
 
-        const user =
-            getLoggedInUser();
 
-        const username =
-            prompt(
-                "Choose your room name (optional):",
-                user.name || ""
-            );
+        // Empty username
+        // Backend generates random name
+        sessionStorage.setItem(
+            "roomUsername",
+            ""
+        );
 
-        // Save room information
+
         sessionStorage.setItem(
             "roomId",
             code
         );
 
-        sessionStorage.setItem(
-            "roomUsername",
-            username && username.trim()
-                ? username.trim()
-                : ""
-        );
 
         console.log(
             "Joining Room:",
             code
         );
+
 
         // Enter room
         window.location.href =
