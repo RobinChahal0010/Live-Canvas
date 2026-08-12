@@ -68,11 +68,7 @@ if (loginBtn) {
         // ========================================================
 
         const loggedInUser = {
-
-            name: user.name,
-
             email: user.email
-
         };
 
 
