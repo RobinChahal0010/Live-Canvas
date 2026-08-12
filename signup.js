@@ -1,10 +1,14 @@
 const signupBtn = document.getElementById("signupBtn");
 signupBtn.addEventListener("click", function () {
+    const name =
+            document.getElementById("name")
+                .value
+                .trim();
     const email = document.getElementById("email").value.trim();
 
     const password = document.getElementById("password").value.trim();
 
-    if (email === "" || password === "") {
+    if (name ==="" || email === "" || password === "") {
         alert("Please fill all fields.");
         return;
     }
@@ -27,6 +31,7 @@ signupBtn.addEventListener("click", function () {
         return;
     }
     const newUser = {
+        name: name,
         email: email,
         password: password
     };
