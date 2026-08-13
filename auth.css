@@ -129,7 +129,7 @@ body {
 
     align-items: center;
 
-    gap: 10px;
+    gap: 6px;
 
     margin-bottom: 25px;
 
@@ -150,7 +150,7 @@ body {
     height: 56px;
     object-fit: contain;
     display: inline-block;
-    margin-right: 10px;
+    margin-right: 6px;
 }
 
 

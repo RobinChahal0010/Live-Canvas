@@ -56,9 +56,6 @@ signupBtn.addEventListener("click", function () {
         email: newUser.email
     };
     localStorage.setItem('loggedInUser', JSON.stringify(loggedInUser));
-
-    alert('Account created successfully!');
-
     const params = new URLSearchParams(window.location.search);
     const redirect = params.get('redirect') || 'index.html';
     window.location.href = redirect;
