@@ -49,8 +49,17 @@ signupBtn.addEventListener("click", function () {
         "users",
         JSON.stringify(users)
     );
-    alert(
-        "Account created successfully!"
-    );
-    window.location.href = "login.html";
+
+    // Auto-login the newly created user and redirect
+    const loggedInUser = {
+        name: newUser.name,
+        email: newUser.email
+    };
+    localStorage.setItem('loggedInUser', JSON.stringify(loggedInUser));
+
+    alert('Account created successfully!');
+
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect') || 'index.html';
+    window.location.href = redirect;
 });

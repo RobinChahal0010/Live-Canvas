@@ -1019,7 +1019,7 @@
         <div class="hero-content">
             <h1 class="title" id="titleText">Live Canvas</h1>
             <p class="tagline" id="taglineText">Work Collaboratively With Your Team</p>
-            <a href="index.html" class="hero-btn" data-color="#ffc800" data-name="Launch">Start Now</a>
+            <a href="#" id="startNow" class="hero-btn" data-color="#ffc800" data-name="Launch">Start Now</a>
         </div>
 
     </section>
@@ -1331,6 +1331,22 @@
                 }
             });
         });
+
+        // Start Now button: redirect to login if not authenticated
+        const startNowBtn = document.getElementById('startNow');
+        if (startNowBtn) {
+            startNowBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const logged = localStorage.getItem('loggedInUser');
+                const target = 'index.html';
+                if (logged) {
+                    window.location.href = target;
+                } else {
+                    const redirectUrl = `login.html?redirect=${encodeURIComponent(target)}`;
+                    window.location.href = redirectUrl;
+                }
+            });
+        }
     </script>
 
 </body>
