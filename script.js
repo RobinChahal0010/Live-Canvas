@@ -3000,12 +3000,14 @@ function saveDocument() {
     };
 
 
-    localStorage.setItem(
-        "liveCanvasDocument",
-        JSON.stringify(
-            documentData
-        )
-    );
+    const documentKey = roomId
+    ? `liveCanvasDocument_${roomId}`
+    : "liveCanvasDocument_solo";
+
+localStorage.setItem(
+    documentKey,
+    JSON.stringify(documentData)
+);
 }
 
 
@@ -3015,10 +3017,12 @@ function saveDocument() {
 
 function loadDocument() {
 
-    const saved =
-        localStorage.getItem(
-            "liveCanvasDocument"
-        );
+    const documentKey = roomId
+    ? `liveCanvasDocument_${roomId}`
+    : "liveCanvasDocument_solo";
+
+const saved =
+    localStorage.getItem(documentKey);
 
     if (!saved) {
         return;
