@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Saved Boards - LiveCanvas</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Use same handwritten script font family as home page -->
+    <style>
+        :root{ --card-bg: #ffffff }
+        body{ background: #ffffff; font-family: Poppins, sans-serif }
+        .container{
+            min-height: calc(100vh - 84px);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:40px 20px;
+        }
+
+        .board-shell{
+            width:100%;
+            max-width:1200px;
+            height:540px;
+            border-radius:24px;
+            background: var(--card-bg);
+            border: none;
+            box-shadow: none;
+            display:flex;
+            flex-direction:column;
+            overflow:hidden;
+            position:relative;
+        }
+
+        .board-header{
+            /* pin to extreme left of viewport */
+            position:fixed;
+            left:18px;
+            top:18px;
+            display:flex;
+            align-items:center;
+            gap:10px;
+            z-index:30;
+            padding:6px 8px;
+            background:transparent;
+        }
+
+        .board-header .logo-img{ width:48px; height:48px; object-fit:contain }
+
+        .board-header h2{
+            font-family: 'Outfit', 'Source Sans Pro', sans-serif;
+            font-weight:700;
+            letter-spacing:1px;
+            margin:0;
+            font-size:28px;
+            color:#0f172a;
+            line-height:1;
+        }
+
+        .board-body{
+            flex:1 1 auto;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            flex-direction:column;
+            gap:18px;
+            color:#334155;
+        }
+
+        .empty-title{
+            font-size:20px;
+            color:#0f172a;
+            font-weight:600;
+        }
+
+        .create-main{
+            appearance:none;
+            border:2px dashed #9ca3af;
+            background:transparent;
+            padding:28px 36px;
+            border-radius:18px;
+            cursor:pointer;
+            color:#374151;
+            font-weight:600;
+            display:flex;
+            align-items:center;
+            gap:12px;
+        }
+
+        .create-main img{ width:58px; opacity:0.9 }
+
+        /* graphic bottom center (visible, fixed to viewport) */
+        .graphic{
+            position:fixed;
+            bottom:10px;
+            left:50%;
+            transform:translateX(-50%);
+            pointer-events:none;
+            width:80vw;
+            max-width:none;
+            height:auto;
+            opacity:1;
+            z-index:10;
+        }
+
+        /* Overlay heading displayed on top of the graphic */
+        .graphic-overlay{
+            position:fixed;
+            left:50%;
+            transform:translateX(-50%);
+            /* moved lower so it's closer to the graphic */
+            bottom:200px;
+            pointer-events:none;
+            z-index:11;
+            text-align:center;
+            width:100%;
+        }
+
+        .graphic-overlay .overlay-title{
+            font-family: 'Outfit', 'Source Sans Pro', sans-serif;
+            font-size:40px;
+            font-weight:700;
+            margin:0;
+            /* gradient text matching the button */
+            background:linear-gradient(135deg,#7c3aed,#2563eb);
+            -webkit-background-clip:text;
+            background-clip:text;
+            color:transparent;
+        }
+
+        .graphic-overlay .overlay-actions{
+            margin-top:22px;
+        }
+
+        /* circular floating plus button */
+        .overlay-create{
+            pointer-events:auto; /* allow clicking */
+            width:72px;
+            height:72px;
+            padding:0;
+            border-radius:50%;
+            border:none;
+            overflow:hidden;
+            background:linear-gradient(135deg,#7c3aed,#2563eb);
+            display:inline-grid;
+            place-items:center;
+            color:#fff;
+            cursor:pointer;
+            box-shadow:0 18px 40px rgba(37,99,235,0.18), 0 6px 18px rgba(124,58,237,0.12);
+            transform:translateY(0);
+            transition:transform .22s ease, box-shadow .22s ease, filter .22s ease;
+        }
+
+        .overlay-create .plus{
+            font-size:34px;
+            line-height:1;
+            font-weight:700;
+            display:inline-block;
+            transform:translateY(-2px);
+        }
+
+        .overlay-create:hover{
+            transform:translateY(-6px) rotate(-6deg);
+            box-shadow:0 26px 50px rgba(37,99,235,0.22), 0 10px 26px rgba(124,58,237,0.16);
+            filter:brightness(1.03);
+        }
+
+        .overlay-create:active{
+            transform:translateY(-2px) scale(.98);
+        }
+
+        /* fun modal styling */
+        .modal{background:linear-gradient(180deg,#ffffff, #fbf8ff);padding:20px;border-radius:14px;width:420px;box-shadow:0 30px 80px rgba(37,99,235,0.12);border:1px solid rgba(124,58,237,0.06)}
+
+        .modal h3{margin:0 0 10px 0;color:#2b2b3a;font-family: 'Outfit', sans-serif}
+
+        .modal .row{margin-bottom:12px}
+
+        .modal label{display:block;font-size:13px;color:#4a5568;margin-bottom:6px}
+
+        .modal input[type="text"]{width:100%;padding:12px;border:1px solid #e9e6ff;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfbff);box-shadow:inset 0 1px 0 rgba(255,255,255,0.6)}
+
+        .modal .options{display:flex;gap:8px;flex-wrap:wrap}
+
+        .option-btn{padding:8px 12px;border-radius:12px;border:1px solid #ecebf8;background:#fff;cursor:pointer;font-weight:600;color:#374151}
+
+        .option-btn.active{background:linear-gradient(90deg,#7c3aed,#2563eb);color:#fff;border-color:transparent;box-shadow:0 8px 24px rgba(124,58,237,0.12)}
+
+        .modal .actions{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}
+
+        .modal .actions .left-note{font-size:13px;color:#6b7280}
+
+        .btn{padding:10px 14px;border-radius:12px;border:none;cursor:pointer}
+
+        .btn.primary{background:linear-gradient(90deg,#7c3aed,#2563eb);color:#fff;box-shadow:0 12px 36px rgba(37,99,235,0.14)}
+
+        .btn.ghost{background:transparent;border:1px solid #e9e6ff;color:#4b5563}
+
+        @media(max-width:640px){ .board-shell{height:500px;padding:12px} .modal{width:92%} .board-header h2{font-size:24px} }
+
+        /* Modal */
+        .modal-backdrop{
+            position:fixed;inset:0;background:rgba(2,6,23,0.45);display:none;align-items:center;justify-content:center;z-index:60;
+        }
+        .modal{background:white;padding:20px;border-radius:12px;width:360px;box-shadow:0 12px 40px rgba(2,6,23,0.2)}
+        .modal h3{margin:0 0 10px 0}
+        .modal .row{margin-bottom:12px}
+        .modal label{display:block;font-size:13px;color:#334155;margin-bottom:6px}
+        .modal input[type="text"]{width:100%;padding:10px;border:1px solid #e6eef8;border-radius:8px}
+        .modal .options{display:flex;gap:8px;flex-wrap:wrap}
+        .option-btn{padding:8px 10px;border-radius:8px;border:1px solid #d1d5db;background:#fff;cursor:pointer}
+        .option-btn.active{background:#2563eb;color:#fff;border-color:#2563eb}
+        .modal .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+        .btn{padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
+        .btn.primary{background:#2563eb;color:#fff}
+        .btn.ghost{background:transparent;border:1px solid #cbd5e1}
+
+        @media(max-width:640px){ .board-shell{height:500px;padding:12px} .modal{width:92%} .board-header h2{font-size:28px} }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="board-shell" role="main">
+            <div class="board-header">
+                
+                <h2 style="margin:0">Live Canvas</h2>
+            </div>
+
+            <div class="board-body">
+                <!-- Empty state removed; overlay heading placed above the graphic -->
+            </div>
+
+            <img src="assets/saved.png" alt="saved graphic" class="graphic">
+
+            <div class="graphic-overlay">
+                <h1 class="overlay-title">You have no boards</h1>
+                <h1 class="overlay-title">Create your first one now</h1>
+                <div class="overlay-actions">
+                    <button id="openCreate" class="overlay-create" aria-label="Create new board"><span class="plus">+</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="backdrop" class="modal-backdrop">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <h3 id="modalTitle">Create New Board</h3>
+            <div class="row">
+                <label for="boardName">Board name</label>
+                <input id="boardName" type="text" placeholder="Untitled board">
+            </div>
+            <div class="row">
+                <label>Screen options</label>
+                <div class="options" id="options">
+                    <button type="button" class="option-btn" data-value="grid">Grid</button>
+                    <button type="button" class="option-btn" data-value="dots">Dots</button>
+                    <button type="button" class="option-btn" data-value="plain">Plain white</button>
+                    <button type="button" class="option-btn" data-value="lines">Lines</button>
+                </div>
+            </div>
+            <div class="actions">
+                <button id="cancelBtn" class="btn ghost">Cancel</button>
+                <button id="createBtn" class="btn primary">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Require login
+        try{
+            const user = JSON.parse(localStorage.getItem('loggedInUser'));
+            if(!user){
+                window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+            }
+        }catch(e){
+            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+        }
+
+        const backdrop = document.getElementById('backdrop');
+        const openCreate = document.getElementById('openCreate');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const createBtn = document.getElementById('createBtn');
+        const optionsEl = document.getElementById('options');
+        const boardNameInput = document.getElementById('boardName');
+
+        let selectedOption = 'plain';
+
+        function openModal(){
+            backdrop.style.display = 'flex';
+            boardNameInput.focus();
+        }
+
+        function closeModal(){
+            backdrop.style.display = 'none';
+            boardNameInput.value = '';
+            // reset option
+            selectedOption = 'plain';
+            Array.from(optionsEl.children).forEach(btn => btn.classList.remove('active'));
+            optionsEl.querySelector('[data-value="plain"]').classList.add('active');
+        }
+
+        if (openCreate) openCreate.addEventListener('click', openModal);
+        cancelBtn.addEventListener('click', closeModal);
+        backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) closeModal(); });
+
+        // options handler
+        optionsEl.addEventListener('click', (e)=>{
+            const btn = e.target.closest('.option-btn');
+            if(!btn) return;
+            selectedOption = btn.dataset.value;
+            Array.from(optionsEl.children).forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+
+        // set default active
+        optionsEl.querySelector('[data-value="plain"]').classList.add('active');
+
+        createBtn.addEventListener('click', ()=>{
+            const name = boardNameInput.value.trim() || 'Untitled board';
+            const boards = JSON.parse(localStorage.getItem('savedBoards')||'[]');
+            const id = 'B' + Date.now().toString(36);
+            const board = { id, name, template: selectedOption, created: Date.now() };
+            boards.unshift(board);
+            localStorage.setItem('savedBoards', JSON.stringify(boards));
+
+            // pass newly created board id to index via sessionStorage
+            sessionStorage.setItem('currentBoardId', id);
+            // ensure solo mode
+            sessionStorage.removeItem('roomId');
+            // navigate to canvas
+            window.location.href = 'index.html';
+        });
+    </script>
+
+</body>
+
+</html>

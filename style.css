@@ -191,6 +191,14 @@ header{
 
 }
 
+/* Header logo image */
+.logo-img{
+    width:36px;
+    height:36px;
+    object-fit:contain;
+    display:inline-block;
+}
+
 .logo h2{
 
     font-size:28px;

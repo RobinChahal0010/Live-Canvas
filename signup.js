@@ -57,6 +57,6 @@ signupBtn.addEventListener("click", function () {
     };
     localStorage.setItem('loggedInUser', JSON.stringify(loggedInUser));
     const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect') || 'index.html';
+    const redirect = params.get('redirect') || 'saved.html';
     window.location.href = redirect;
 });
