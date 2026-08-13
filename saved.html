@@ -113,7 +113,7 @@
             left:50%;
             transform:translateX(-50%);
             /* moved lower so it's closer to the graphic */
-            bottom:200px;
+            bottom:400px;
             pointer-events:none;
             z-index:11;
             text-align:center;
@@ -122,51 +122,49 @@
 
         .graphic-overlay .overlay-title{
             font-family: 'Outfit', 'Source Sans Pro', sans-serif;
-            font-size:40px;
+            font-size:36px;
             font-weight:700;
             margin:0;
-            /* gradient text matching the button */
-            background:linear-gradient(135deg,#7c3aed,#2563eb);
-            -webkit-background-clip:text;
-            background-clip:text;
-            color:transparent;
+            color:#000; /* plain black as requested */
         }
 
         .graphic-overlay .overlay-actions{
-            margin-top:22px;
+            margin-top:18px;
         }
 
         /* circular floating plus button */
         .overlay-create{
             pointer-events:auto; /* allow clicking */
-            width:72px;
-            height:72px;
+            width:50px;
+            height:50px;
             padding:0;
             border-radius:50%;
             border:none;
             overflow:hidden;
-            background:linear-gradient(135deg,#7c3aed,#2563eb);
+            /* solid blue from provided image */
+            background:#0052cc;
             display:inline-grid;
             place-items:center;
             color:#fff;
             cursor:pointer;
-            box-shadow:0 18px 40px rgba(37,99,235,0.18), 0 6px 18px rgba(124,58,237,0.12);
+            box-shadow:0 14px 34px rgba(0,82,204,0.16), 0 6px 18px rgba(0,0,0,0.08);
             transform:translateY(0);
-            transition:transform .22s ease, box-shadow .22s ease, filter .22s ease;
+            transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;
         }
 
         .overlay-create .plus{
-            font-size:34px;
+            font-size:20px;
             line-height:1;
-            font-weight:700;
+            font-weight:800;
             display:inline-block;
             transform:translateY(-2px);
+            letter-spacing:-2px;
         }
 
         .overlay-create:hover{
-            transform:translateY(-6px) rotate(-6deg);
-            box-shadow:0 26px 50px rgba(37,99,235,0.22), 0 10px 26px rgba(124,58,237,0.16);
-            filter:brightness(1.03);
+            transform:translateY(-6px) scale(1.03);
+            box-shadow:0 30px 60px rgba(0,82,204,0.22), 0 12px 30px rgba(0,0,0,0.12);
+            filter:brightness(1.02);
         }
 
         .overlay-create:active{
