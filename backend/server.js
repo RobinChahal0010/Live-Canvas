@@ -5,68 +5,42 @@ const path = require("path");
 
 const app = express();
 
-const server = http.createServer(app);
+const server =
+    http.createServer(app);
 
-const io = new Server(server);
+const io =
+    new Server(server);
 
+
+// ============================================================
+// SERVE ROOM PAGE
+// ============================================================
 
 app.get("/", (req, res) => {
 
     res.sendFile(
-        path.join(__dirname, "..", "room.html")
+        path.join(
+            __dirname,
+            "..",
+            "room.html"
+        )
     );
 
 });
 
 
-app.use(express.static(path.join(__dirname, "..")));
+// ============================================================
+// SERVE STATIC FILES
+// ============================================================
 
-const adjectives = [
-    "Pixel",
-    "Neon",
-    "Quantum",
-    "Cyber",
-    "Digital",
-    "Creative",
-    "Binary",
-    "Logic"
-];
-
-const animals = [
-    "Panda",
-    "Fox",
-    "Falcon",
-    "Tiger",
-    "Wolf",
-    "Penguin",
-    "Koala",
-    "Otter",
-    "Phoenix"
-];
-
-function generateUsername() {
-
-    const adjective =
-        adjectives[
-            Math.floor(
-                Math.random() * adjectives.length
-            )
-        ];
-
-    const animal =
-        animals[
-            Math.floor(
-                Math.random() * animals.length
-            )
-        ];
-
-    const number =
-        Math.floor(
-            10 + Math.random() * 90
-        );
-
-    return `${adjective}${animal}${number}`;
-}
+app.use(
+    express.static(
+        path.join(
+            __dirname,
+            ".."
+        )
+    )
+);
 
 
 // ============================================================
@@ -75,133 +49,210 @@ function generateUsername() {
 
 io.on("connection", (socket) => {
 
-    console.log("User connected:", socket.id);
-
-// ========================================================
-// JOIN ROOM
-// ========================================================
-
-socket.on("join-room", (roomId, username) => {
-
-    // Validate room ID
-    if (!roomId || !roomId.trim()) {
-        return;
-    }
-
-    // Generate random username if none provided
-    
-        username = generateUsername();
-    
-
-    // Store user information
-    socket.username = username;
-    socket.roomId = roomId;
-
-    // Join room
-    socket.join(roomId);
-
     console.log(
-        `${username} joined room ${roomId}`
+        "User connected:",
+        socket.id
     );
-
-    // Get users currently inside room
-    const room =
-        io.sockets.adapter.rooms.get(roomId);
-
-    const userCount =
-        room ? room.size : 1;
-
-    // Tell current user
-    socket.emit("room-joined", {
-
-        roomId: roomId,
-        username: username,
-        userCount: userCount
-
-    });
-
-    // Tell everyone else
-    socket.to(roomId).emit(
-        "user-joined",
-        {
-            username: username,
-            userCount: userCount
-        }
-    );
-
-});
-
-// ============================================================
-// CANVAS DRAW SYNC
-// ============================================================
-
-socket.on("canvas-draw", (data) => {
-
-    if (!socket.roomId) {
-        return;
-    }
-
-    socket.to(socket.roomId).emit(
-        "canvas-draw",
-        data
-    );
-
-});
 
 
     // ========================================================
-    // USER DISCONNECT
+    // JOIN ROOM
     // ========================================================
 
-    socket.on("disconnect", () => {
+    socket.on(
+        "join-room",
+        (roomId, username) => {
 
-        console.log(
-            "User disconnected:",
-            socket.id
-        );
+            // Validate room ID
+            if (
+                !roomId ||
+                !roomId.trim()
+            ) {
 
-        if (!socket.roomId) {
-            return;
-        }
+                return;
+            }
 
 
-        const room =
-            io.sockets.adapter.rooms.get(
-                socket.roomId
+            // Validate username
+            if (
+                !username ||
+                !username.trim()
+            ) {
+
+                console.log(
+                    "Join rejected: username missing"
+                );
+
+                return;
+            }
+
+
+            username =
+                username.trim();
+
+
+            // Store user information
+            socket.username =
+                username;
+
+            socket.roomId =
+                roomId;
+
+
+            // Join room
+            socket.join(roomId);
+
+
+            console.log(
+                `${username} joined room ${roomId}`
             );
 
-        const userCount =
-            room ? room.size : 0;
+
+            // Get users currently inside room
+            const room =
+                io.sockets.adapter.rooms.get(
+                    roomId
+                );
 
 
-        socket.to(
-            socket.roomId
-        ).emit(
-            "user-left",
-            {
-                username:
-                    socket.username || "Unknown User",
+            const userCount =
+                room
+                    ? room.size
+                    : 1;
 
-                userCount:
-                    userCount
+
+            // =================================================
+            // TELL CURRENT USER
+            // =================================================
+
+            socket.emit(
+                "room-joined",
+                {
+
+                    roomId:
+                        roomId,
+
+                    username:
+                        username,
+
+                    userCount:
+                        userCount
+
+                }
+            );
+
+
+            // =================================================
+            // TELL OTHER USERS
+            // =================================================
+
+            socket.to(roomId).emit(
+                "user-joined",
+                {
+
+                    username:
+                        username,
+
+                    userCount:
+                        userCount
+
+                }
+            );
+
+        }
+    );
+
+
+    // =========================================================
+    // CANVAS DRAW SYNC
+    // =========================================================
+
+    socket.on(
+        "canvas-draw",
+        (data) => {
+
+            if (!socket.roomId) {
+                return;
             }
-        );
 
-    });
+
+            socket.to(
+                socket.roomId
+            ).emit(
+                "canvas-draw",
+                data
+            );
+
+        }
+    );
+
+
+    // =========================================================
+    // USER DISCONNECT
+    // =========================================================
+
+    socket.on(
+        "disconnect",
+        () => {
+
+            console.log(
+                "User disconnected:",
+                socket.id
+            );
+
+
+            if (!socket.roomId) {
+                return;
+            }
+
+
+            const room =
+                io.sockets.adapter.rooms.get(
+                    socket.roomId
+                );
+
+
+            const userCount =
+                room
+                    ? room.size
+                    : 0;
+
+
+            socket.to(
+                socket.roomId
+            ).emit(
+                "user-left",
+                {
+
+                    username:
+                        socket.username ||
+                        "Unknown User",
+
+                    userCount:
+                        userCount
+
+                }
+            );
+
+        }
+    );
 
 });
 
 
-/* =========================================
-   START SERVER
-========================================= */
+// ============================================================
+// START SERVER
+// ============================================================
 
 const PORT = 3000;
 
-server.listen(PORT, () => {
+server.listen(
+    PORT,
+    () => {
 
-    console.log(
-        `LiveCanvas server running at http://localhost:${PORT}`
-    );
+        console.log(
+            `LiveCanvas server running at http://localhost:${PORT}`
+        );
 
-});
+    }
+);

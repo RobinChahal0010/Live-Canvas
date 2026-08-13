@@ -97,7 +97,6 @@ function generateRoomId() {
         .toString(36)
         .substring(2, 8)
         .toUpperCase();
-
 }
 
 
@@ -120,10 +119,6 @@ if (soloBtn) {
                 "roomId"
             );
 
-            sessionStorage.removeItem(
-                "roomUsername"
-            );
-
             console.log(
                 "Starting Solo Canvas"
             );
@@ -133,7 +128,6 @@ if (soloBtn) {
 
         }
     );
-
 }
 
 
@@ -154,12 +148,7 @@ if (createRoomBtn) {
             const roomId =
                 generateRoomId();
 
-            // Let backend generate random name
-            sessionStorage.setItem(
-                "roomUsername",
-                ""
-            );
-
+            // Save room ID only
             sessionStorage.setItem(
                 "roomId",
                 roomId
@@ -186,7 +175,6 @@ if (createRoomBtn) {
 
         }
     );
-
 }
 
 
@@ -219,7 +207,6 @@ if (joinRoomBtn) {
 
         }
     );
-
 }
 
 
@@ -247,7 +234,7 @@ if (joinBtn) {
                     .toUpperCase();
 
 
-            // Validate
+            // Validate room code
             if (!code) {
 
                 alert(
@@ -258,12 +245,7 @@ if (joinBtn) {
             }
 
 
-            // Let backend generate random name
-            sessionStorage.setItem(
-                "roomUsername",
-                ""
-            );
-
+            // Save room ID only
             sessionStorage.setItem(
                 "roomId",
                 code
@@ -281,7 +263,6 @@ if (joinBtn) {
 
         }
     );
-
 }
 
 
@@ -352,7 +333,6 @@ if (copyRoomBtn) {
 
         }
     );
-
 }
 
 
@@ -397,5 +377,4 @@ if (enterRoomBtn) {
 
         }
     );
-
 }

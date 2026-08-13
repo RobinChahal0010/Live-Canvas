@@ -7,8 +7,11 @@
 // ROOM / SOCKET
 // ============================================================
 
-const urlParams = new URLSearchParams(window.location.search);
-const roomId = urlParams.get("room");
+const urlParams =
+    new URLSearchParams(window.location.search);
+
+const roomId =
+    urlParams.get("room");
 
 let socket = null;
 
@@ -23,8 +26,25 @@ console.log("================================");
 // AUTHENTICATION
 // ============================================================
 
-const loggedInUser =
-    JSON.parse(localStorage.getItem("loggedInUser"));
+let loggedInUser = null;
+
+try {
+
+    loggedInUser =
+        JSON.parse(
+            localStorage.getItem("loggedInUser")
+        );
+
+} catch (error) {
+
+    console.error(
+        "Could not read loggedInUser:",
+        error
+    );
+
+    loggedInUser = null;
+}
+
 
 const welcomeUser =
     document.getElementById("welcomeUser");
@@ -48,55 +68,80 @@ function updateAuthUI() {
     if (loggedInUser) {
 
         if (welcomeUser) {
+
             welcomeUser.textContent =
                 `Hi, ${loggedInUser.name} 👋`;
         }
 
         if (loginHeaderBtn) {
-            loginHeaderBtn.style.display = "none";
+
+            loginHeaderBtn.style.display =
+                "none";
         }
 
         if (signupHeaderBtn) {
-            signupHeaderBtn.style.display = "none";
+
+            signupHeaderBtn.style.display =
+                "none";
         }
 
         if (logoutBtn) {
-            logoutBtn.style.display = "block";
+
+            logoutBtn.style.display =
+                "block";
         }
 
     } else {
 
         if (welcomeUser) {
-            welcomeUser.textContent = "";
+
+            welcomeUser.textContent =
+                "";
         }
 
         if (loginHeaderBtn) {
-            loginHeaderBtn.style.display = "block";
+
+            loginHeaderBtn.style.display =
+                "block";
         }
 
         if (signupHeaderBtn) {
-            signupHeaderBtn.style.display = "block";
+
+            signupHeaderBtn.style.display =
+                "block";
         }
 
         if (logoutBtn) {
-            logoutBtn.style.display = "none";
+
+            logoutBtn.style.display =
+                "none";
         }
     }
 }
 
 updateAuthUI();
 
-console.log("Logged In User:", loggedInUser);
+console.log(
+    "Logged In User:",
+    loggedInUser
+);
 
 
 // ============================================================
-// ROOM USERNAME
+// CURRENT USER NAME
 // ============================================================
+
+// IMPORTANT:
+// No random username.
+// Name comes directly from signup.
 
 let currentUsername =
-    sessionStorage.getItem("roomUsername") || "";
+    loggedInUser?.name || "User";
 
-console.log("Room Username:", currentUsername);
+console.log(
+    "Current User Name:",
+    currentUsername
+);
 
 
 // ============================================================
@@ -138,103 +183,116 @@ if (
 
 
     // ========================================================
-    // SOCKET CONNECTED
+    // SOCKET CONNECT
     // ========================================================
 
-    socket.on("connect", () => {
+    socket.on(
+        "connect",
+        () => {
 
-        console.log(
-            "Connected to server:",
-            socket.id
-        );
+            console.log(
+                "Connected to server:",
+                socket.id
+            );
 
-        socket.emit(
-            "join-room",
-            roomId,
-            currentUsername
-        );
-    });
+
+            // Send REAL signup name
+            // No random username
+
+            socket.emit(
+                "join-room",
+                roomId,
+                loggedInUser.name
+            );
+
+        }
+    );
 
 
     // ========================================================
     // ROOM JOINED
     // ========================================================
 
-    socket.on("room-joined", data => {
+    socket.on(
+        "room-joined",
+        data => {
 
-        console.log(
-            "Successfully joined room:",
-            data.roomId
-        );
+            console.log(
+                "Successfully joined room:",
+                data.roomId
+            );
 
-        console.log(
-            "Username:",
-            data.username
-        );
-
-        console.log(
-            "Users in room:",
-            data.userCount
-        );
-
-        if (data.username) {
-
-            currentUsername =
-                data.username;
-
-            sessionStorage.setItem(
-                "roomUsername",
+            console.log(
+                "User:",
                 data.username
             );
+
+            console.log(
+                "Users in room:",
+                data.userCount
+            );
+
         }
-    });
+    );
 
 
     // ========================================================
     // USER JOINED
     // ========================================================
 
-    socket.on("user-joined", data => {
+    socket.on(
+        "user-joined",
+        data => {
 
-        console.log(
-            `${data.username} joined the room`
-        );
+            console.log(
+                `${data.username} joined the room`
+            );
 
-        console.log(
-            "Users:",
-            data.userCount
-        );
-    });
+            console.log(
+                "Users:",
+                data.userCount
+            );
+
+        }
+    );
 
 
     // ========================================================
     // USER LEFT
     // ========================================================
 
-    socket.on("user-left", data => {
+    socket.on(
+        "user-left",
+        data => {
 
-        console.log(
-            `${data.username} left the room`
-        );
+            console.log(
+                `${data.username} left the room`
+            );
 
-        console.log(
-            "Users:",
-            data.userCount
-        );
-    });
+            console.log(
+                "Users:",
+                data.userCount
+            );
+
+        }
+    );
 
 
     // ========================================================
-    // SOCKET ERROR
+    // CONNECTION ERROR
     // ========================================================
 
-    socket.on("connect_error", error => {
+    socket.on(
+        "connect_error",
+        error => {
 
-        console.error(
-            "Socket connection failed:",
-            error
-        );
-    });
+            console.error(
+                "Socket connection failed:",
+                error
+            );
+
+        }
+    );
 }
 
 
@@ -243,10 +301,14 @@ if (
 // ============================================================
 
 const themeButtons =
-    document.querySelectorAll(".theme-color");
+    document.querySelectorAll(
+        ".theme-color"
+    );
 
 const themeStatus =
-    document.getElementById("themeStatus");
+    document.getElementById(
+        "themeStatus"
+    );
 
 
 function applyTheme(theme) {
@@ -259,7 +321,10 @@ function applyTheme(theme) {
     );
 
     if (theme) {
-        document.body.classList.add(theme);
+
+        document.body.classList.add(
+            theme
+        );
     }
 
     if (themeStatus) {
@@ -275,26 +340,30 @@ function applyTheme(theme) {
 }
 
 
-themeButtons.forEach(button => {
+themeButtons.forEach(
+    button => {
 
-    button.addEventListener(
-        "click",
-        () => {
+        button.addEventListener(
+            "click",
+            () => {
 
-            const theme =
-                button.dataset.theme || "";
+                const theme =
+                    button.dataset.theme || "";
 
-            applyTheme(theme);
-        }
-    );
+                applyTheme(theme);
 
-});
+            }
+        );
+
+    }
+);
 
 
 const savedTheme =
     localStorage.getItem("theme");
 
 if (savedTheme !== null) {
+
     applyTheme(savedTheme);
 }
 
@@ -311,6 +380,7 @@ if (loginHeaderBtn) {
 
             window.location.href =
                 "login.html";
+
         }
     );
 }
@@ -324,6 +394,7 @@ if (signupHeaderBtn) {
 
             window.location.href =
                 "signup.html";
+
         }
     );
 }
@@ -339,12 +410,14 @@ if (logoutBtn) {
                 "loggedInUser"
             );
 
+            // Old username storage completely removed
             sessionStorage.removeItem(
                 "roomUsername"
             );
 
             window.location.href =
                 "index.html";
+
         }
     );
 }
@@ -355,16 +428,24 @@ if (logoutBtn) {
 // ============================================================
 
 const canvas =
-    document.getElementById("drawingBoard");
+    document.getElementById(
+        "drawingBoard"
+    );
 
 const ctx =
-    canvas ? canvas.getContext("2d") : null;
+    canvas
+        ? canvas.getContext("2d")
+        : null;
 
 const notebookPage =
-    document.getElementById("notebookPage");
+    document.getElementById(
+        "notebookPage"
+    );
 
 const objectLayer =
-    document.getElementById("objectLayer");
+    document.getElementById(
+        "objectLayer"
+    );
 
 
 // ============================================================
@@ -372,34 +453,54 @@ const objectLayer =
 // ============================================================
 
 const drawBtn =
-    document.getElementById("drawBtn");
+    document.getElementById(
+        "drawBtn"
+    );
 
 const eraserBtn =
-    document.getElementById("eraserBtn");
+    document.getElementById(
+        "eraserBtn"
+    );
 
 const highlighterBtn =
-    document.getElementById("highlighterBtn");
+    document.getElementById(
+        "highlighterBtn"
+    );
 
 const lightPenBtn =
-    document.getElementById("lightPenBtn");
+    document.getElementById(
+        "lightPenBtn"
+    );
 
 const selectTool =
-    document.getElementById("selectTool");
+    document.getElementById(
+        "selectTool"
+    );
 
 const shapeBtn =
-    document.getElementById("shapeBtn");
+    document.getElementById(
+        "shapeBtn"
+    );
 
 const textBtn =
-    document.getElementById("textBtn");
+    document.getElementById(
+        "textBtn"
+    );
 
 const imageBtn =
-    document.getElementById("imageBtn");
+    document.getElementById(
+        "imageBtn"
+    );
 
 const stickyBtn =
-    document.getElementById("stickyBtn");
+    document.getElementById(
+        "stickyBtn"
+    );
 
 const tableBtn =
-    document.getElementById("tableBtn");
+    document.getElementById(
+        "tableBtn"
+    );
 
 
 // ============================================================
@@ -407,19 +508,29 @@ const tableBtn =
 // ============================================================
 
 const colorPicker =
-    document.getElementById("colorPicker");
+    document.getElementById(
+        "colorPicker"
+    );
 
 const brushSize =
-    document.getElementById("brushSize");
+    document.getElementById(
+        "brushSize"
+    );
 
 const undoBtn =
-    document.getElementById("undoBtn");
+    document.getElementById(
+        "undoBtn"
+    );
 
 const redoBtn =
-    document.getElementById("redoBtn");
+    document.getElementById(
+        "redoBtn"
+    );
 
 const clearBtn =
-    document.getElementById("clearBtn");
+    document.getElementById(
+        "clearBtn"
+    );
 
 
 // ============================================================
@@ -427,19 +538,29 @@ const clearBtn =
 // ============================================================
 
 const addPageBtn =
-    document.getElementById("addPageBtn");
+    document.getElementById(
+        "addPageBtn"
+    );
 
 const previousPage =
-    document.getElementById("previousPage");
+    document.getElementById(
+        "previousPage"
+    );
 
 const nextPage =
-    document.getElementById("nextPage");
+    document.getElementById(
+        "nextPage"
+    );
 
 const extendPageBtn =
-    document.getElementById("extendPageBtn");
+    document.getElementById(
+        "extendPageBtn"
+    );
 
 const pageNumber =
-    document.getElementById("pageNumber");
+    document.getElementById(
+        "pageNumber"
+    );
 
 
 // ============================================================
@@ -447,20 +568,30 @@ const pageNumber =
 // ============================================================
 
 const zoomIn =
-    document.getElementById("zoomIn");
+    document.getElementById(
+        "zoomIn"
+    );
 
 const zoomOut =
-    document.getElementById("zoomOut");
+    document.getElementById(
+        "zoomOut"
+    );
 
 const zoomValue =
-    document.getElementById("zoomValue");
+    document.getElementById(
+        "zoomValue"
+    );
 
 
 // ============================================================
 // SAFETY CHECK
 // ============================================================
 
-if (!canvas || !ctx || !notebookPage) {
+if (
+    !canvas ||
+    !ctx ||
+    !notebookPage
+) {
 
     console.error(
         "Canvas elements not found."
@@ -473,24 +604,34 @@ if (!canvas || !ctx || !notebookPage) {
 // STATE
 // ============================================================
 
-let currentTool = "pen";
+let currentTool =
+    "pen";
 
-let isDrawing = false;
+let isDrawing =
+    false;
 
-let lastX = 0;
-let lastY = 0;
+let lastX =
+    0;
 
-let currentStroke = [];
+let lastY =
+    0;
+
+let currentStroke =
+    [];
 
 
 // ============================================================
 // HISTORY
 // ============================================================
 
-let undoStack = [];
-let redoStack = [];
+let undoStack =
+    [];
 
-const MAX_HISTORY = 50;
+let redoStack =
+    [];
+
+const MAX_HISTORY =
+    50;
 
 
 // ============================================================
@@ -498,20 +639,24 @@ const MAX_HISTORY = 50;
 // ============================================================
 
 let pages = [
+
     {
         canvasData: null,
         height: 700
     }
+
 ];
 
-let currentPage = 0;
+let currentPage =
+    0;
 
 
 // ============================================================
 // ZOOM
 // ============================================================
 
-let zoom = 100;
+let zoom =
+    100;
 
 
 // ============================================================
@@ -520,14 +665,20 @@ let zoom = 100;
 
 function setupCanvas() {
 
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+    ctx.lineCap =
+        "round";
 
-    ctx.lineWidth = 4;
+    ctx.lineJoin =
+        "round";
 
-    ctx.strokeStyle = "#172033";
+    ctx.lineWidth =
+        4;
 
-    ctx.globalAlpha = 1;
+    ctx.strokeStyle =
+        "#172033";
+
+    ctx.globalAlpha =
+        1;
 
     ctx.globalCompositeOperation =
         "source-over";
@@ -542,7 +693,11 @@ setupCanvas();
 
 function resizeCanvasHeight(height) {
 
-    if (!height || height < 100) {
+    if (
+        !height ||
+        height < 100
+    ) {
+
         height = 700;
     }
 
@@ -550,13 +705,17 @@ function resizeCanvasHeight(height) {
         canvas.toDataURL();
 
     canvas.width =
-        notebookPage.clientWidth || 1000;
+        notebookPage.clientWidth ||
+        1000;
 
     canvas.height =
         height;
 
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
+    canvas.style.width =
+        "100%";
+
+    canvas.style.height =
+        "100%";
 
     setupCanvas();
 
@@ -572,9 +731,11 @@ function resizeCanvasHeight(height) {
                 0,
                 0
             );
+
         };
 
-        image.src = oldData;
+        image.src =
+            oldData;
     }
 }
 
@@ -586,16 +747,21 @@ function resizeCanvasHeight(height) {
 function initializeCanvas() {
 
     const height =
-        notebookPage.offsetHeight || 700;
+        notebookPage.offsetHeight ||
+        700;
 
     canvas.width =
-        notebookPage.clientWidth || 1000;
+        notebookPage.clientWidth ||
+        1000;
 
     canvas.height =
         height;
 
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
+    canvas.style.width =
+        "100%";
+
+    canvas.style.height =
+        "100%";
 
     setupCanvas();
 }
@@ -664,7 +830,8 @@ function restoreCanvas(data) {
         setupCanvas();
     };
 
-    image.src = data;
+    image.src =
+        data;
 }
 
 
@@ -686,6 +853,7 @@ function getMousePosition(e) {
         y:
             (e.clientY - rect.top) *
             (canvas.height / rect.height)
+
     };
 }
 
@@ -700,12 +868,15 @@ function setActiveTool(button) {
         .querySelectorAll(
             ".canvas-toolbar .tool"
         )
-        .forEach(btn => {
+        .forEach(
+            btn => {
 
-            btn.classList.remove(
-                "active-tool"
-            );
-        });
+                btn.classList.remove(
+                    "active-tool"
+                );
+
+            }
+        );
 
     if (button) {
 
@@ -720,14 +891,22 @@ function setActiveTool(button) {
 // TOOL HELPERS
 // ============================================================
 
-function activateTool(tool, button, cursor) {
+function activateTool(
+    tool,
+    button,
+    cursor
+) {
 
-    currentTool = tool;
+    currentTool =
+        tool;
 
-    setActiveTool(button);
+    setActiveTool(
+        button
+    );
 
     canvas.style.cursor =
-        cursor || "crosshair";
+        cursor ||
+        "crosshair";
 }
 
 
@@ -746,6 +925,7 @@ if (drawBtn) {
                 drawBtn,
                 "crosshair"
             );
+
         }
     );
 }
@@ -766,6 +946,7 @@ if (highlighterBtn) {
                 highlighterBtn,
                 "crosshair"
             );
+
         }
     );
 }
@@ -786,6 +967,7 @@ if (lightPenBtn) {
                 lightPenBtn,
                 "crosshair"
             );
+
         }
     );
 }
@@ -806,6 +988,7 @@ if (eraserBtn) {
                 eraserBtn,
                 "crosshair"
             );
+
         }
     );
 }
@@ -826,6 +1009,7 @@ if (selectTool) {
                 selectTool,
                 "default"
             );
+
         }
     );
 }
@@ -842,22 +1026,29 @@ function startDrawing(e) {
         currentTool === "text" ||
         currentTool === "shape"
     ) {
+
         return;
     }
 
-    isDrawing = true;
+    isDrawing =
+        true;
 
     const position =
         getMousePosition(e);
 
-    lastX = position.x;
-    lastY = position.y;
+    lastX =
+        position.x;
+
+    lastY =
+        position.y;
 
     currentStroke = [
+
         {
             x: lastX,
             y: lastY
         }
+
     ];
 
     saveState();
@@ -891,8 +1082,10 @@ function draw(e) {
         position.y;
 
     currentStroke.push({
+
         x: currentX,
         y: currentY
+
     });
 
 
@@ -900,12 +1093,15 @@ function draw(e) {
     // PEN
     // --------------------------------------------------------
 
-    if (currentTool === "pen") {
+    if (
+        currentTool === "pen"
+    ) {
 
         ctx.globalCompositeOperation =
             "source-over";
 
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha =
+            1;
 
         ctx.strokeStyle =
             colorPicker?.value ||
@@ -913,7 +1109,8 @@ function draw(e) {
 
         ctx.lineWidth =
             Number(
-                brushSize?.value || 4
+                brushSize?.value ||
+                4
             );
     }
 
@@ -923,13 +1120,15 @@ function draw(e) {
     // --------------------------------------------------------
 
     else if (
-        currentTool === "highlighter"
+        currentTool ===
+        "highlighter"
     ) {
 
         ctx.globalCompositeOperation =
             "source-over";
 
-        ctx.globalAlpha = 0.28;
+        ctx.globalAlpha =
+            0.28;
 
         ctx.strokeStyle =
             colorPicker?.value ||
@@ -937,7 +1136,8 @@ function draw(e) {
 
         ctx.lineWidth =
             Number(
-                brushSize?.value || 4
+                brushSize?.value ||
+                4
             ) * 3;
     }
 
@@ -947,13 +1147,15 @@ function draw(e) {
     // --------------------------------------------------------
 
     else if (
-        currentTool === "lightPen"
+        currentTool ===
+        "lightPen"
     ) {
 
         ctx.globalCompositeOperation =
             "source-over";
 
-        ctx.globalAlpha = 0.18;
+        ctx.globalAlpha =
+            0.18;
 
         ctx.strokeStyle =
             colorPicker?.value ||
@@ -961,7 +1163,8 @@ function draw(e) {
 
         ctx.lineWidth =
             Number(
-                brushSize?.value || 4
+                brushSize?.value ||
+                4
             ) * 1.5;
     }
 
@@ -971,17 +1174,20 @@ function draw(e) {
     // --------------------------------------------------------
 
     else if (
-        currentTool === "eraser"
+        currentTool ===
+        "eraser"
     ) {
 
         ctx.globalCompositeOperation =
             "destination-out";
 
-        ctx.globalAlpha = 1;
+        ctx.globalAlpha =
+            1;
 
         ctx.lineWidth =
             Number(
-                brushSize?.value || 4
+                brushSize?.value ||
+                4
             ) * 2;
     }
 
@@ -1017,6 +1223,7 @@ function draw(e) {
         socket.emit(
             "canvas-draw",
             {
+
                 x1: lastX,
                 y1: lastY,
 
@@ -1029,18 +1236,23 @@ function draw(e) {
 
                 lineWidth:
                     Number(
-                        brushSize?.value || 4
+                        brushSize?.value ||
+                        4
                     ),
 
                 tool:
                     currentTool
+
             }
         );
     }
 
 
-    lastX = currentX;
-    lastY = currentY;
+    lastX =
+        currentX;
+
+    lastY =
+        currentY;
 }
 
 
@@ -1074,13 +1286,15 @@ if (socket) {
 
 
             if (
-                data.tool === "eraser"
+                data.tool ===
+                "eraser"
             ) {
 
                 ctx.globalCompositeOperation =
                     "destination-out";
 
-                ctx.globalAlpha = 1;
+                ctx.globalAlpha =
+                    1;
 
                 ctx.lineWidth =
                     (data.lineWidth || 4) * 2;
@@ -1088,29 +1302,35 @@ if (socket) {
             }
 
             else if (
-                data.tool === "highlighter"
+                data.tool ===
+                "highlighter"
             ) {
 
                 ctx.globalCompositeOperation =
                     "source-over";
 
-                ctx.globalAlpha = 0.28;
+                ctx.globalAlpha =
+                    0.28;
 
                 ctx.lineWidth =
                     (data.lineWidth || 4) * 3;
+
             }
 
             else if (
-                data.tool === "lightPen"
+                data.tool ===
+                "lightPen"
             ) {
 
                 ctx.globalCompositeOperation =
                     "source-over";
 
-                ctx.globalAlpha = 0.18;
+                ctx.globalAlpha =
+                    0.18;
 
                 ctx.lineWidth =
                     (data.lineWidth || 4) * 1.5;
+
             }
 
             else {
@@ -1118,22 +1338,29 @@ if (socket) {
                 ctx.globalCompositeOperation =
                     "source-over";
 
-                ctx.globalAlpha = 1;
+                ctx.globalAlpha =
+                    1;
 
                 ctx.lineWidth =
                     data.lineWidth || 4;
+
             }
 
 
             ctx.strokeStyle =
-                data.color || "#172033";
+                data.color ||
+                "#172033";
 
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
+            ctx.lineCap =
+                "round";
+
+            ctx.lineJoin =
+                "round";
 
             ctx.stroke();
 
             ctx.restore();
+
         }
     );
 }
@@ -1149,12 +1376,14 @@ function stopDrawing() {
         return;
     }
 
-    isDrawing = false;
+    isDrawing =
+        false;
 
     ctx.closePath();
 
     if (
-        currentTool === "lightPen"
+        currentTool ===
+        "lightPen"
     ) {
 
         createLightPenStroke(
@@ -1162,12 +1391,14 @@ function stopDrawing() {
         );
     }
 
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha =
+        1;
 
     ctx.globalCompositeOperation =
         "source-over";
 
-    currentStroke = [];
+    currentStroke =
+        [];
 }
 
 
@@ -1175,17 +1406,22 @@ function stopDrawing() {
 // LIGHT PEN
 // ============================================================
 
-function createLightPenStroke(points) {
+function createLightPenStroke(
+    points
+) {
 
     if (
         !points ||
         points.length < 2
     ) {
+
         return;
     }
 
     const tempCanvas =
-        document.createElement("canvas");
+        document.createElement(
+            "canvas"
+        );
 
     tempCanvas.width =
         canvas.width;
@@ -1196,22 +1432,33 @@ function createLightPenStroke(points) {
     tempCanvas.style.position =
         "absolute";
 
-    tempCanvas.style.left = "0";
-    tempCanvas.style.top = "0";
+    tempCanvas.style.left =
+        "0";
 
-    tempCanvas.style.width = "100%";
-    tempCanvas.style.height = "100%";
+    tempCanvas.style.top =
+        "0";
+
+    tempCanvas.style.width =
+        "100%";
+
+    tempCanvas.style.height =
+        "100%";
 
     tempCanvas.style.pointerEvents =
         "none";
 
-    tempCanvas.style.zIndex = "20";
+    tempCanvas.style.zIndex =
+        "20";
+
 
     const tempCtx =
         tempCanvas.getContext("2d");
 
-    tempCtx.lineCap = "round";
-    tempCtx.lineJoin = "round";
+    tempCtx.lineCap =
+        "round";
+
+    tempCtx.lineJoin =
+        "round";
 
     tempCtx.strokeStyle =
         colorPicker?.value ||
@@ -1219,12 +1466,15 @@ function createLightPenStroke(points) {
 
     tempCtx.lineWidth =
         Number(
-            brushSize?.value || 4
+            brushSize?.value ||
+            4
         ) * 2;
 
-    tempCtx.globalAlpha = 0.48;
+    tempCtx.globalAlpha =
+        0.48;
 
     tempCtx.beginPath();
+
 
     points.forEach(
         (point, index) => {
@@ -1243,8 +1493,10 @@ function createLightPenStroke(points) {
                     point.y
                 );
             }
+
         }
     );
+
 
     tempCtx.stroke();
 
@@ -1261,7 +1513,8 @@ function createLightPenStroke(points) {
             tempCanvas.style.transition =
                 "opacity 0.9s ease";
 
-            tempCanvas.style.opacity = "0";
+            tempCanvas.style.opacity =
+                "0";
 
 
             setTimeout(
@@ -1321,8 +1574,11 @@ canvas.addEventListener(
         startDrawing(
             e.touches[0]
         );
+
     },
-    { passive: false }
+    {
+        passive: false
+    }
 );
 
 
@@ -1339,8 +1595,11 @@ canvas.addEventListener(
         draw(
             e.touches[0]
         );
+
     },
-    { passive: false }
+    {
+        passive: false
+    }
 );
 
 
@@ -1351,8 +1610,11 @@ canvas.addEventListener(
         e.preventDefault();
 
         stopDrawing();
+
     },
-    { passive: false }
+    {
+        passive: false
+    }
 );
 
 
@@ -1377,6 +1639,7 @@ if (colorPicker) {
                     "crosshair"
                 );
             }
+
         }
     );
 }
@@ -1395,6 +1658,7 @@ if (undoBtn) {
             if (
                 undoStack.length === 0
             ) {
+
                 return;
             }
 
@@ -1410,6 +1674,7 @@ if (undoBtn) {
             );
 
             saveCurrentPage();
+
         }
     );
 }
@@ -1428,6 +1693,7 @@ if (redoBtn) {
             if (
                 redoStack.length === 0
             ) {
+
                 return;
             }
 
@@ -1443,6 +1709,7 @@ if (redoBtn) {
             );
 
             saveCurrentPage();
+
         }
     );
 }
@@ -1468,6 +1735,7 @@ if (clearBtn) {
             );
 
             saveCurrentPage();
+
         }
     );
 }
@@ -1479,7 +1747,10 @@ if (clearBtn) {
 
 function saveCurrentPage() {
 
-    if (!pages[currentPage]) {
+    if (
+        !pages[currentPage]
+    ) {
+
         return;
     }
 
@@ -1501,12 +1772,14 @@ function loadPage(index) {
         index < 0 ||
         index >= pages.length
     ) {
+
         return;
     }
 
     saveCurrentPage();
 
-    currentPage = index;
+    currentPage =
+        index;
 
     const page =
         pages[currentPage];
@@ -1515,7 +1788,6 @@ function loadPage(index) {
     notebookPage.style.height =
         `${page.height}px`;
 
-
     canvas.width =
         notebookPage.clientWidth ||
         1000;
@@ -1523,8 +1795,11 @@ function loadPage(index) {
     canvas.height =
         page.height;
 
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
+    canvas.style.width =
+        "100%";
+
+    canvas.style.height =
+        "100%";
 
     setupCanvas();
 
@@ -1589,8 +1864,10 @@ if (addPageBtn) {
             saveCurrentPage();
 
             pages.push({
+
                 canvasData: null,
                 height: 700
+
             });
 
             currentPage =
@@ -1603,7 +1880,8 @@ if (addPageBtn) {
                 notebookPage.clientWidth ||
                 1000;
 
-            canvas.height = 700;
+            canvas.height =
+                700;
 
             ctx.clearRect(
                 0,
@@ -1615,6 +1893,7 @@ if (addPageBtn) {
             setupCanvas();
 
             updatePageNumber();
+
         }
     );
 }
@@ -1638,6 +1917,7 @@ if (previousPage) {
                     currentPage - 1
                 );
             }
+
         }
     );
 }
@@ -1666,6 +1946,7 @@ if (nextPage) {
 
                 addPageBtn.click();
             }
+
         }
     );
 }
@@ -1691,7 +1972,9 @@ if (extendPageBtn) {
 
 
             const oldCanvas =
-                document.createElement("canvas");
+                document.createElement(
+                    "canvas"
+                );
 
             oldCanvas.width =
                 canvas.width;
@@ -1699,8 +1982,11 @@ if (extendPageBtn) {
             oldCanvas.height =
                 canvas.height;
 
+
             const oldCtx =
-                oldCanvas.getContext("2d");
+                oldCanvas.getContext(
+                    "2d"
+                );
 
             oldCtx.drawImage(
                 canvas,
@@ -1712,7 +1998,6 @@ if (extendPageBtn) {
             notebookPage.style.height =
                 `${newHeight}px`;
 
-
             canvas.width =
                 notebookPage.clientWidth ||
                 1000;
@@ -1720,8 +2005,11 @@ if (extendPageBtn) {
             canvas.height =
                 newHeight;
 
-            canvas.style.width = "100%";
-            canvas.style.height = "100%";
+            canvas.style.width =
+                "100%";
+
+            canvas.style.height =
+                "100%";
 
             setupCanvas();
 
@@ -1738,6 +2026,7 @@ if (extendPageBtn) {
 
             pages[currentPage].canvasData =
                 canvas.toDataURL();
+
         }
     );
 }
@@ -1776,6 +2065,7 @@ if (zoomIn) {
                 );
 
             updateZoom();
+
         }
     );
 }
@@ -1794,6 +2084,7 @@ if (zoomOut) {
                 );
 
             updateZoom();
+
         }
     );
 }
@@ -1814,6 +2105,7 @@ if (textBtn) {
                 textBtn,
                 "text"
             );
+
         }
     );
 }
@@ -1828,8 +2120,10 @@ canvas.addEventListener(
     e => {
 
         if (
-            currentTool !== "text"
+            currentTool !==
+            "text"
         ) {
+
             return;
         }
 
@@ -1845,6 +2139,7 @@ canvas.addEventListener(
             !text ||
             !text.trim()
         ) {
+
             return;
         }
 
@@ -1859,6 +2154,7 @@ canvas.addEventListener(
             selectTool,
             "default"
         );
+
     }
 );
 
@@ -1878,7 +2174,9 @@ function createTextObject(
     }
 
     const element =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     element.textContent =
         text;
@@ -1931,12 +2229,18 @@ function createTextObject(
 // DRAG OBJECT
 // ============================================================
 
-function makeDraggable(element) {
+function makeDraggable(
+    element
+) {
 
-    let dragging = false;
+    let dragging =
+        false;
 
-    let offsetX = 0;
-    let offsetY = 0;
+    let offsetX =
+        0;
+
+    let offsetY =
+        0;
 
 
     element.addEventListener(
@@ -1947,10 +2251,12 @@ function makeDraggable(element) {
                 currentTool !==
                 "select"
             ) {
+
                 return;
             }
 
-            dragging = true;
+            dragging =
+                true;
 
             const rect =
                 element.getBoundingClientRect();
@@ -1966,6 +2272,7 @@ function makeDraggable(element) {
             e.stopPropagation();
 
             e.preventDefault();
+
         }
     );
 
@@ -1982,18 +2289,15 @@ function makeDraggable(element) {
                 objectLayer.getBoundingClientRect();
 
             element.style.left =
-                `${
-                    e.clientX -
+                `${e.clientX -
                     parentRect.left -
-                    offsetX
-                }px`;
+                    offsetX}px`;
 
             element.style.top =
-                `${
-                    e.clientY -
+                `${e.clientY -
                     parentRect.top -
-                    offsetY
-                }px`;
+                    offsetY}px`;
+
         }
     );
 
@@ -2002,7 +2306,9 @@ function makeDraggable(element) {
         "mouseup",
         () => {
 
-            dragging = false;
+            dragging =
+                false;
+
         }
     );
 }
@@ -2023,12 +2329,14 @@ if (shapeBtn) {
                 shapeBtn,
                 "crosshair"
             );
+
         }
     );
 }
 
 
-let shapeStart = null;
+let shapeStart =
+    null;
 
 
 canvas.addEventListener(
@@ -2039,11 +2347,13 @@ canvas.addEventListener(
             currentTool !==
             "shape"
         ) {
+
             return;
         }
 
         shapeStart =
             getMousePosition(e);
+
     }
 );
 
@@ -2057,6 +2367,7 @@ canvas.addEventListener(
             "shape" ||
             !shapeStart
         ) {
+
             return;
         }
 
@@ -2101,13 +2412,15 @@ canvas.addEventListener(
             );
         }
 
-        shapeStart = null;
+        shapeStart =
+            null;
 
         activateTool(
             "select",
             selectTool,
             "default"
         );
+
     }
 );
 
@@ -2128,7 +2441,9 @@ function createShape(
     }
 
     const shape =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     shape.style.position =
         "absolute";
@@ -2193,6 +2508,7 @@ if (stickyBtn) {
                 selectTool,
                 "default"
             );
+
         }
     );
 }
@@ -2208,7 +2524,9 @@ function createStickyNote(
     }
 
     const note =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     note.className =
         "live-sticky-note";
@@ -2284,13 +2602,16 @@ if (imageBtn) {
         () => {
 
             const input =
-                document.createElement("input");
+                document.createElement(
+                    "input"
+                );
 
             input.type =
                 "file";
 
             input.accept =
                 "image/*";
+
 
             input.addEventListener(
                 "change",
@@ -2312,15 +2633,18 @@ if (imageBtn) {
                             createImageObject(
                                 event.target.result
                             );
+
                         };
 
                     reader.readAsDataURL(
                         file
                     );
+
                 }
             );
 
             input.click();
+
         }
     );
 }
@@ -2330,16 +2654,21 @@ if (imageBtn) {
 // CREATE IMAGE
 // ============================================================
 
-function createImageObject(src) {
+function createImageObject(
+    src
+) {
 
     if (!objectLayer) {
         return;
     }
 
     const image =
-        document.createElement("img");
+        document.createElement(
+            "img"
+        );
 
-    image.src = src;
+    image.src =
+        src;
 
     image.style.position =
         "absolute";
@@ -2411,6 +2740,7 @@ if (tableBtn) {
                 rows < 1 ||
                 columns < 1
             ) {
+
                 return;
             }
 
@@ -2418,6 +2748,7 @@ if (tableBtn) {
                 rows,
                 columns
             );
+
         }
     );
 }
@@ -2437,7 +2768,9 @@ function createTable(
     }
 
     const table =
-        document.createElement("table");
+        document.createElement(
+            "table"
+        );
 
     table.style.position =
         "absolute";
@@ -2574,11 +2907,16 @@ document.addEventListener(
         if (
             target &&
             (
-                target.tagName === "INPUT" ||
-                target.tagName === "TEXTAREA" ||
+                target.tagName ===
+                    "INPUT" ||
+
+                target.tagName ===
+                    "TEXTAREA" ||
+
                 target.isContentEditable
             )
         ) {
+
             return;
         }
 
@@ -2586,6 +2924,7 @@ document.addEventListener(
         // P = Pen
 
         if (key === "p") {
+
             drawBtn?.click();
         }
 
@@ -2593,6 +2932,7 @@ document.addEventListener(
         // E = Eraser
 
         if (key === "e") {
+
             eraserBtn?.click();
         }
 
@@ -2600,8 +2940,10 @@ document.addEventListener(
         // H = Highlighter
 
         if (key === "h") {
+
             highlighterBtn?.click();
         }
+
     }
 );
 
@@ -2642,7 +2984,8 @@ function saveDocument() {
 
     const documentData = {
 
-        pages: pages,
+        pages:
+            pages,
 
         currentPage:
             currentPage,
@@ -2653,6 +2996,7 @@ function saveDocument() {
         title:
             titleInput?.value ||
             "Study Notes"
+
     };
 
 
@@ -2754,16 +3098,19 @@ function loadDocument() {
         notebookPage.style.height =
             `${page.height || 700}px`;
 
-
         canvas.width =
             notebookPage.clientWidth ||
             1000;
 
         canvas.height =
-            page.height || 700;
+            page.height ||
+            700;
 
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
+        canvas.style.width =
+            "100%";
+
+        canvas.style.height =
+            "100%";
 
         setupCanvas();
 
@@ -2834,6 +3181,7 @@ window.addEventListener(
     () => {
 
         saveDocument();
+
     }
 );
 

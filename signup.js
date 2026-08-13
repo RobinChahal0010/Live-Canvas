@@ -12,6 +12,14 @@ signupBtn.addEventListener("click", function () {
         alert("Please fill all fields.");
         return;
     }
+    if (name.length < 2) {
+
+            alert(
+                "Name must be at least 2 characters."
+            );
+
+            return;
+        }
 
     if (password.length < 6) {
         alert("Password must be at least 6 characters.");
