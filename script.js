@@ -68,25 +68,21 @@ function updateAuthUI() {
     if (loggedInUser) {
 
         if (welcomeUser) {
-
             welcomeUser.textContent =
                 `Hi, ${loggedInUser.name} 👋`;
         }
 
         if (loginHeaderBtn) {
-
             loginHeaderBtn.style.display =
                 "none";
         }
 
         if (signupHeaderBtn) {
-
             signupHeaderBtn.style.display =
                 "none";
         }
 
         if (logoutBtn) {
-
             logoutBtn.style.display =
                 "block";
         }
@@ -94,25 +90,21 @@ function updateAuthUI() {
     } else {
 
         if (welcomeUser) {
-
             welcomeUser.textContent =
                 "";
         }
 
         if (loginHeaderBtn) {
-
             loginHeaderBtn.style.display =
                 "block";
         }
 
         if (signupHeaderBtn) {
-
             signupHeaderBtn.style.display =
                 "block";
         }
 
         if (logoutBtn) {
-
             logoutBtn.style.display =
                 "none";
         }
@@ -121,19 +113,10 @@ function updateAuthUI() {
 
 updateAuthUI();
 
-console.log(
-    "Logged In User:",
-    loggedInUser
-);
-
 
 // ============================================================
 // CURRENT USER NAME
 // ============================================================
-
-// IMPORTANT:
-// No random username.
-// Name comes directly from signup.
 
 let currentUsername =
     loggedInUser?.name || "User";
@@ -163,6 +146,173 @@ if (roomId && !loggedInUser) {
         encodeURIComponent(redirectUrl);
 }
 
+
+// ============================================================
+// COLLABORATORS
+// ============================================================
+
+function updateCollaborators(users = []) {
+
+    const collaborators =
+        document.getElementById("collaborators");
+
+    const collaboratorList =
+        document.getElementById("collaboratorList");
+
+    const shareBtn =
+        document.getElementById("shareBtn");
+
+    if (
+        !collaborators ||
+        !collaboratorList
+    ) {
+        return;
+    }
+
+
+    // ========================================================
+    // REMOVE OLD AVATARS
+    // ========================================================
+
+    collaboratorList
+        .querySelectorAll(".avatar")
+        .forEach(
+            avatar => avatar.remove()
+        );
+
+
+    // ========================================================
+    // SOLO MODE
+    // ========================================================
+
+    if (!roomId) {
+
+        collaborators.style.display =
+            "none";
+
+        return;
+    }
+
+
+    // ========================================================
+    // ROOM MODE
+    // ========================================================
+
+    collaborators.style.display =
+        "flex";
+
+
+    if (!Array.isArray(users)) {
+        return;
+    }
+
+
+    // ========================================================
+    // MAX 4 VISIBLE USERS
+    // ========================================================
+
+    const maxVisibleUsers = 4;
+
+    const visibleUsers =
+        users.slice(
+            0,
+            maxVisibleUsers
+        );
+
+
+    // ========================================================
+    // CREATE AVATARS
+    // ========================================================
+
+    visibleUsers.forEach(
+        username => {
+
+            if (
+                !username ||
+                typeof username !== "string"
+            ) {
+                return;
+            }
+
+
+            const cleanName =
+                username.trim();
+
+
+            if (!cleanName) {
+                return;
+            }
+
+
+            const avatar =
+                document.createElement("span");
+
+
+            avatar.classList.add(
+                "avatar"
+            );
+
+
+            // First letter
+            avatar.textContent =
+                cleanName
+                    .charAt(0)
+                    .toUpperCase();
+
+
+            // Full name on hover
+            avatar.title =
+                cleanName;
+
+
+            // Add inside collaborator list
+            collaboratorList.appendChild(
+                avatar
+            );
+
+        }
+    );
+
+
+    // ========================================================
+    // MORE USERS
+    // ========================================================
+
+    if (
+        users.length >
+        maxVisibleUsers
+    ) {
+
+        const more =
+            document.createElement("span");
+
+
+        more.classList.add(
+            "avatar",
+            "more"
+        );
+
+
+        more.textContent =
+            `+${users.length - maxVisibleUsers}`;
+
+
+        more.title =
+            `${users.length - maxVisibleUsers} more collaborators`;
+
+
+        collaboratorList.appendChild(
+            more
+        );
+    }
+
+
+    console.log(
+        "Collaborators updated:",
+        users
+    );
+
+}
 
 // ============================================================
 // CONNECT TO SOCKET.IO ROOM
@@ -196,15 +346,11 @@ if (
             );
 
 
-            // Send REAL signup name
-            // No random username
-
             socket.emit(
                 "join-room",
                 roomId,
                 loggedInUser.name
             );
-
         }
     );
 
@@ -232,6 +378,29 @@ if (
                 data.userCount
             );
 
+            console.log(
+                "Room users:",
+                data.users
+            );
+
+
+            currentUsername =
+                data.username;
+
+
+            sessionStorage.setItem(
+                "roomUsername",
+                data.username
+            );
+
+            console.log(
+    "🔥 COLLABORATOR DATA:",
+    data.users
+);
+            // UPDATE ACTUAL COLLABORATORS
+            updateCollaborators(
+                data.users || []
+            );
         }
     );
 
@@ -253,6 +422,15 @@ if (
                 data.userCount
             );
 
+            console.log(
+                "Room users:",
+                data.users
+            );
+
+
+            updateCollaborators(
+                data.users || []
+            );
         }
     );
 
@@ -274,6 +452,15 @@ if (
                 data.userCount
             );
 
+            console.log(
+                "Remaining users:",
+                data.users
+            );
+
+
+            updateCollaborators(
+                data.users || []
+            );
         }
     );
 
@@ -290,11 +477,20 @@ if (
                 "Socket connection failed:",
                 error
             );
-
         }
     );
 }
 
+
+// ============================================================
+// SOLO MODE INITIALIZATION
+// ============================================================
+
+if (!roomId) {
+
+    updateCollaborators([]);
+
+}
 
 
 // ============================================================
@@ -309,7 +505,6 @@ if (loginHeaderBtn) {
 
             window.location.href =
                 "login.html";
-
         }
     );
 }
@@ -323,7 +518,6 @@ if (signupHeaderBtn) {
 
             window.location.href =
                 "signup.html";
-
         }
     );
 }
@@ -339,17 +533,17 @@ if (logoutBtn) {
                 "loggedInUser"
             );
 
-            // Old username storage completely removed
             sessionStorage.removeItem(
                 "roomUsername"
             );
 
             window.location.href =
                 "login.html";
-
         }
     );
 }
+
+
 // ============================================================
 // SHARE ROOM
 // ============================================================
@@ -363,6 +557,7 @@ if (shareBtn) {
         "click",
         async () => {
 
+            // SOLO
             if (!roomId) {
 
                 alert(
@@ -372,19 +567,24 @@ if (shareBtn) {
                 return;
             }
 
+
             const shareText =
                 `Join my LiveCanvas room!\n\nRoom Code: ${roomId}`;
 
+
             try {
 
-                if (navigator.share) {
+                if (
+                    navigator.share
+                ) {
 
                     await navigator.share({
 
-                        title: "LiveCanvas Room",
+                        title:
+                            "LiveCanvas Room",
 
-                        text: shareText
-
+                        text:
+                            shareText
                     });
 
                 } else {
@@ -403,9 +603,7 @@ if (shareBtn) {
                 console.log(
                     "Share cancelled."
                 );
-
             }
-
         }
     );
 }
@@ -643,128 +841,337 @@ let pages = [
 let currentPage =
     0;
 
-const VALID_CANVAS_STYLES = ["blank", "grid", "dots", "lines"];
 
-let currentCanvasStyle = "lines";
+const VALID_CANVAS_STYLES =
+    [
+        "blank",
+        "grid",
+        "dots",
+        "lines"
+    ];
+
+
+let currentCanvasStyle =
+    "lines";
+
+
+// ============================================================
+// CANVAS STYLE
+// ============================================================
 
 function normalizeCanvasStyle(style) {
-    const safeStyle = typeof style === "string" ? style.trim().toLowerCase() : "lines";
+
+    const safeStyle =
+        typeof style === "string"
+            ? style.trim().toLowerCase()
+            : "lines";
+
 
     if (safeStyle === "plain") {
+
         return "blank";
     }
 
-    return VALID_CANVAS_STYLES.includes(safeStyle) ? safeStyle : "lines";
+
+    return VALID_CANVAS_STYLES.includes(
+        safeStyle
+    )
+        ? safeStyle
+        : "lines";
 }
 
+
 function applyCanvasStyle(style) {
-    currentCanvasStyle = normalizeCanvasStyle(style);
+
+    currentCanvasStyle =
+        normalizeCanvasStyle(style);
+
 
     if (notebookPage) {
-        notebookPage.setAttribute("data-canvas-style", currentCanvasStyle);
+
+        notebookPage.setAttribute(
+            "data-canvas-style",
+            currentCanvasStyle
+        );
     }
 
-    if (!paperBackground) return;
+
+    if (!paperBackground) {
+        return;
+    }
+
 
     const styleMap = {
+
         blank: {
-            backgroundColor: '#fff',
-            backgroundImage: 'none',
-            backgroundSize: 'auto'
+
+            backgroundColor:
+                "#fff",
+
+            backgroundImage:
+                "none",
+
+            backgroundSize:
+                "auto"
         },
+
+
         grid: {
-            backgroundColor: '#fffdf5',
-            backgroundImage: 'linear-gradient(rgba(120, 155, 190, 0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 155, 190, 0.16) 1px, transparent 1px)',
-            backgroundSize: '24px 24px'
+
+            backgroundColor:
+                "#fffdf5",
+
+            backgroundImage:
+                "linear-gradient(rgba(120,155,190,0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(120,155,190,0.16) 1px, transparent 1px)",
+
+            backgroundSize:
+                "24px 24px"
         },
+
+
         dots: {
-            backgroundColor: '#fffdf5',
-            backgroundImage: 'radial-gradient(circle, rgba(120, 155, 190, 0.35) 1.25px, transparent 1.35px)',
-            backgroundSize: '22px 22px'
+
+            backgroundColor:
+                "#fffdf5",
+
+            backgroundImage:
+                "radial-gradient(circle, rgba(120,155,190,0.35) 1.25px, transparent 1.35px)",
+
+            backgroundSize:
+                "22px 22px"
         },
+
+
         lines: {
-            backgroundColor: '#fffdf5',
-            backgroundImage: 'repeating-linear-gradient(to bottom, rgba(120, 155, 190, 0.18) 0, rgba(120, 155, 190, 0.18) 1px, transparent 1px, transparent 28px)',
-            backgroundSize: '100% 28px'
+
+            backgroundColor:
+                "#fffdf5",
+
+            backgroundImage:
+                "repeating-linear-gradient(to bottom, rgba(120,155,190,0.18) 0, rgba(120,155,190,0.18) 1px, transparent 1px, transparent 28px)",
+
+            backgroundSize:
+                "100% 28px"
         }
     };
 
-    const selectedStyle = styleMap[currentCanvasStyle] || styleMap.lines;
 
-    paperBackground.style.backgroundColor = selectedStyle.backgroundColor;
-    paperBackground.style.backgroundImage = selectedStyle.backgroundImage;
-    paperBackground.style.backgroundSize = selectedStyle.backgroundSize;
-    paperBackground.style.backgroundPosition = '0 0';
+    const selectedStyle =
+        styleMap[
+            currentCanvasStyle
+        ] || styleMap.lines;
+
+
+    paperBackground.style.backgroundColor =
+        selectedStyle.backgroundColor;
+
+    paperBackground.style.backgroundImage =
+        selectedStyle.backgroundImage;
+
+    paperBackground.style.backgroundSize =
+        selectedStyle.backgroundSize;
+
+    paperBackground.style.backgroundPosition =
+        "0 0";
 }
 
+
+// ============================================================
+// DOCUMENT KEY
+// ============================================================
+
 function getDocumentKey() {
-    const boardId = sessionStorage.getItem("currentBoardId");
+
+    const boardId =
+        sessionStorage.getItem(
+            "currentBoardId"
+        );
+
+
     if (boardId) {
+
         return `liveCanvasDocument_${boardId}`;
     }
 
-    return roomId ? `liveCanvasDocument_${roomId}` : "liveCanvasDocument_solo";
+
+    return roomId
+        ? `liveCanvasDocument_${roomId}`
+        : "liveCanvasDocument_solo";
 }
 
+
+// ============================================================
+// RESTORE CANVAS STYLE
+// ============================================================
+
 function restoreCanvasStyleFromBoard() {
-    const pendingCanvasStyle = sessionStorage.getItem("currentCanvasStyle");
+
+    const pendingCanvasStyle =
+        sessionStorage.getItem(
+            "currentCanvasStyle"
+        );
+
 
     if (pendingCanvasStyle) {
-        applyCanvasStyle(pendingCanvasStyle);
-        sessionStorage.removeItem("currentCanvasStyle");
+
+        applyCanvasStyle(
+            pendingCanvasStyle
+        );
+
+        sessionStorage.removeItem(
+            "currentCanvasStyle"
+        );
     }
 
-    const storedBoardId = sessionStorage.getItem("currentBoardId");
+
+    const storedBoardId =
+        sessionStorage.getItem(
+            "currentBoardId"
+        );
+
 
     if (storedBoardId) {
+
         try {
-            const savedBoards = JSON.parse(localStorage.getItem("savedBoards") || "[]");
-            const matchingBoard = savedBoards.find(board => board.id === storedBoardId);
+
+            const savedBoards =
+                JSON.parse(
+                    localStorage.getItem(
+                        "savedBoards"
+                    ) || "[]"
+                );
+
+
+            const matchingBoard =
+                savedBoards.find(
+                    board =>
+                        board.id ===
+                        storedBoardId
+                );
+
 
             if (matchingBoard) {
-                applyCanvasStyle(matchingBoard.canvasStyle || matchingBoard.template || "blank");
 
-                const titleInput = document.getElementById("documentTitle");
-                if (titleInput && matchingBoard.name) {
-                    titleInput.value = matchingBoard.name;
+                applyCanvasStyle(
+                    matchingBoard.canvasStyle ||
+                    matchingBoard.template ||
+                    "blank"
+                );
+
+
+                const titleInput =
+                    document.getElementById(
+                        "documentTitle"
+                    );
+
+
+                if (
+                    titleInput &&
+                    matchingBoard.name
+                ) {
+
+                    titleInput.value =
+                        matchingBoard.name;
                 }
+
 
                 return;
             }
+
         } catch (error) {
-            console.warn("Could not restore saved board style:", error);
+
+            console.warn(
+                "Could not restore saved board style:",
+                error
+            );
         }
     }
 
-    const pendingBoardName = sessionStorage.getItem("currentBoardName");
+
+    const pendingBoardName =
+        sessionStorage.getItem(
+            "currentBoardName"
+        );
+
+
     if (pendingBoardName) {
-        const titleInput = document.getElementById("documentTitle");
+
+        const titleInput =
+            document.getElementById(
+                "documentTitle"
+            );
+
+
         if (titleInput) {
-            titleInput.value = pendingBoardName;
+
+            titleInput.value =
+                pendingBoardName;
         }
-        sessionStorage.removeItem("currentBoardName");
+
+
+        sessionStorage.removeItem(
+            "currentBoardName"
+        );
     }
 
-    const documentKey = getDocumentKey();
+
+    const documentKey =
+        getDocumentKey();
+
 
     try {
-        const savedDocument = JSON.parse(localStorage.getItem(documentKey) || "null");
 
-        if (savedDocument && savedDocument.canvasStyle) {
-            applyCanvasStyle(savedDocument.canvasStyle);
-            if (savedDocument.title) {
-                const titleInput = document.getElementById("documentTitle");
+        const savedDocument =
+            JSON.parse(
+                localStorage.getItem(
+                    documentKey
+                ) || "null"
+            );
+
+
+        if (
+            savedDocument &&
+            savedDocument.canvasStyle
+        ) {
+
+            applyCanvasStyle(
+                savedDocument.canvasStyle
+            );
+
+
+            if (
+                savedDocument.title
+            ) {
+
+                const titleInput =
+                    document.getElementById(
+                        "documentTitle"
+                    );
+
+
                 if (titleInput) {
-                    titleInput.value = savedDocument.title;
+
+                    titleInput.value =
+                        savedDocument.title;
                 }
             }
+
+
             return;
         }
+
     } catch (error) {
-        console.warn("Could not restore document canvas style:", error);
+
+        console.warn(
+            "Could not restore document canvas style:",
+            error
+        );
     }
 
-    applyCanvasStyle("blank");
+
+    applyCanvasStyle(
+        "blank"
+    );
 }
 
 
@@ -801,7 +1208,9 @@ function setupCanvas() {
         "source-over";
 }
 
+
 setupCanvas();
+
 restoreCanvasStyleFromBoard();
 
 
@@ -819,8 +1228,10 @@ function resizeCanvasHeight(height) {
         height = 700;
     }
 
+
     const oldData =
         canvas.toDataURL();
+
 
     canvas.width =
         notebookPage.clientWidth ||
@@ -829,28 +1240,33 @@ function resizeCanvasHeight(height) {
     canvas.height =
         height;
 
+
     canvas.style.width =
         "100%";
 
     canvas.style.height =
         "100%";
 
+
     setupCanvas();
+
 
     if (oldData) {
 
         const image =
             new Image();
 
-        image.onload = () => {
 
-            ctx.drawImage(
-                image,
-                0,
-                0
-            );
+        image.onload =
+            () => {
 
-        };
+                ctx.drawImage(
+                    image,
+                    0,
+                    0
+                );
+            };
+
 
         image.src =
             oldData;
@@ -868,12 +1284,15 @@ function initializeCanvas() {
         notebookPage.offsetHeight ||
         700;
 
+
     canvas.width =
         notebookPage.clientWidth ||
         1000;
 
+
     canvas.height =
         height;
+
 
     canvas.style.width =
         "100%";
@@ -881,14 +1300,16 @@ function initializeCanvas() {
     canvas.style.height =
         "100%";
 
+
     setupCanvas();
 }
+
 
 initializeCanvas();
 
 
 // ============================================================
-// SAVE CANVAS STATE
+// SAVE STATE
 // ============================================================
 
 function saveState() {
@@ -897,6 +1318,7 @@ function saveState() {
         canvas.toDataURL()
     );
 
+
     if (
         undoStack.length >
         MAX_HISTORY
@@ -904,6 +1326,7 @@ function saveState() {
 
         undoStack.shift();
     }
+
 
     redoStack = [];
 }
@@ -927,26 +1350,32 @@ function restoreCanvas(data) {
         return;
     }
 
+
     const image =
         new Image();
 
-    image.onload = () => {
 
-        ctx.clearRect(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
+    image.onload =
+        () => {
 
-        ctx.drawImage(
-            image,
-            0,
-            0
-        );
+            ctx.clearRect(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
 
-        setupCanvas();
-    };
+
+            ctx.drawImage(
+                image,
+                0,
+                0
+            );
+
+
+            setupCanvas();
+        };
+
 
     image.src =
         data;
@@ -954,13 +1383,14 @@ function restoreCanvas(data) {
 
 
 // ============================================================
-// MOUSE / TOUCH POSITION
+// MOUSE POSITION
 // ============================================================
 
 function getMousePosition(e) {
 
     const rect =
         canvas.getBoundingClientRect();
+
 
     return {
 
@@ -971,7 +1401,6 @@ function getMousePosition(e) {
         y:
             (e.clientY - rect.top) *
             (canvas.height / rect.height)
-
     };
 }
 
@@ -992,9 +1421,9 @@ function setActiveTool(button) {
                 btn.classList.remove(
                     "active-tool"
                 );
-
             }
         );
+
 
     if (button) {
 
@@ -1006,7 +1435,7 @@ function setActiveTool(button) {
 
 
 // ============================================================
-// TOOL HELPERS
+// ACTIVATE TOOL
 // ============================================================
 
 function activateTool(
@@ -1018,9 +1447,11 @@ function activateTool(
     currentTool =
         tool;
 
+
     setActiveTool(
         button
     );
+
 
     canvas.style.cursor =
         cursor ||
@@ -1043,7 +1474,6 @@ if (drawBtn) {
                 drawBtn,
                 "crosshair"
             );
-
         }
     );
 }
@@ -1064,7 +1494,6 @@ if (highlighterBtn) {
                 highlighterBtn,
                 "crosshair"
             );
-
         }
     );
 }
@@ -1085,7 +1514,6 @@ if (lightPenBtn) {
                 lightPenBtn,
                 "crosshair"
             );
-
         }
     );
 }
@@ -1106,7 +1534,6 @@ if (eraserBtn) {
                 eraserBtn,
                 "crosshair"
             );
-
         }
     );
 }
@@ -1127,7 +1554,6 @@ if (selectTool) {
                 selectTool,
                 "default"
             );
-
         }
     );
 }
@@ -1148,11 +1574,14 @@ function startDrawing(e) {
         return;
     }
 
+
     isDrawing =
         true;
 
+
     const position =
         getMousePosition(e);
+
 
     lastX =
         position.x;
@@ -1160,16 +1589,18 @@ function startDrawing(e) {
     lastY =
         position.y;
 
+
     currentStroke = [
 
         {
             x: lastX,
             y: lastY
         }
-
     ];
 
+
     saveState();
+
 
     ctx.beginPath();
 
@@ -1190,8 +1621,10 @@ function draw(e) {
         return;
     }
 
+
     const position =
         getMousePosition(e);
+
 
     const currentX =
         position.x;
@@ -1199,17 +1632,18 @@ function draw(e) {
     const currentY =
         position.y;
 
+
     currentStroke.push({
 
-        x: currentX,
-        y: currentY
+        x:
+            currentX,
 
+        y:
+            currentY
     });
 
 
-    // --------------------------------------------------------
     // PEN
-    // --------------------------------------------------------
 
     if (
         currentTool === "pen"
@@ -1233,9 +1667,7 @@ function draw(e) {
     }
 
 
-    // --------------------------------------------------------
     // HIGHLIGHTER
-    // --------------------------------------------------------
 
     else if (
         currentTool ===
@@ -1260,9 +1692,7 @@ function draw(e) {
     }
 
 
-    // --------------------------------------------------------
     // LIGHT PEN
-    // --------------------------------------------------------
 
     else if (
         currentTool ===
@@ -1287,9 +1717,7 @@ function draw(e) {
     }
 
 
-    // --------------------------------------------------------
     // ERASER
-    // --------------------------------------------------------
 
     else if (
         currentTool ===
@@ -1310,28 +1738,25 @@ function draw(e) {
     }
 
 
-    // --------------------------------------------------------
-    // DRAW
-    // --------------------------------------------------------
-
     ctx.beginPath();
+
 
     ctx.moveTo(
         lastX,
         lastY
     );
 
+
     ctx.lineTo(
         currentX,
         currentY
     );
 
+
     ctx.stroke();
 
 
-    // --------------------------------------------------------
-    // SEND TO OTHER USERS
-    // --------------------------------------------------------
+    // SEND DRAWING
 
     if (
         socket &&
@@ -1342,11 +1767,17 @@ function draw(e) {
             "canvas-draw",
             {
 
-                x1: lastX,
-                y1: lastY,
+                x1:
+                    lastX,
 
-                x2: currentX,
-                y2: currentY,
+                y1:
+                    lastY,
+
+                x2:
+                    currentX,
+
+                y2:
+                    currentY,
 
                 color:
                     colorPicker?.value ||
@@ -1360,7 +1791,6 @@ function draw(e) {
 
                 tool:
                     currentTool
-
             }
         );
     }
@@ -1388,14 +1818,18 @@ if (socket) {
                 return;
             }
 
+
             ctx.save();
 
+
             ctx.beginPath();
+
 
             ctx.moveTo(
                 data.x1,
                 data.y1
             );
+
 
             ctx.lineTo(
                 data.x2,
@@ -1416,8 +1850,8 @@ if (socket) {
 
                 ctx.lineWidth =
                     (data.lineWidth || 4) * 2;
-
             }
+
 
             else if (
                 data.tool ===
@@ -1432,8 +1866,8 @@ if (socket) {
 
                 ctx.lineWidth =
                     (data.lineWidth || 4) * 3;
-
             }
+
 
             else if (
                 data.tool ===
@@ -1448,8 +1882,8 @@ if (socket) {
 
                 ctx.lineWidth =
                     (data.lineWidth || 4) * 1.5;
-
             }
+
 
             else {
 
@@ -1461,7 +1895,6 @@ if (socket) {
 
                 ctx.lineWidth =
                     data.lineWidth || 4;
-
             }
 
 
@@ -1469,16 +1902,18 @@ if (socket) {
                 data.color ||
                 "#172033";
 
+
             ctx.lineCap =
                 "round";
 
             ctx.lineJoin =
                 "round";
 
+
             ctx.stroke();
 
-            ctx.restore();
 
+            ctx.restore();
         }
     );
 }
@@ -1494,10 +1929,13 @@ function stopDrawing() {
         return;
     }
 
+
     isDrawing =
         false;
 
+
     ctx.closePath();
+
 
     if (
         currentTool ===
@@ -1509,11 +1947,14 @@ function stopDrawing() {
         );
     }
 
+
     ctx.globalAlpha =
         1;
 
+
     ctx.globalCompositeOperation =
         "source-over";
+
 
     currentStroke =
         [];
@@ -1524,9 +1965,7 @@ function stopDrawing() {
 // LIGHT PEN
 // ============================================================
 
-function createLightPenStroke(
-    points
-) {
+function createLightPenStroke(points) {
 
     if (
         !points ||
@@ -1536,16 +1975,19 @@ function createLightPenStroke(
         return;
     }
 
+
     const tempCanvas =
         document.createElement(
             "canvas"
         );
+
 
     tempCanvas.width =
         canvas.width;
 
     tempCanvas.height =
         canvas.height;
+
 
     tempCanvas.style.position =
         "absolute";
@@ -1572,15 +2014,18 @@ function createLightPenStroke(
     const tempCtx =
         tempCanvas.getContext("2d");
 
+
     tempCtx.lineCap =
         "round";
 
     tempCtx.lineJoin =
         "round";
 
+
     tempCtx.strokeStyle =
         colorPicker?.value ||
         "#ffffff";
+
 
     tempCtx.lineWidth =
         Number(
@@ -1588,8 +2033,10 @@ function createLightPenStroke(
             4
         ) * 2;
 
+
     tempCtx.globalAlpha =
         0.48;
+
 
     tempCtx.beginPath();
 
@@ -1611,19 +2058,17 @@ function createLightPenStroke(
                     point.y
                 );
             }
-
         }
     );
 
 
     tempCtx.stroke();
 
+
     notebookPage.appendChild(
         tempCanvas
     );
 
-
-    // Stay visible for 2 seconds
 
     setTimeout(
         () => {
@@ -1685,9 +2130,11 @@ canvas.addEventListener(
 
         e.preventDefault();
 
+
         if (!e.touches[0]) {
             return;
         }
+
 
         startDrawing(
             e.touches[0]
@@ -1706,9 +2153,11 @@ canvas.addEventListener(
 
         e.preventDefault();
 
+
         if (!e.touches[0]) {
             return;
         }
+
 
         draw(
             e.touches[0]
@@ -1757,7 +2206,6 @@ if (colorPicker) {
                     "crosshair"
                 );
             }
-
         }
     );
 }
@@ -1780,19 +2228,22 @@ if (undoBtn) {
                 return;
             }
 
+
             redoStack.push(
                 canvas.toDataURL()
             );
 
+
             const previous =
                 undoStack.pop();
+
 
             restoreCanvas(
                 previous
             );
 
-            saveCurrentPage();
 
+            saveCurrentPage();
         }
     );
 }
@@ -1815,19 +2266,22 @@ if (redoBtn) {
                 return;
             }
 
+
             undoStack.push(
                 canvas.toDataURL()
             );
 
+
             const next =
                 redoStack.pop();
+
 
             restoreCanvas(
                 next
             );
 
-            saveCurrentPage();
 
+            saveCurrentPage();
         }
     );
 }
@@ -1845,6 +2299,7 @@ if (clearBtn) {
 
             saveState();
 
+
             ctx.clearRect(
                 0,
                 0,
@@ -1852,8 +2307,8 @@ if (clearBtn) {
                 canvas.height
             );
 
-            saveCurrentPage();
 
+            saveCurrentPage();
         }
     );
 }
@@ -1872,8 +2327,10 @@ function saveCurrentPage() {
         return;
     }
 
+
     pages[currentPage].canvasData =
         canvas.toDataURL();
+
 
     pages[currentPage].height =
         notebookPage.offsetHeight;
@@ -1894,10 +2351,13 @@ function loadPage(index) {
         return;
     }
 
+
     saveCurrentPage();
+
 
     currentPage =
         index;
+
 
     const page =
         pages[currentPage];
@@ -1906,18 +2366,22 @@ function loadPage(index) {
     notebookPage.style.height =
         `${page.height}px`;
 
+
     canvas.width =
         notebookPage.clientWidth ||
         1000;
 
+
     canvas.height =
         page.height;
+
 
     canvas.style.width =
         "100%";
 
     canvas.style.height =
         "100%";
+
 
     setupCanvas();
 
@@ -1935,16 +2399,19 @@ function loadPage(index) {
         const image =
             new Image();
 
-        image.onload = () => {
 
-            ctx.drawImage(
-                image,
-                0,
-                0
-            );
+        image.onload =
+            () => {
 
-            setupCanvas();
-        };
+                ctx.drawImage(
+                    image,
+                    0,
+                    0
+                );
+
+                setupCanvas();
+            };
+
 
         image.src =
             page.canvasData;
@@ -1981,25 +2448,33 @@ if (addPageBtn) {
 
             saveCurrentPage();
 
+
             pages.push({
 
-                canvasData: null,
-                height: 700
+                canvasData:
+                    null,
 
+                height:
+                    700
             });
+
 
             currentPage =
                 pages.length - 1;
 
+
             notebookPage.style.height =
                 "700px";
+
 
             canvas.width =
                 notebookPage.clientWidth ||
                 1000;
 
+
             canvas.height =
                 700;
+
 
             ctx.clearRect(
                 0,
@@ -2008,10 +2483,11 @@ if (addPageBtn) {
                 canvas.height
             );
 
+
             setupCanvas();
 
-            updatePageNumber();
 
+            updatePageNumber();
         }
     );
 }
@@ -2035,7 +2511,6 @@ if (previousPage) {
                     currentPage - 1
                 );
             }
-
         }
     );
 }
@@ -2064,7 +2539,6 @@ if (nextPage) {
 
                 addPageBtn.click();
             }
-
         }
     );
 }
@@ -2082,8 +2556,10 @@ if (extendPageBtn) {
 
             saveCurrentPage();
 
+
             const oldHeight =
                 notebookPage.offsetHeight;
+
 
             const newHeight =
                 oldHeight + 500;
@@ -2093,6 +2569,7 @@ if (extendPageBtn) {
                 document.createElement(
                     "canvas"
                 );
+
 
             oldCanvas.width =
                 canvas.width;
@@ -2106,6 +2583,7 @@ if (extendPageBtn) {
                     "2d"
                 );
 
+
             oldCtx.drawImage(
                 canvas,
                 0,
@@ -2116,18 +2594,22 @@ if (extendPageBtn) {
             notebookPage.style.height =
                 `${newHeight}px`;
 
+
             canvas.width =
                 notebookPage.clientWidth ||
                 1000;
 
+
             canvas.height =
                 newHeight;
+
 
             canvas.style.width =
                 "100%";
 
             canvas.style.height =
                 "100%";
+
 
             setupCanvas();
 
@@ -2142,9 +2624,9 @@ if (extendPageBtn) {
             pages[currentPage].height =
                 newHeight;
 
+
             pages[currentPage].canvasData =
                 canvas.toDataURL();
-
         }
     );
 }
@@ -2162,8 +2644,10 @@ function updateZoom() {
             `${zoom}%`;
     }
 
+
     notebookPage.style.transform =
         `scale(${zoom / 100})`;
+
 
     notebookPage.style.transformOrigin =
         "top center";
@@ -2182,8 +2666,8 @@ if (zoomIn) {
                     zoom + 10
                 );
 
-            updateZoom();
 
+            updateZoom();
         }
     );
 }
@@ -2201,8 +2685,8 @@ if (zoomOut) {
                     zoom - 10
                 );
 
-            updateZoom();
 
+            updateZoom();
         }
     );
 }
@@ -2223,7 +2707,6 @@ if (textBtn) {
                 textBtn,
                 "text"
             );
-
         }
     );
 }
@@ -2245,13 +2728,16 @@ canvas.addEventListener(
             return;
         }
 
+
         const position =
             getMousePosition(e);
+
 
         const text =
             prompt(
                 "Enter your text:"
             );
+
 
         if (
             !text ||
@@ -2261,18 +2747,19 @@ canvas.addEventListener(
             return;
         }
 
+
         createTextObject(
             text.trim(),
             position.x,
             position.y
         );
 
+
         activateTool(
             "select",
             selectTool,
             "default"
         );
-
     }
 );
 
@@ -2291,51 +2778,66 @@ function createTextObject(
         return;
     }
 
+
     const element =
         document.createElement(
             "div"
         );
 
+
     element.textContent =
         text;
+
 
     element.style.position =
         "absolute";
 
+
     element.style.left =
         `${x}px`;
+
 
     element.style.top =
         `${y}px`;
 
+
     element.style.fontSize =
         "22px";
 
+
     element.style.fontFamily =
         "Poppins, sans-serif";
+
 
     element.style.color =
         colorPicker?.value ||
         "#172033";
 
+
     element.style.background =
         "transparent";
+
 
     element.style.padding =
         "4px 8px";
 
+
     element.style.cursor =
         "move";
+
 
     element.style.pointerEvents =
         "auto";
 
+
     element.dataset.type =
         "text";
+
 
     objectLayer.appendChild(
         element
     );
+
 
     makeDraggable(
         element
@@ -2347,9 +2849,7 @@ function createTextObject(
 // DRAG OBJECT
 // ============================================================
 
-function makeDraggable(
-    element
-) {
+function makeDraggable(element) {
 
     let dragging =
         false;
@@ -2373,24 +2873,28 @@ function makeDraggable(
                 return;
             }
 
+
             dragging =
                 true;
 
+
             const rect =
                 element.getBoundingClientRect();
+
 
             offsetX =
                 e.clientX -
                 rect.left;
 
+
             offsetY =
                 e.clientY -
                 rect.top;
 
+
             e.stopPropagation();
 
             e.preventDefault();
-
         }
     );
 
@@ -2403,19 +2907,21 @@ function makeDraggable(
                 return;
             }
 
+
             const parentRect =
                 objectLayer.getBoundingClientRect();
+
 
             element.style.left =
                 `${e.clientX -
                     parentRect.left -
                     offsetX}px`;
 
+
             element.style.top =
                 `${e.clientY -
                     parentRect.top -
                     offsetY}px`;
-
         }
     );
 
@@ -2426,7 +2932,6 @@ function makeDraggable(
 
             dragging =
                 false;
-
         }
     );
 }
@@ -2447,7 +2952,6 @@ if (shapeBtn) {
                 shapeBtn,
                 "crosshair"
             );
-
         }
     );
 }
@@ -2469,9 +2973,9 @@ canvas.addEventListener(
             return;
         }
 
+
         shapeStart =
             getMousePosition(e);
-
     }
 );
 
@@ -2489,8 +2993,10 @@ canvas.addEventListener(
             return;
         }
 
+
         const end =
             getMousePosition(e);
+
 
         const x =
             Math.min(
@@ -2498,17 +3004,20 @@ canvas.addEventListener(
                 end.x
             );
 
+
         const y =
             Math.min(
                 shapeStart.y,
                 end.y
             );
 
+
         const width =
             Math.abs(
                 end.x -
                 shapeStart.x
             );
+
 
         const height =
             Math.abs(
@@ -2530,15 +3039,16 @@ canvas.addEventListener(
             );
         }
 
+
         shapeStart =
             null;
+
 
         activateTool(
             "select",
             selectTool,
             "default"
         );
-
     }
 );
 
@@ -2558,25 +3068,32 @@ function createShape(
         return;
     }
 
+
     const shape =
         document.createElement(
             "div"
         );
 
+
     shape.style.position =
         "absolute";
+
 
     shape.style.left =
         `${x}px`;
 
+
     shape.style.top =
         `${y}px`;
+
 
     shape.style.width =
         `${width}px`;
 
+
     shape.style.height =
         `${height}px`;
+
 
     shape.style.border =
         `2px solid ${
@@ -2584,29 +3101,32 @@ function createShape(
             "#172033"
         }`;
 
+
     shape.style.borderRadius =
         "8px";
+
 
     shape.style.boxSizing =
         "border-box";
 
+
     shape.style.pointerEvents =
         "auto";
 
+
     shape.style.cursor =
         "move";
+
 
     objectLayer.appendChild(
         shape
     );
 
+
     makeDraggable(
         shape
     );
 }
-
-
-
 
 
 // ============================================================
@@ -2624,8 +3144,10 @@ if (imageBtn) {
                     "input"
                 );
 
+
             input.type =
                 "file";
+
 
             input.accept =
                 "image/*";
@@ -2638,12 +3160,15 @@ if (imageBtn) {
                     const file =
                         input.files?.[0];
 
+
                     if (!file) {
                         return;
                     }
 
+
                     const reader =
                         new FileReader();
+
 
                     reader.onload =
                         event => {
@@ -2651,18 +3176,17 @@ if (imageBtn) {
                             createImageObject(
                                 event.target.result
                             );
-
                         };
+
 
                     reader.readAsDataURL(
                         file
                     );
-
                 }
             );
 
-            input.click();
 
+            input.click();
         }
     );
 }
@@ -2672,52 +3196,63 @@ if (imageBtn) {
 // CREATE IMAGE
 // ============================================================
 
-function createImageObject(
-    src
-) {
+function createImageObject(src) {
 
     if (!objectLayer) {
         return;
     }
+
 
     const image =
         document.createElement(
             "img"
         );
 
+
     image.src =
         src;
+
 
     image.style.position =
         "absolute";
 
+
     image.style.left =
         "150px";
+
 
     image.style.top =
         "200px";
 
+
     image.style.width =
         "250px";
+
 
     image.style.maxWidth =
         "400px";
 
+
     image.style.borderRadius =
         "10px";
+
 
     image.style.boxShadow =
         "0 5px 20px rgba(0,0,0,0.12)";
 
+
     image.style.cursor =
         "move";
+
 
     image.style.pointerEvents =
         "auto";
 
+
     objectLayer.appendChild(
         image
     );
+
 
     makeDraggable(
         image
@@ -2743,6 +3278,7 @@ if (tableBtn) {
                     )
                 );
 
+
             const columns =
                 Number(
                     prompt(
@@ -2762,11 +3298,11 @@ if (tableBtn) {
                 return;
             }
 
+
             createTable(
                 rows,
                 columns
             );
-
         }
     );
 }
@@ -2785,28 +3321,36 @@ function createTable(
         return;
     }
 
+
     const table =
         document.createElement(
             "table"
         );
 
+
     table.style.position =
         "absolute";
+
 
     table.style.left =
         "200px";
 
+
     table.style.top =
         "300px";
+
 
     table.style.borderCollapse =
         "collapse";
 
+
     table.style.background =
         "#ffffff";
 
+
     table.style.pointerEvents =
         "auto";
+
 
     table.style.cursor =
         "move";
@@ -2821,6 +3365,7 @@ function createTable(
         const row =
             table.insertRow();
 
+
         for (
             let c = 0;
             c < columns;
@@ -2830,17 +3375,22 @@ function createTable(
             const cell =
                 row.insertCell();
 
+
             cell.textContent =
                 "Cell";
+
 
             cell.contentEditable =
                 "true";
 
+
             cell.style.border =
                 "1px solid #999";
 
+
             cell.style.padding =
                 "10px 15px";
+
 
             cell.style.minWidth =
                 "70px";
@@ -2851,6 +3401,7 @@ function createTable(
     objectLayer.appendChild(
         table
     );
+
 
     makeDraggable(
         table
@@ -2870,7 +3421,7 @@ document.addEventListener(
             e.key.toLowerCase();
 
 
-        // Ctrl + Z
+        // CTRL + Z
 
         if (
             e.ctrlKey &&
@@ -2886,7 +3437,7 @@ document.addEventListener(
         }
 
 
-        // Ctrl + Y
+        // CTRL + Y
 
         if (
             e.ctrlKey &&
@@ -2901,7 +3452,7 @@ document.addEventListener(
         }
 
 
-        // Ctrl + Shift + Z
+        // CTRL + SHIFT + Z
 
         if (
             e.ctrlKey &&
@@ -2917,10 +3468,9 @@ document.addEventListener(
         }
 
 
-        // Don't trigger shortcuts while typing
-
         const target =
             e.target;
+
 
         if (
             target &&
@@ -2939,29 +3489,25 @@ document.addEventListener(
         }
 
 
-        // P = Pen
+        // P = PEN
 
         if (key === "p") {
-
             drawBtn?.click();
         }
 
 
-        // E = Eraser
+        // E = ERASER
 
         if (key === "e") {
-
             eraserBtn?.click();
         }
 
 
-        // H = Highlighter
+        // H = HIGHLIGHTER
 
         if (key === "h") {
-
             highlighterBtn?.click();
         }
-
     }
 );
 
@@ -2995,10 +3541,12 @@ function saveDocument() {
 
     saveCurrentPage();
 
+
     const titleInput =
         document.getElementById(
             "documentTitle"
         );
+
 
     const documentData = {
 
@@ -3017,14 +3565,18 @@ function saveDocument() {
 
         canvasStyle:
             currentCanvasStyle
-
     };
 
-    const documentKey = getDocumentKey();
+
+    const documentKey =
+        getDocumentKey();
+
 
     localStorage.setItem(
         documentKey,
-        JSON.stringify(documentData)
+        JSON.stringify(
+            documentData
+        )
     );
 }
 
@@ -3035,10 +3587,15 @@ function saveDocument() {
 
 function loadDocument() {
 
-    const documentKey = getDocumentKey();
+    const documentKey =
+        getDocumentKey();
+
 
     const saved =
-        localStorage.getItem(documentKey);
+        localStorage.getItem(
+            documentKey
+        );
+
 
     if (!saved) {
         return;
@@ -3094,8 +3651,12 @@ function loadDocument() {
                 );
         }
 
+
         if (data.canvasStyle) {
-            applyCanvasStyle(data.canvasStyle);
+
+            applyCanvasStyle(
+                data.canvasStyle
+            );
         }
 
 
@@ -3122,19 +3683,24 @@ function loadDocument() {
         notebookPage.style.height =
             `${page.height || 700}px`;
 
+
         canvas.width =
             notebookPage.clientWidth ||
             1000;
+
 
         canvas.height =
             page.height ||
             700;
 
+
         canvas.style.width =
             "100%";
 
+
         canvas.style.height =
             "100%";
+
 
         setupCanvas();
 
@@ -3152,16 +3718,20 @@ function loadDocument() {
             const image =
                 new Image();
 
-            image.onload = () => {
 
-                ctx.drawImage(
-                    image,
-                    0,
-                    0
-                );
+            image.onload =
+                () => {
 
-                setupCanvas();
-            };
+                    ctx.drawImage(
+                        image,
+                        0,
+                        0
+                    );
+
+
+                    setupCanvas();
+                };
+
 
             image.src =
                 page.canvasData;

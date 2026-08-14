@@ -4,12 +4,8 @@ const { Server } = require("socket.io");
 const path = require("path");
 
 const app = express();
-
-const server =
-    http.createServer(app);
-
-const io =
-    new Server(server);
+const server = http.createServer(app);
+const io = new Server(server);
 
 
 // ============================================================
@@ -30,7 +26,7 @@ app.get("/", (req, res) => {
 
 
 // ============================================================
-// SERVE STATIC FILES
+// STATIC FILES
 // ============================================================
 
 app.use(
@@ -63,19 +59,31 @@ io.on("connection", (socket) => {
         "join-room",
         (roomId, username) => {
 
-            // Validate room ID
+            // ------------------------------------------------
+            // VALIDATE ROOM
+            // ------------------------------------------------
+
             if (
                 !roomId ||
+                typeof roomId !== "string" ||
                 !roomId.trim()
             ) {
+
+                console.log(
+                    "Join rejected: invalid room"
+                );
 
                 return;
             }
 
 
-            // Validate username
+            // ------------------------------------------------
+            // VALIDATE USERNAME
+            // ------------------------------------------------
+
             if (
                 !username ||
+                typeof username !== "string" ||
                 !username.trim()
             ) {
 
@@ -87,11 +95,17 @@ io.on("connection", (socket) => {
             }
 
 
+            roomId =
+                roomId.trim();
+
             username =
                 username.trim();
 
 
-            // Store user information
+            // ------------------------------------------------
+            // STORE USER INFO
+            // ------------------------------------------------
+
             socket.username =
                 username;
 
@@ -99,8 +113,13 @@ io.on("connection", (socket) => {
                 roomId;
 
 
-            // Join room
-            socket.join(roomId);
+            // ------------------------------------------------
+            // JOIN SOCKET.IO ROOM
+            // ------------------------------------------------
+
+            socket.join(
+                roomId
+            );
 
 
             console.log(
@@ -108,21 +127,57 @@ io.on("connection", (socket) => {
             );
 
 
-            // Get users currently inside room
+            // ------------------------------------------------
+            // GET CURRENT USERS
+            // ------------------------------------------------
+
             const room =
                 io.sockets.adapter.rooms.get(
                     roomId
                 );
 
 
-            const userCount =
+            const users =
                 room
-                    ? room.size
-                    : 1;
+                    ? [...room]
+                        .map(
+                            socketId => {
+
+                                const userSocket =
+                                    io.sockets.sockets.get(
+                                        socketId
+                                    );
+
+                                return userSocket
+                                    ?.username;
+                            }
+                        )
+                        .filter(Boolean)
+                    : [];
+
+
+            const userCount =
+                users.length;
+
+
+            console.log(
+                "Room:",
+                roomId
+            );
+
+            console.log(
+                "Users:",
+                users
+            );
+
+            console.log(
+                "User count:",
+                userCount
+            );
 
 
             // =================================================
-            // TELL CURRENT USER
+            // SEND ROOM DATA TO CURRENT USER
             // =================================================
 
             socket.emit(
@@ -136,17 +191,21 @@ io.on("connection", (socket) => {
                         username,
 
                     userCount:
-                        userCount
+                        userCount,
 
+                    users:
+                        users
                 }
             );
 
 
             // =================================================
-            // TELL OTHER USERS
+            // SEND UPDATED USERS TO OTHER USERS
             // =================================================
 
-            socket.to(roomId).emit(
+            socket.to(
+                roomId
+            ).emit(
                 "user-joined",
                 {
 
@@ -154,8 +213,10 @@ io.on("connection", (socket) => {
                         username,
 
                     userCount:
-                        userCount
+                        userCount,
 
+                    users:
+                        users
                 }
             );
 
@@ -163,15 +224,19 @@ io.on("connection", (socket) => {
     );
 
 
-    // =========================================================
+    // ========================================================
     // CANVAS DRAW SYNC
-    // =========================================================
+    // ========================================================
 
     socket.on(
         "canvas-draw",
         (data) => {
 
-            if (!socket.roomId) {
+            if (
+                !socket.roomId ||
+                !data
+            ) {
+
                 return;
             }
 
@@ -187,9 +252,9 @@ io.on("connection", (socket) => {
     );
 
 
-    // =========================================================
+    // ========================================================
     // USER DISCONNECT
-    // =========================================================
+    // ========================================================
 
     socket.on(
         "disconnect",
@@ -201,36 +266,93 @@ io.on("connection", (socket) => {
             );
 
 
-            if (!socket.roomId) {
+            if (
+                !socket.roomId
+            ) {
+
                 return;
             }
 
 
+            const roomId =
+                socket.roomId;
+
+
+            const username =
+                socket.username ||
+                "Unknown User";
+
+
+            // ------------------------------------------------
+            // IMPORTANT
+            // Socket.IO removes the socket from the room
+            // before disconnect event is handled.
+            // ------------------------------------------------
+
             const room =
                 io.sockets.adapter.rooms.get(
-                    socket.roomId
+                    roomId
                 );
 
 
-            const userCount =
+            const users =
                 room
-                    ? room.size
-                    : 0;
+                    ? [...room]
+                        .map(
+                            socketId => {
 
+                                const userSocket =
+                                    io.sockets.sockets.get(
+                                        socketId
+                                    );
+
+                                return userSocket
+                                    ?.username;
+                            }
+                        )
+                        .filter(Boolean)
+                    : [];
+
+
+            const userCount =
+                users.length;
+
+
+            console.log(
+                `${username} left room ${roomId}`
+            );
+
+
+            console.log(
+                "Remaining users:",
+                users
+            );
+
+
+            console.log(
+                "Remaining user count:",
+                userCount
+            );
+
+
+            // ------------------------------------------------
+            // INFORM REMAINING USERS
+            // ------------------------------------------------
 
             socket.to(
-                socket.roomId
+                roomId
             ).emit(
                 "user-left",
                 {
 
                     username:
-                        socket.username ||
-                        "Unknown User",
+                        username,
 
                     userCount:
-                        userCount
+                        userCount,
 
+                    users:
+                        users
                 }
             );
 
