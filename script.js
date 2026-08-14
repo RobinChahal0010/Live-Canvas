@@ -296,77 +296,6 @@ if (
 }
 
 
-// ============================================================
-// THEME SYSTEM
-// ============================================================
-
-const themeButtons =
-    document.querySelectorAll(
-        ".theme-color"
-    );
-
-const themeStatus =
-    document.getElementById(
-        "themeStatus"
-    );
-
-
-function applyTheme(theme) {
-
-    document.body.classList.remove(
-        "dark",
-        "purple",
-        "green",
-        "ocean"
-    );
-
-    if (theme) {
-
-        document.body.classList.add(
-            theme
-        );
-    }
-
-    if (themeStatus) {
-
-        themeStatus.textContent =
-            theme || "Light";
-    }
-
-    localStorage.setItem(
-        "theme",
-        theme || ""
-    );
-}
-
-
-themeButtons.forEach(
-    button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-
-                const theme =
-                    button.dataset.theme || "";
-
-                applyTheme(theme);
-
-            }
-        );
-
-    }
-);
-
-
-const savedTheme =
-    localStorage.getItem("theme");
-
-if (savedTheme !== null) {
-
-    applyTheme(savedTheme);
-}
-
 
 // ============================================================
 // HEADER BUTTONS
@@ -417,6 +346,65 @@ if (logoutBtn) {
 
             window.location.href =
                 "login.html";
+
+        }
+    );
+}
+// ============================================================
+// SHARE ROOM
+// ============================================================
+
+const shareBtn =
+    document.getElementById("shareBtn");
+
+if (shareBtn) {
+
+    shareBtn.addEventListener(
+        "click",
+        async () => {
+
+            if (!roomId) {
+
+                alert(
+                    "You are currently in Solo mode."
+                );
+
+                return;
+            }
+
+            const shareText =
+                `Join my LiveCanvas room!\n\nRoom Code: ${roomId}`;
+
+            try {
+
+                if (navigator.share) {
+
+                    await navigator.share({
+
+                        title: "LiveCanvas Room",
+
+                        text: shareText
+
+                    });
+
+                } else {
+
+                    await navigator.clipboard.writeText(
+                        roomId
+                    );
+
+                    alert(
+                        `Room code copied!\n\n${roomId}`
+                    );
+                }
+
+            } catch (error) {
+
+                console.log(
+                    "Share cancelled."
+                );
+
+            }
 
         }
     );
@@ -2618,107 +2606,7 @@ function createShape(
 }
 
 
-// ============================================================
-// STICKY NOTE
-// ============================================================
 
-if (stickyBtn) {
-
-    stickyBtn.addEventListener(
-        "click",
-        () => {
-
-            createStickyNote(
-                150,
-                150
-            );
-
-            activateTool(
-                "select",
-                selectTool,
-                "default"
-            );
-
-        }
-    );
-}
-
-
-function createStickyNote(
-    x,
-    y
-) {
-
-    if (!objectLayer) {
-        return;
-    }
-
-    const note =
-        document.createElement(
-            "div"
-        );
-
-    note.className =
-        "live-sticky-note";
-
-    note.contentEditable =
-        "true";
-
-    note.textContent =
-        "Write your note...";
-
-    note.style.position =
-        "absolute";
-
-    note.style.left =
-        `${x}px`;
-
-    note.style.top =
-        `${y}px`;
-
-    note.style.width =
-        "180px";
-
-    note.style.minHeight =
-        "130px";
-
-    note.style.padding =
-        "18px";
-
-    note.style.background =
-        "#fff1a8";
-
-    note.style.boxShadow =
-        "0 8px 20px rgba(0,0,0,0.12)";
-
-    note.style.borderRadius =
-        "5px";
-
-    note.style.fontFamily =
-        "Poppins, sans-serif";
-
-    note.style.color =
-        "#4b4630";
-
-    note.style.outline =
-        "none";
-
-    note.style.cursor =
-        "move";
-
-    note.style.pointerEvents =
-        "auto";
-
-    objectLayer.appendChild(
-        note
-    );
-
-    makeDraggable(
-        note
-    );
-
-    note.focus();
-}
 
 
 // ============================================================
