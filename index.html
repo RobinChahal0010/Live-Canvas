@@ -5,30 +5,37 @@
 
     <meta charset="UTF-8">
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
 
     <title>LiveCanvas</title>
 
-    <link rel="icon" type="image/png" href="assets/icon.png">
+    <link
+        rel="icon"
+        type="image/png"
+        href="assets/icon.png">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css">
-
+    <link
+        rel="stylesheet"
+        href="style.css">
 
     <!-- Google Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com">
 
-    <link rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossorigin>
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin>
 
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
 
-
-    <!-- Icons -->
+    <!-- Font Awesome -->
     <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
@@ -49,7 +56,10 @@
 
     <div class="logo">
 
-        <img src="assets/logo_bg.png" alt="LiveCanvas" class="logo-img">
+        <img
+            src="assets/logo_bg.png"
+            alt="LiveCanvas"
+            class="logo-img">
 
         <h2>LiveCanvas</h2>
 
@@ -60,54 +70,9 @@
 
     <div class="header-right">
 
-
-        <!-- THEME PICKER -->
-
-        <div class="theme-picker">
-
-            <div
-                class="theme-color blue"
-                data-theme=""
-                title="Light">
-            </div>
-
-
-            <div
-                class="theme-color dark-theme"
-                data-theme="dark"
-                title="Dark">
-            </div>
-
-
-            <div
-                class="theme-color purple"
-                data-theme="purple"
-                title="Purple">
-            </div>
-
-
-            <div
-                class="theme-color green"
-                data-theme="green"
-                title="Green">
-            </div>
-
-
-            <div
-                class="theme-color ocean"
-                data-theme="ocean"
-                title="Ocean">
-            </div>
-
-        </div>
-
-
-        <!-- AUTHENTICATION -->
-
         <div class="auth-section">
 
             <span id="welcomeUser"></span>
-
 
             <button id="loginHeaderBtn">
 
@@ -137,12 +102,9 @@
 
         </div>
 
-
     </div>
 
 </header>
-
-
 
 
 
@@ -154,342 +116,440 @@
 
 
     <!-- =================================================
-         LEFT SIDEBAR
-    ================================================== -->
-
-    <aside class="sidebar">
-
-
-        <!-- STICKY NOTES -->
-
-        <div class="card">
-
-            <h3>
-
-                <i class="fa-solid fa-note-sticky"></i>
-
-                Sticky Notes
-
-            </h3>
-
-
-            <button id="addNoteBtn">
-
-                + Add Note
-
-            </button>
-
-
-            <input
-                type="text"
-                id="searchNote"
-                placeholder="Search Notes">
-
-
-            <div id="notesContainer">
-
-            </div>
-
-        </div>
-
-
-
-        <!-- STATISTICS -->
-
-        <div class="card">
-
-            <h3>
-
-                <i class="fa-solid fa-chart-column"></i>
-
-                Statistics
-
-            </h3>
-
-
-            <p>
-
-                Total Notes :
-
-                <span id="totalNotes">
-                    0
-                </span>
-
-            </p>
-
-
-            <p>
-
-                Canvas Saves :
-
-                <span id="saveCount">
-                    0
-                </span>
-
-            </p>
-
-
-            <p>
-
-                Theme :
-
-                <span id="themeStatus">
-                    Light
-                </span>
-
-            </p>
-
-        </div>
-
-
-    </aside>
-
-
-
-    <!-- =================================================
-         CANVAS
+         CANVAS SECTION
     ================================================== -->
 
     <section class="canvas-section">
 
-    <!-- TOP CANVAS HEADER -->
-    <div class="canvas-topbar">
 
-        <div class="document-info">
-            <span class="document-icon">
-                <i class="fa-solid fa-book-open"></i>
+        <!-- =================================================
+             CANVAS TOP BAR
+        ================================================== -->
+
+        <div class="canvas-topbar">
+
+
+            <!-- DOCUMENT INFO -->
+
+            <div class="document-info">
+
+                <span class="document-icon">
+
+                    <i class="fa-solid fa-book-open"></i>
+
+                </span>
+
+
+                <div>
+
+                    <input
+                        type="text"
+                        id="documentTitle"
+                        value=""
+                        placeholder="Board name">
+
+                    <small>
+                        LiveCanvas Document
+                    </small>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- COLLABORATORS -->
+
+            <div class="collaborators">
+
+                <span class="avatar purple">
+                    R
+                </span>
+
+                <span class="avatar pink">
+                    A
+                </span>
+
+                <span class="avatar orange">
+                    S
+                </span>
+
+                <span class="avatar more">
+                    +3
+                </span>
+
+
+                <!-- SHARE -->
+
+                <button
+                    class="share-btn"
+                    id="shareBtn"
+                    type="button">
+
+                    <i class="fa-solid fa-share-nodes"></i>
+
+                    Share
+
+                </button>
+
+
+                <!-- MORE -->
+
+                <button
+                    class="more-btn"
+                    type="button">
+
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- =================================================
+             CANVAS TOOLBAR
+        ================================================== -->
+
+        <div class="canvas-toolbar">
+
+
+            <!-- SELECT -->
+
+            <button
+                class="tool active-tool"
+                id="selectTool"
+                title="Select">
+
+                <i class="fa-solid fa-arrow-pointer"></i>
+
+            </button>
+
+
+
+            <!-- PEN -->
+
+            <button
+                class="tool"
+                id="drawBtn"
+                title="Pen">
+
+                <i class="fa-solid fa-pen"></i>
+
+            </button>
+
+
+
+            <!-- HIGHLIGHTER -->
+
+            <button
+                class="tool"
+                id="highlighterBtn"
+                title="Highlighter">
+
+                <i class="fa-solid fa-highlighter"></i>
+
+            </button>
+
+
+
+            <!-- LIGHT PEN -->
+
+            <button
+                class="tool"
+                id="lightPenBtn"
+                title="Light Pen">
+
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+
+            </button>
+
+
+
+            <!-- ERASER -->
+
+            <button
+                class="tool"
+                id="eraserBtn"
+                title="Eraser">
+
+                <i class="fa-solid fa-eraser"></i>
+
+            </button>
+
+
+
+            <div class="toolbar-divider"></div>
+
+
+
+            <!-- SHAPES -->
+
+            <button
+                class="tool"
+                id="shapeBtn"
+                title="Shapes">
+
+                <i class="fa-regular fa-square"></i>
+
+            </button>
+
+
+
+            <!-- TEXT -->
+
+            <button
+                class="tool"
+                id="textBtn"
+                title="Text">
+
+                <i class="fa-solid fa-t"></i>
+
+            </button>
+
+
+
+            <!-- IMAGE -->
+
+            <button
+                class="tool"
+                id="imageBtn"
+                title="Image">
+
+                <i class="fa-regular fa-image"></i>
+
+            </button>
+
+
+
+            <!-- TABLE -->
+
+            <button
+                class="tool"
+                id="tableBtn"
+                title="Table">
+
+                <i class="fa-solid fa-table"></i>
+
+            </button>
+
+
+
+            <div class="toolbar-divider"></div>
+
+
+
+            <!-- COLOR -->
+
+            <label
+                class="color-tool"
+                title="Color">
+
+                <input
+                    type="color"
+                    id="colorPicker"
+                    value="#172033">
+
+            </label>
+
+
+
+            <!-- BRUSH SIZE -->
+
+            <input
+                type="range"
+                id="brushSize"
+                min="1"
+                max="20"
+                value="4"
+                class="brush-slider">
+
+
+
+            <div class="toolbar-spacer"></div>
+
+
+
+            <!-- UNDO -->
+
+            <button
+                class="tool"
+                id="undoBtn"
+                title="Undo">
+
+                <i class="fa-solid fa-rotate-left"></i>
+
+            </button>
+
+
+
+            <!-- REDO -->
+
+            <button
+                class="tool"
+                id="redoBtn"
+                title="Redo">
+
+                <i class="fa-solid fa-rotate-right"></i>
+
+            </button>
+
+
+
+            <div class="toolbar-divider"></div>
+
+
+
+            <!-- ZOOM OUT -->
+
+            <button
+                class="tool"
+                id="zoomOut"
+                title="Zoom Out">
+
+                <i class="fa-solid fa-minus"></i>
+
+            </button>
+
+
+            <span id="zoomValue">
+                100%
             </span>
 
-            <div>
-                <input
-                    type="text"
-                    id="documentTitle"
-                    value=""
-                    placeholder="Board name"
-                >
-            </div>
-        </div>
 
-        <div class="collaborators">
+            <!-- ZOOM IN -->
 
-            <span class="avatar purple">R</span>
-            <span class="avatar pink">A</span>
-            <span class="avatar orange">S</span>
-            <span class="avatar more">+3</span>
+            <button
+                class="tool"
+                id="zoomIn"
+                title="Zoom In">
 
-            <button class="share-btn">
-                <i class="fa-solid fa-share-nodes"></i>
-                Share
-            </button>
+                <i class="fa-solid fa-plus"></i>
 
-            <button class="more-btn">
-                <i class="fa-solid fa-ellipsis-vertical"></i>
             </button>
 
         </div>
 
-    </div>
 
 
-    <div class="canvas-toolbar">
+        <!-- =================================================
+             NOTEBOOK AREA
+        ================================================== -->
 
-    <!-- SELECT -->
-    <button class="tool active-tool" id="selectTool" title="Select">
-        <i class="fa-solid fa-arrow-pointer"></i>
-    </button>
+        <div class="notebook-area">
 
-    <!-- PEN -->
-    <button class="tool" id="drawBtn" title="Pen">
-        <i class="fa-solid fa-pen"></i>
-    </button>
 
-    <!-- HIGHLIGHTER -->
-    <button class="tool" id="highlighterBtn" title="Highlighter">
-        <i class="fa-solid fa-highlighter"></i>
-    </button>
-
-    <!-- LIGHT PEN -->
-    <button class="tool" id="lightPenBtn" title="Light Pen">
-        <i class="fa-solid fa-wand-magic-sparkles"></i>
-    </button>
-
-    <!-- ERASER -->
-    <button class="tool" id="eraserBtn" title="Eraser">
-        <i class="fa-solid fa-eraser"></i>
-    </button>
-
-    <div class="toolbar-divider"></div>
-
-    <!-- SHAPES -->
-    <button class="tool" id="shapeBtn" title="Shapes">
-        <i class="fa-regular fa-square"></i>
-    </button>
-
-    <!-- TEXT -->
-    <button class="tool" id="textBtn" title="Text">
-        <i class="fa-solid fa-t"></i>
-    </button>
-
-    <!-- IMAGE -->
-    <button class="tool" id="imageBtn" title="Image">
-        <i class="fa-regular fa-image"></i>
-    </button>
-
-    <!-- STICKY -->
-    <button class="tool" id="stickyBtn" title="Sticky Note">
-        <i class="fa-solid fa-note-sticky"></i>
-    </button>
-
-    <!-- TABLE -->
-    <button class="tool" id="tableBtn" title="Table">
-        <i class="fa-solid fa-table"></i>
-    </button>
-
-    <div class="toolbar-divider"></div>
-
-    <!-- COLOR -->
-    <label class="color-tool" title="Color">
-        <input
-            type="color"
-            id="colorPicker"
-            value="#172033"
-        >
-    </label>
-
-    <!-- BRUSH SIZE -->
-    <input
-        type="range"
-        id="brushSize"
-        min="1"
-        max="20"
-        value="4"
-        class="brush-slider"
-    >
-
-    <div class="toolbar-spacer"></div>
-
-    <!-- UNDO -->
-    <button class="tool" id="undoBtn" title="Undo">
-        <i class="fa-solid fa-rotate-left"></i>
-    </button>
-
-    <!-- REDO -->
-    <button class="tool" id="redoBtn" title="Redo">
-        <i class="fa-solid fa-rotate-right"></i>
-    </button>
-
-    <div class="toolbar-divider"></div>
-
-    <!-- ZOOM -->
-    <button class="tool" id="zoomOut" title="Zoom Out">
-        <i class="fa-solid fa-minus"></i>
-    </button>
-
-    <span id="zoomValue">100%</span>
-
-    <button class="tool" id="zoomIn" title="Zoom In">
-        <i class="fa-solid fa-plus"></i>
-    </button>
-
-</div>
-        
-           
-
-        
-         
-         
-
-    <!-- NOTEBOOK AREA -->
-
-    <div class="notebook-area">
-
-        <div
-            class="notebook-page"
-            id="notebookPage"
-            data-canvas-style="blank"
-        >
-
-            <!-- PAPER -->
-
-            <div class="paper-background"></div>
-
-            <!-- CANVAS -->
-
-            <canvas
-                id="drawingBoard"
-                width="1000"
-                height="700"
-            ></canvas>
-
-            <!-- OBJECT LAYER -->
+            <!-- NOTEBOOK PAGE -->
 
             <div
-                class="object-layer"
-                id="objectLayer"
-            ></div>
-
-        </div>
+                class="notebook-page"
+                id="notebookPage"
+                data-canvas-style="blank">
 
 
-        <!-- PAGE CONTROLS -->
+                <!-- PAPER BACKGROUND -->
 
-        <div class="page-controls">
+                <div class="paper-background"></div>
+
+
+
+                <!-- DRAWING CANVAS -->
+
+                <canvas
+                    id="drawingBoard"
+                    width="1000"
+                    height="700">
+                </canvas>
+
+
+
+                <!-- OBJECT LAYER -->
+
+                <div
+                    class="object-layer"
+                    id="objectLayer">
+                </div>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 PAGE CONTROLS
+            ================================================== -->
+
+            <div class="page-controls">
+
+
+                <!-- PREVIOUS -->
+
+                <button
+                    class="page-btn"
+                    id="previousPage">
+
+                    <i class="fa-solid fa-chevron-left"></i>
+
+                </button>
+
+
+
+                <!-- PAGE NUMBER -->
+
+                <span id="pageNumber">
+                    1 / ∞
+                </span>
+
+
+
+                <!-- NEXT -->
+
+                <button
+                    class="page-btn"
+                    id="nextPage">
+
+                    <i class="fa-solid fa-chevron-right"></i>
+
+                </button>
+
+            </div>
+
+
+
+            <!-- =================================================
+                 ADD PAGE
+            ================================================== -->
 
             <button
-                class="page-btn"
-                id="previousPage"
-            >
-                <i class="fa-solid fa-chevron-left"></i>
+                class="add-page-btn"
+                id="addPageBtn">
+
+                <i class="fa-solid fa-plus"></i>
+
+                Add Page
+
             </button>
 
 
-            <span id="pageNumber">
-                1 / ∞
-            </span>
 
+            <!-- =================================================
+                 EXTEND PAGE
+            ================================================== -->
 
             <button
-                class="page-btn"
-                id="nextPage"
-            >
-                <i class="fa-solid fa-chevron-right"></i>
+                class="extend-page-btn"
+                id="extendPageBtn">
+
+                <i class="fa-solid fa-arrows-up-down"></i>
+
+                Extend Page
+
             </button>
 
         </div>
 
-
-        <!-- ADD PAGE -->
-
-        <button
-            class="add-page-btn"
-            id="addPageBtn"
-        >
-
-            <i class="fa-solid fa-plus"></i>
-
-            Add Page
-
-        </button>
-
-
-        <!-- EXTEND PAGE -->
-
-        <button
-            class="extend-page-btn"
-            id="extendPageBtn"
-        >
-
-            <i class="fa-solid fa-arrows-up-down"></i>
-
-            Extend Page
-
-        </button>
-
-    </div>
-
-</section>
-
-
+    </section>
 
 </main>
 
@@ -517,7 +577,9 @@
 <!-- =====================================================
      JAVASCRIPT
 ===================================================== -->
+
 <script src="/socket.io/socket.io.js"></script>
+
 <script src="script.js"></script>
 
 
