@@ -442,6 +442,11 @@ const notebookPage =
         "notebookPage"
     );
 
+const paperBackground =
+    document.querySelector(
+        ".paper-background"
+    );
+
 const objectLayer =
     document.getElementById(
         "objectLayer"
@@ -650,6 +655,110 @@ let pages = [
 let currentPage =
     0;
 
+const VALID_CANVAS_STYLES = ["blank", "grid", "dots", "lines"];
+
+let currentCanvasStyle = "lines";
+
+function normalizeCanvasStyle(style) {
+    const safeStyle = typeof style === "string" ? style.trim().toLowerCase() : "lines";
+
+    if (safeStyle === "plain") {
+        return "blank";
+    }
+
+    return VALID_CANVAS_STYLES.includes(safeStyle) ? safeStyle : "lines";
+}
+
+function applyCanvasStyle(style) {
+    currentCanvasStyle = normalizeCanvasStyle(style);
+
+    if (notebookPage) {
+        notebookPage.setAttribute("data-canvas-style", currentCanvasStyle);
+    }
+
+    if (!paperBackground) return;
+
+    const styleMap = {
+        blank: {
+            backgroundColor: '#fff',
+            backgroundImage: 'none',
+            backgroundSize: 'auto'
+        },
+        grid: {
+            backgroundColor: '#fffdf5',
+            backgroundImage: 'linear-gradient(rgba(120, 155, 190, 0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 155, 190, 0.16) 1px, transparent 1px)',
+            backgroundSize: '24px 24px'
+        },
+        dots: {
+            backgroundColor: '#fffdf5',
+            backgroundImage: 'radial-gradient(circle, rgba(120, 155, 190, 0.35) 1.25px, transparent 1.35px)',
+            backgroundSize: '22px 22px'
+        },
+        lines: {
+            backgroundColor: '#fffdf5',
+            backgroundImage: 'repeating-linear-gradient(to bottom, rgba(120, 155, 190, 0.18) 0, rgba(120, 155, 190, 0.18) 1px, transparent 1px, transparent 28px)',
+            backgroundSize: '100% 28px'
+        }
+    };
+
+    const selectedStyle = styleMap[currentCanvasStyle] || styleMap.lines;
+
+    paperBackground.style.backgroundColor = selectedStyle.backgroundColor;
+    paperBackground.style.backgroundImage = selectedStyle.backgroundImage;
+    paperBackground.style.backgroundSize = selectedStyle.backgroundSize;
+    paperBackground.style.backgroundPosition = '0 0';
+}
+
+function getDocumentKey() {
+    const boardId = sessionStorage.getItem("currentBoardId");
+    if (boardId) {
+        return `liveCanvasDocument_${boardId}`;
+    }
+
+    return roomId ? `liveCanvasDocument_${roomId}` : "liveCanvasDocument_solo";
+}
+
+function restoreCanvasStyleFromBoard() {
+    const pendingCanvasStyle = sessionStorage.getItem("currentCanvasStyle");
+
+    if (pendingCanvasStyle) {
+        applyCanvasStyle(pendingCanvasStyle);
+        sessionStorage.removeItem("currentCanvasStyle");
+        return;
+    }
+
+    const storedBoardId = sessionStorage.getItem("currentBoardId");
+
+    if (storedBoardId) {
+        try {
+            const savedBoards = JSON.parse(localStorage.getItem("savedBoards") || "[]");
+            const matchingBoard = savedBoards.find(board => board.id === storedBoardId);
+
+            if (matchingBoard) {
+                applyCanvasStyle(matchingBoard.canvasStyle || matchingBoard.template || "blank");
+                return;
+            }
+        } catch (error) {
+            console.warn("Could not restore saved board style:", error);
+        }
+    }
+
+    const documentKey = getDocumentKey();
+
+    try {
+        const savedDocument = JSON.parse(localStorage.getItem(documentKey) || "null");
+
+        if (savedDocument && savedDocument.canvasStyle) {
+            applyCanvasStyle(savedDocument.canvasStyle);
+            return;
+        }
+    } catch (error) {
+        console.warn("Could not restore document canvas style:", error);
+    }
+
+    applyCanvasStyle("blank");
+}
+
 
 // ============================================================
 // ZOOM
@@ -685,6 +794,7 @@ function setupCanvas() {
 }
 
 setupCanvas();
+restoreCanvasStyleFromBoard();
 
 
 // ============================================================
@@ -2995,19 +3105,19 @@ function saveDocument() {
 
         title:
             titleInput?.value ||
-            "Study Notes"
+            "Study Notes",
+
+        canvasStyle:
+            currentCanvasStyle
 
     };
 
+    const documentKey = getDocumentKey();
 
-    const documentKey = roomId
-    ? `liveCanvasDocument_${roomId}`
-    : "liveCanvasDocument_solo";
-
-localStorage.setItem(
-    documentKey,
-    JSON.stringify(documentData)
-);
+    localStorage.setItem(
+        documentKey,
+        JSON.stringify(documentData)
+    );
 }
 
 
@@ -3017,12 +3127,10 @@ localStorage.setItem(
 
 function loadDocument() {
 
-    const documentKey = roomId
-    ? `liveCanvasDocument_${roomId}`
-    : "liveCanvasDocument_solo";
+    const documentKey = getDocumentKey();
 
-const saved =
-    localStorage.getItem(documentKey);
+    const saved =
+        localStorage.getItem(documentKey);
 
     if (!saved) {
         return;
@@ -3076,6 +3184,10 @@ const saved =
                         data.zoom
                     )
                 );
+        }
+
+        if (data.canvasStyle) {
+            applyCanvasStyle(data.canvasStyle);
         }
 
 

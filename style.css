@@ -1253,18 +1253,37 @@ footer{
     position: absolute;
     inset: 0;
 
-    background-color: #fffdf5;
-
-    background-image:
-        linear-gradient(
-            rgba(120, 155, 190, 0.18) 1px,
-            transparent 1px
-        );
-
-    background-size:
-        100% 28px;
-
+    background-color: #fff;
+    background-image: none;
+    background-size: auto;
     pointer-events: none;
+}
+
+.notebook-page[data-canvas-style="grid"] .paper-background {
+    background-color: #fffdf5;
+    background-image:
+        linear-gradient(rgba(120, 155, 190, 0.16) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(120, 155, 190, 0.16) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+.notebook-page[data-canvas-style="dots"] .paper-background {
+    background-color: #fffdf5;
+    background-image: radial-gradient(circle, rgba(120, 155, 190, 0.35) 1.25px, transparent 1.35px);
+    background-size: 22px 22px;
+}
+
+.notebook-page[data-canvas-style="lines"] .paper-background {
+    background-color: #fffdf5;
+    background-image:
+        repeating-linear-gradient(
+            to bottom,
+            rgba(120, 155, 190, 0.18) 0,
+            rgba(120, 155, 190, 0.18) 1px,
+            transparent 1px,
+            transparent 28px
+        );
+    background-size: 100% 28px;
 }
 
 
@@ -1272,17 +1291,23 @@ footer{
 
 .paper-background::before {
     content: "";
-
     position: absolute;
-
     top: 0;
     bottom: 0;
-
     left: 95px;
-
     width: 1px;
-
     background: rgba(236, 100, 110, 0.35);
+    display: none;
+}
+
+.notebook-page[data-canvas-style="lines"] .paper-background::before {
+    display: block;
+}
+
+.notebook-page[data-canvas-style="blank"] .paper-background::before,
+.notebook-page[data-canvas-style="grid"] .paper-background::before,
+.notebook-page[data-canvas-style="dots"] .paper-background::before {
+    display: none;
 }
 
 

@@ -447,7 +447,7 @@
                         <span>Dots</span>
                         <span class="option-check" aria-hidden="true">✓</span>
                     </button>
-                    <button type="button" class="option-btn" data-value="plain" aria-pressed="true">
+                    <button type="button" class="option-btn" data-value="blank" aria-pressed="true">
                         <span class="option-preview" aria-hidden="true"></span>
                         <span>Blank</span>
                         <span class="option-check" aria-hidden="true">✓</span>
@@ -485,7 +485,7 @@
         const optionsEl = document.getElementById('options');
         const boardNameInput = document.getElementById('boardName');
 
-        let selectedOption = 'plain';
+        let selectedOption = 'blank';
 
         function updateCreateButtonState(){
             const hasValue = boardNameInput.value.trim().length > 0;
@@ -504,12 +504,12 @@
             backdrop.classList.remove('visible');
             boardNameInput.value = '';
             updateCreateButtonState();
-            selectedOption = 'plain';
+            selectedOption = 'blank';
             Array.from(optionsEl.children).forEach(btn => {
                 btn.classList.remove('active');
                 btn.setAttribute('aria-pressed', 'false');
             });
-            const blankOption = optionsEl.querySelector('[data-value="plain"]');
+            const blankOption = optionsEl.querySelector('[data-value="blank"]');
             if (blankOption) {
                 blankOption.classList.add('active');
                 blankOption.setAttribute('aria-pressed', 'true');
@@ -543,7 +543,7 @@
             });
         });
 
-        const blankOption = optionsEl.querySelector('[data-value="plain"]');
+        const blankOption = optionsEl.querySelector('[data-value="blank"]');
         if (blankOption) {
             blankOption.classList.add('active');
             blankOption.setAttribute('aria-pressed', 'true');
@@ -556,12 +556,19 @@
             if (!name) return;
             const boards = JSON.parse(localStorage.getItem('savedBoards')||'[]');
             const id = 'B' + Date.now().toString(36);
-            const board = { id, name, template: selectedOption, created: Date.now() };
+            const board = {
+                id,
+                name,
+                template: selectedOption,
+                canvasStyle: selectedOption === 'blank' ? 'blank' : selectedOption,
+                created: Date.now()
+            };
             boards.unshift(board);
             localStorage.setItem('savedBoards', JSON.stringify(boards));
 
-            // pass newly created board id to index via sessionStorage
+            // pass newly created board id and selected canvas style to index via sessionStorage
             sessionStorage.setItem('currentBoardId', id);
+            sessionStorage.setItem('currentCanvasStyle', selectedOption);
             // ensure solo mode
             sessionStorage.removeItem('roomId');
             // navigate to canvas
