@@ -724,7 +724,6 @@ function restoreCanvasStyleFromBoard() {
     if (pendingCanvasStyle) {
         applyCanvasStyle(pendingCanvasStyle);
         sessionStorage.removeItem("currentCanvasStyle");
-        return;
     }
 
     const storedBoardId = sessionStorage.getItem("currentBoardId");
@@ -736,11 +735,26 @@ function restoreCanvasStyleFromBoard() {
 
             if (matchingBoard) {
                 applyCanvasStyle(matchingBoard.canvasStyle || matchingBoard.template || "blank");
+
+                const titleInput = document.getElementById("documentTitle");
+                if (titleInput && matchingBoard.name) {
+                    titleInput.value = matchingBoard.name;
+                }
+
                 return;
             }
         } catch (error) {
             console.warn("Could not restore saved board style:", error);
         }
+    }
+
+    const pendingBoardName = sessionStorage.getItem("currentBoardName");
+    if (pendingBoardName) {
+        const titleInput = document.getElementById("documentTitle");
+        if (titleInput) {
+            titleInput.value = pendingBoardName;
+        }
+        sessionStorage.removeItem("currentBoardName");
     }
 
     const documentKey = getDocumentKey();
@@ -750,6 +764,12 @@ function restoreCanvasStyleFromBoard() {
 
         if (savedDocument && savedDocument.canvasStyle) {
             applyCanvasStyle(savedDocument.canvasStyle);
+            if (savedDocument.title) {
+                const titleInput = document.getElementById("documentTitle");
+                if (titleInput) {
+                    titleInput.value = savedDocument.title;
+                }
+            }
             return;
         }
     } catch (error) {

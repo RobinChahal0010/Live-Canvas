@@ -569,6 +569,7 @@
             // pass newly created board id and selected canvas style to index via sessionStorage
             sessionStorage.setItem('currentBoardId', id);
             sessionStorage.setItem('currentCanvasStyle', selectedOption);
+            sessionStorage.setItem('currentBoardName', name);
             // ensure solo mode
             sessionStorage.removeItem('roomId');
             // navigate to canvas
