@@ -1,24 +1,22 @@
 // ============================================================
-// LIVE CANVAS - ROOM + AUTH + CANVAS + TOOLS
+// LIVE CANVAS - COMPLETE SCRIPT
+// ROOM + AUTH + SOCKET + CANVAS + TOOLS + SHAPES + PAGES
 // ============================================================
 
 
 // ============================================================
-// ROOM / SOCKET
+// ROOM
 // ============================================================
 
-const urlParams =
-    new URLSearchParams(window.location.search);
-
-const roomId =
-    urlParams.get("room");
+const urlParams = new URLSearchParams(window.location.search);
+const roomId = urlParams.get("room");
 
 let socket = null;
 
 console.log("================================");
 console.log("LIVE CANVAS");
 console.log("Current URL:", window.location.href);
-console.log("Current Room ID:", roomId);
+console.log("Room ID:", roomId);
 console.log("================================");
 
 
@@ -29,22 +27,15 @@ console.log("================================");
 let loggedInUser = null;
 
 try {
+    const storedUser = localStorage.getItem("loggedInUser");
 
-    loggedInUser =
-        JSON.parse(
-            localStorage.getItem("loggedInUser")
-        );
-
+    if (storedUser) {
+        loggedInUser = JSON.parse(storedUser);
+    }
 } catch (error) {
-
-    console.error(
-        "Could not read loggedInUser:",
-        error
-    );
-
+    console.error("Could not read loggedInUser:", error);
     loggedInUser = null;
 }
-
 
 const welcomeUser =
     document.getElementById("welcomeUser");
@@ -60,7 +51,7 @@ const logoutBtn =
 
 
 // ============================================================
-// HEADER AUTH UI
+// AUTH UI
 // ============================================================
 
 function updateAuthUI() {
@@ -69,44 +60,37 @@ function updateAuthUI() {
 
         if (welcomeUser) {
             welcomeUser.textContent =
-                `Hi, ${loggedInUser.name} 👋`;
+                `Hi, ${loggedInUser.name || "User"} 👋`;
         }
 
         if (loginHeaderBtn) {
-            loginHeaderBtn.style.display =
-                "none";
+            loginHeaderBtn.style.display = "none";
         }
 
         if (signupHeaderBtn) {
-            signupHeaderBtn.style.display =
-                "none";
+            signupHeaderBtn.style.display = "none";
         }
 
         if (logoutBtn) {
-            logoutBtn.style.display =
-                "block";
+            logoutBtn.style.display = "block";
         }
 
     } else {
 
         if (welcomeUser) {
-            welcomeUser.textContent =
-                "";
+            welcomeUser.textContent = "";
         }
 
         if (loginHeaderBtn) {
-            loginHeaderBtn.style.display =
-                "block";
+            loginHeaderBtn.style.display = "block";
         }
 
         if (signupHeaderBtn) {
-            signupHeaderBtn.style.display =
-                "block";
+            signupHeaderBtn.style.display = "block";
         }
 
         if (logoutBtn) {
-            logoutBtn.style.display =
-                "none";
+            logoutBtn.style.display = "none";
         }
     }
 }
@@ -115,35 +99,75 @@ updateAuthUI();
 
 
 // ============================================================
-// CURRENT USER NAME
+// CURRENT USER
 // ============================================================
 
 let currentUsername =
     loggedInUser?.name || "User";
 
-console.log(
-    "Current User Name:",
-    currentUsername
-);
-
 
 // ============================================================
-// ROOM AUTH CHECK
+// ROOM AUTH
 // ============================================================
 
 if (roomId && !loggedInUser) {
 
-    console.log(
-        "Room detected but user is NOT logged in."
-    );
+    console.log("Room requires login.");
 
     const redirectUrl =
         window.location.pathname +
         window.location.search;
 
-    window.location.href =
+    window.location.replace(
         "login.html?redirect=" +
-        encodeURIComponent(redirectUrl);
+        encodeURIComponent(redirectUrl)
+    );
+
+}
+
+
+// ============================================================
+// HEADER BUTTONS
+// ============================================================
+
+if (loginHeaderBtn) {
+
+    loginHeaderBtn.addEventListener("click", () => {
+
+        window.location.href = "login.html";
+
+    });
+
+}
+
+
+if (signupHeaderBtn) {
+
+    signupHeaderBtn.addEventListener("click", () => {
+
+        window.location.href = "signup.html";
+
+    });
+
+}
+
+
+if (logoutBtn) {
+
+    logoutBtn.addEventListener("click", () => {
+
+        localStorage.removeItem("loggedInUser");
+
+        sessionStorage.removeItem("roomUsername");
+
+        if (socket) {
+            socket.disconnect();
+        }
+
+        window.location.href = "login.html";
+
+    });
+
 }
 
 
@@ -159,73 +183,32 @@ function updateCollaborators(users = []) {
     const collaboratorList =
         document.getElementById("collaboratorList");
 
-    const shareBtn =
-        document.getElementById("shareBtn");
-
-    if (
-        !collaborators ||
-        !collaboratorList
-    ) {
+    if (!collaborators || !collaboratorList) {
         return;
     }
-
-
-    // ========================================================
-    // REMOVE OLD AVATARS
-    // ========================================================
 
     collaboratorList
         .querySelectorAll(".avatar")
-        .forEach(
-            avatar => avatar.remove()
-        );
-
-
-    // ========================================================
-    // SOLO MODE
-    // ========================================================
+        .forEach(avatar => avatar.remove());
 
     if (!roomId) {
 
-        collaborators.style.display =
-            "none";
-
+        collaborators.style.display = "none";
         return;
+
     }
 
-
-    // ========================================================
-    // ROOM MODE
-    // ========================================================
-
-    collaborators.style.display =
-        "flex";
-
+    collaborators.style.display = "flex";
 
     if (!Array.isArray(users)) {
         return;
     }
 
-
-    // ========================================================
-    // MAX 4 VISIBLE USERS
-    // ========================================================
-
     const maxVisibleUsers = 4;
 
-    const visibleUsers =
-        users.slice(
-            0,
-            maxVisibleUsers
-        );
-
-
-    // ========================================================
-    // CREATE AVATARS
-    // ========================================================
-
-    visibleUsers.forEach(
-        username => {
+    users
+        .slice(0, maxVisibleUsers)
+        .forEach(username => {
 
             if (
                 !username ||
@@ -234,88 +217,49 @@ function updateCollaborators(users = []) {
                 return;
             }
 
-
-            const cleanName =
-                username.trim();
-
+            const cleanName = username.trim();
 
             if (!cleanName) {
                 return;
             }
 
-
             const avatar =
                 document.createElement("span");
 
+            avatar.className = "avatar";
 
-            avatar.classList.add(
-                "avatar"
-            );
-
-
-            // First letter
             avatar.textContent =
-                cleanName
-                    .charAt(0)
-                    .toUpperCase();
+                cleanName.charAt(0).toUpperCase();
+
+            avatar.title = cleanName;
+
+            collaboratorList.appendChild(avatar);
+
+        });
 
 
-            // Full name on hover
-            avatar.title =
-                cleanName;
-
-
-            // Add inside collaborator list
-            collaboratorList.appendChild(
-                avatar
-            );
-
-        }
-    );
-
-
-    // ========================================================
-    // MORE USERS
-    // ========================================================
-
-    if (
-        users.length >
-        maxVisibleUsers
-    ) {
+    if (users.length > maxVisibleUsers) {
 
         const more =
             document.createElement("span");
 
-
-        more.classList.add(
-            "avatar",
-            "more"
-        );
-
+        more.className = "avatar more";
 
         more.textContent =
             `+${users.length - maxVisibleUsers}`;
 
-
         more.title =
             `${users.length - maxVisibleUsers} more collaborators`;
 
+        collaboratorList.appendChild(more);
 
-        collaboratorList.appendChild(
-            more
-        );
     }
-
-
-    console.log(
-        "Collaborators updated:",
-        users
-    );
 
 }
 
+
 // ============================================================
-// CONNECT TO SOCKET.IO ROOM
+// SOCKET.IO
 // ============================================================
 
 if (
@@ -324,223 +268,83 @@ if (
     typeof io === "function"
 ) {
 
-    console.log(
-        "Connecting to room:",
-        roomId
-    );
+    console.log("Connecting to room:", roomId);
 
     socket = io();
 
 
-    // ========================================================
-    // SOCKET CONNECT
-    // ========================================================
+    socket.on("connect", () => {
 
-    socket.on(
-        "connect",
-        () => {
+        console.log(
+            "Connected to server:",
+            socket.id
+        );
 
-            console.log(
-                "Connected to server:",
-                socket.id
-            );
+        socket.emit(
+            "join-room",
+            roomId,
+            loggedInUser.name || "User"
+        );
 
-
-            socket.emit(
-                "join-room",
-                roomId,
-                loggedInUser.name
-            );
-        }
-    );
+    });
 
 
-    // ========================================================
-    // ROOM JOINED
-    // ========================================================
+    socket.on("room-joined", data => {
 
-    socket.on(
-        "room-joined",
-        data => {
+        console.log("ROOM JOINED:", data);
 
-            console.log(
-                "Successfully joined room:",
-                data.roomId
-            );
+        currentUsername =
+            data.username ||
+            loggedInUser.name ||
+            "User";
 
-            console.log(
-                "User:",
-                data.username
-            );
+        sessionStorage.setItem(
+            "roomUsername",
+            currentUsername
+        );
 
-            console.log(
-                "Users in room:",
-                data.userCount
-            );
+        updateCollaborators(
+            data.users || []
+        );
 
-            console.log(
-                "Room users:",
-                data.users
-            );
+    });
 
 
-            currentUsername =
-                data.username;
+    socket.on("user-joined", data => {
+
+        console.log(
+            `${data.username} joined`
+        );
+
+        updateCollaborators(
+            data.users || []
+        );
+
+    });
 
 
-            sessionStorage.setItem(
-                "roomUsername",
-                data.username
-            );
+    socket.on("user-left", data => {
 
-            console.log(
-    "🔥 COLLABORATOR DATA:",
-    data.users
-);
-            // UPDATE ACTUAL COLLABORATORS
-            updateCollaborators(
-                data.users || []
-            );
-        }
-    );
+        console.log(
+            `${data.username} left`
+        );
+
+        updateCollaborators(
+            data.users || []
+        );
+
+    });
 
 
-    // ========================================================
-    // USER JOINED
-    // ========================================================
+    socket.on("connect_error", error => {
 
-    socket.on(
-        "user-joined",
-        data => {
+        console.error(
+            "Socket connection failed:",
+            error
+        );
 
-            console.log(
-                `${data.username} joined the room`
-            );
+    });
 
-            console.log(
-                "Users:",
-                data.userCount
-            );
-
-            console.log(
-                "Room users:",
-                data.users
-            );
-
-
-            updateCollaborators(
-                data.users || []
-            );
-        }
-    );
-
-
-    // ========================================================
-    // USER LEFT
-    // ========================================================
-
-    socket.on(
-        "user-left",
-        data => {
-
-            console.log(
-                `${data.username} left the room`
-            );
-
-            console.log(
-                "Users:",
-                data.userCount
-            );
-
-            console.log(
-                "Remaining users:",
-                data.users
-            );
-
-
-            updateCollaborators(
-                data.users || []
-            );
-        }
-    );
-
-
-    // ========================================================
-    // CONNECTION ERROR
-    // ========================================================
-
-    socket.on(
-        "connect_error",
-        error => {
-
-            console.error(
-                "Socket connection failed:",
-                error
-            );
-        }
-    );
-}
-
-
-// ============================================================
-// SOLO MODE INITIALIZATION
-// ============================================================
-
-if (!roomId) {
-
-    updateCollaborators([]);
-
-}
-
-
-// ============================================================
-// HEADER BUTTONS
-// ============================================================
-
-if (loginHeaderBtn) {
-
-    loginHeaderBtn.addEventListener(
-        "click",
-        () => {
-
-            window.location.href =
-                "login.html";
-        }
-    );
-}
-
-
-if (signupHeaderBtn) {
-
-    signupHeaderBtn.addEventListener(
-        "click",
-        () => {
-
-            window.location.href =
-                "signup.html";
-        }
-    );
-}
-
-
-if (logoutBtn) {
-
-    logoutBtn.addEventListener(
-        "click",
-        () => {
-
-            localStorage.removeItem(
-                "loggedInUser"
-            );
-
-            sessionStorage.removeItem(
-                "roomUsername"
-            );
-
-            window.location.href =
-                "login.html";
-        }
-    );
 }
 
 
@@ -553,59 +357,52 @@ const shareBtn =
 
 if (shareBtn) {
 
-    shareBtn.addEventListener(
-        "click",
-        async () => {
+    shareBtn.addEventListener("click", async () => {
 
-            // SOLO
-            if (!roomId) {
+        if (!roomId) {
+
+            alert(
+                "You are currently in Solo mode."
+            );
+
+            return;
+        }
+
+        const shareText =
+            `Join my LiveCanvas room!\n\nRoom Code: ${roomId}`;
+
+        try {
+
+            if (navigator.share) {
+
+                await navigator.share({
+
+                    title: "LiveCanvas Room",
+
+                    text: shareText
+
+                });
+
+            } else {
+
+                await navigator.clipboard.writeText(
+                    roomId
+                );
 
                 alert(
-                    "You are currently in Solo mode."
+                    `Room code copied!\n\n${roomId}`
                 );
 
-                return;
             }
 
+        } catch (error) {
 
-            const shareText =
-                `Join my LiveCanvas room!\n\nRoom Code: ${roomId}`;
+            console.log("Share cancelled.");
 
-
-            try {
-
-                if (
-                    navigator.share
-                ) {
-
-                    await navigator.share({
-
-                        title:
-                            "LiveCanvas Room",
-
-                        text:
-                            shareText
-                    });
-
-                } else {
-
-                    await navigator.clipboard.writeText(
-                        roomId
-                    );
-
-                    alert(
-                        `Room code copied!\n\n${roomId}`
-                    );
-                }
-
-            } catch (error) {
-
-                console.log(
-                    "Share cancelled."
-                );
-            }
         }
-    );
+
+    });
+
 }
 
 
@@ -614,9 +411,7 @@ if (shareBtn) {
 // ============================================================
 
 const canvas =
-    document.getElementById(
-        "drawingBoard"
-    );
+    document.getElementById("drawingBoard");
 
 const ctx =
     canvas
@@ -624,19 +419,26 @@ const ctx =
         : null;
 
 const notebookPage =
-    document.getElementById(
-        "notebookPage"
-    );
+    document.getElementById("notebookPage");
 
 const paperBackground =
-    document.querySelector(
-        ".paper-background"
-    );
+    document.querySelector(".paper-background");
 
 const objectLayer =
-    document.getElementById(
-        "objectLayer"
+    document.getElementById("objectLayer");
+
+
+// ============================================================
+// CANVAS SAFETY
+// ============================================================
+
+if (!canvas || !ctx || !notebookPage) {
+
+    console.warn(
+        "Canvas elements not found. Auth/header mode only."
     );
+
+} else {
 
 
 // ============================================================
@@ -644,84 +446,54 @@ const objectLayer =
 // ============================================================
 
 const drawBtn =
-    document.getElementById(
-        "drawBtn"
-    );
+    document.getElementById("drawBtn");
 
 const eraserBtn =
-    document.getElementById(
-        "eraserBtn"
-    );
+    document.getElementById("eraserBtn");
 
 const highlighterBtn =
-    document.getElementById(
-        "highlighterBtn"
-    );
+    document.getElementById("highlighterBtn");
 
 const lightPenBtn =
-    document.getElementById(
-        "lightPenBtn"
-    );
+    document.getElementById("lightPenBtn");
 
 const selectTool =
-    document.getElementById(
-        "selectTool"
-    );
+    document.getElementById("selectTool");
 
 const shapeBtn =
-    document.getElementById(
-        "shapeBtn"
-    );
+    document.getElementById("shapeBtn");
 
 const textBtn =
-    document.getElementById(
-        "textBtn"
-    );
+    document.getElementById("textBtn");
 
 const imageBtn =
-    document.getElementById(
-        "imageBtn"
-    );
+    document.getElementById("imageBtn");
 
 const stickyBtn =
-    document.getElementById(
-        "stickyBtn"
-    );
+    document.getElementById("stickyBtn");
 
 const tableBtn =
-    document.getElementById(
-        "tableBtn"
-    );
+    document.getElementById("tableBtn");
 
 
 // ============================================================
-// CANVAS CONTROLS
+// CONTROLS
 // ============================================================
 
 const colorPicker =
-    document.getElementById(
-        "colorPicker"
-    );
+    document.getElementById("colorPicker");
 
 const brushSize =
-    document.getElementById(
-        "brushSize"
-    );
+    document.getElementById("brushSize");
 
 const undoBtn =
-    document.getElementById(
-        "undoBtn"
-    );
+    document.getElementById("undoBtn");
 
 const redoBtn =
-    document.getElementById(
-        "redoBtn"
-    );
+    document.getElementById("redoBtn");
 
 const clearBtn =
-    document.getElementById(
-        "clearBtn"
-    );
+    document.getElementById("clearBtn");
 
 
 // ============================================================
@@ -729,104 +501,58 @@ const clearBtn =
 // ============================================================
 
 const addPageBtn =
-    document.getElementById(
-        "addPageBtn"
-    );
+    document.getElementById("addPageBtn");
 
 const previousPage =
-    document.getElementById(
-        "previousPage"
-    );
+    document.getElementById("previousPage");
 
 const nextPage =
-    document.getElementById(
-        "nextPage"
-    );
+    document.getElementById("nextPage");
 
 const extendPageBtn =
-    document.getElementById(
-        "extendPageBtn"
-    );
+    document.getElementById("extendPageBtn");
 
 const pageNumber =
-    document.getElementById(
-        "pageNumber"
-    );
+    document.getElementById("pageNumber");
 
 
 // ============================================================
-// ZOOM CONTROLS
+// ZOOM
 // ============================================================
 
 const zoomIn =
-    document.getElementById(
-        "zoomIn"
-    );
+    document.getElementById("zoomIn");
 
 const zoomOut =
-    document.getElementById(
-        "zoomOut"
-    );
+    document.getElementById("zoomOut");
 
 const zoomValue =
-    document.getElementById(
-        "zoomValue"
-    );
-
-
-// ============================================================
-// SAFETY CHECK
-// ============================================================
-
-if (
-    !canvas ||
-    !ctx ||
-    !notebookPage
-) {
-
-    console.error(
-        "Canvas elements not found."
-    );
-
-} else {
+    document.getElementById("zoomValue");
 
 
 // ============================================================
 // STATE
 // ============================================================
 
-let currentTool =
-    "pen";
+let currentTool = "pen";
 
-let isDrawing =
-    false;
+let isDrawing = false;
 
-let lastX =
-    0;
+let lastX = 0;
+let lastY = 0;
 
-let lastY =
-    0;
+let currentStroke = [];
 
-let currentStroke =
-    [];
+let undoStack = [];
+let redoStack = [];
 
+const MAX_HISTORY = 50;
 
-// ============================================================
-// HISTORY
-// ============================================================
-
-let undoStack =
-    [];
-
-let redoStack =
-    [];
-
-const MAX_HISTORY =
-    50;
+let zoom = 100;
 
 
 // ============================================================
-// PAGE SYSTEM
+// PAGES
 // ============================================================
 
 let pages = [
@@ -838,26 +564,22 @@ let pages = [
 
 ];
 
-let currentPage =
-    0;
-
-
-const VALID_CANVAS_STYLES =
-    [
-        "blank",
-        "grid",
-        "dots",
-        "lines"
-    ];
-
-
-let currentCanvasStyle =
-    "lines";
+let currentPage = 0;
 
 
 // ============================================================
 // CANVAS STYLE
 // ============================================================
+
+const VALID_CANVAS_STYLES = [
+    "blank",
+    "grid",
+    "dots",
+    "lines"
+];
+
+let currentCanvasStyle = "lines";
+
 
 function normalizeCanvasStyle(style) {
 
@@ -866,16 +588,11 @@ function normalizeCanvasStyle(style) {
             ? style.trim().toLowerCase()
             : "lines";
 
-
     if (safeStyle === "plain") {
-
         return "blank";
     }
 
-
-    return VALID_CANVAS_STYLES.includes(
-        safeStyle
-    )
+    return VALID_CANVAS_STYLES.includes(safeStyle)
         ? safeStyle
         : "lines";
 }
@@ -886,90 +603,74 @@ function applyCanvasStyle(style) {
     currentCanvasStyle =
         normalizeCanvasStyle(style);
 
-
-    if (notebookPage) {
-
-        notebookPage.setAttribute(
-            "data-canvas-style",
-            currentCanvasStyle
-        );
-    }
-
+    notebookPage.setAttribute(
+        "data-canvas-style",
+        currentCanvasStyle
+    );
 
     if (!paperBackground) {
         return;
     }
 
-
-    const styleMap = {
+    const styles = {
 
         blank: {
 
-            backgroundColor:
-                "#fff",
+            backgroundColor: "#fff",
 
-            backgroundImage:
-                "none",
+            backgroundImage: "none",
 
-            backgroundSize:
-                "auto"
+            backgroundSize: "auto"
+
         },
-
 
         grid: {
 
-            backgroundColor:
-                "#fffdf5",
+            backgroundColor: "#fffdf5",
 
             backgroundImage:
                 "linear-gradient(rgba(120,155,190,0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(120,155,190,0.16) 1px, transparent 1px)",
 
-            backgroundSize:
-                "24px 24px"
-        },
+            backgroundSize: "24px 24px"
 
+        },
 
         dots: {
 
-            backgroundColor:
-                "#fffdf5",
+            backgroundColor: "#fffdf5",
 
             backgroundImage:
                 "radial-gradient(circle, rgba(120,155,190,0.35) 1.25px, transparent 1.35px)",
 
-            backgroundSize:
-                "22px 22px"
-        },
+            backgroundSize: "22px 22px"
 
+        },
 
         lines: {
 
-            backgroundColor:
-                "#fffdf5",
+            backgroundColor: "#fffdf5",
 
             backgroundImage:
                 "repeating-linear-gradient(to bottom, rgba(120,155,190,0.18) 0, rgba(120,155,190,0.18) 1px, transparent 1px, transparent 28px)",
 
-            backgroundSize:
-                "100% 28px"
+            backgroundSize: "100% 28px"
+
         }
+
     };
 
-
-    const selectedStyle =
-        styleMap[
-            currentCanvasStyle
-        ] || styleMap.lines;
-
+    const selected =
+        styles[currentCanvasStyle] ||
+        styles.lines;
 
     paperBackground.style.backgroundColor =
-        selectedStyle.backgroundColor;
+        selected.backgroundColor;
 
     paperBackground.style.backgroundImage =
-        selectedStyle.backgroundImage;
+        selected.backgroundImage;
 
     paperBackground.style.backgroundSize =
-        selectedStyle.backgroundSize;
+        selected.backgroundSize;
 
     paperBackground.style.backgroundPosition =
         "0 0";
@@ -983,16 +684,11 @@ function applyCanvasStyle(style) {
 function getDocumentKey() {
 
     const boardId =
-        sessionStorage.getItem(
-            "currentBoardId"
-        );
-
+        sessionStorage.getItem("currentBoardId");
 
     if (boardId) {
-
         return `liveCanvasDocument_${boardId}`;
     }
-
 
     return roomId
         ? `liveCanvasDocument_${roomId}`
@@ -1001,16 +697,13 @@ function getDocumentKey() {
 
 
 // ============================================================
-// RESTORE CANVAS STYLE
+// RESTORE STYLE
 // ============================================================
 
 function restoreCanvasStyleFromBoard() {
 
     const pendingCanvasStyle =
-        sessionStorage.getItem(
-            "currentCanvasStyle"
-        );
-
+        sessionStorage.getItem("currentCanvasStyle");
 
     if (pendingCanvasStyle) {
 
@@ -1021,14 +714,11 @@ function restoreCanvasStyleFromBoard() {
         sessionStorage.removeItem(
             "currentCanvasStyle"
         );
+
     }
 
-
     const storedBoardId =
-        sessionStorage.getItem(
-            "currentBoardId"
-        );
-
+        sessionStorage.getItem("currentBoardId");
 
     if (storedBoardId) {
 
@@ -1041,14 +731,11 @@ function restoreCanvasStyleFromBoard() {
                     ) || "[]"
                 );
 
-
             const matchingBoard =
                 savedBoards.find(
                     board =>
-                        board.id ===
-                        storedBoardId
+                        board.id === storedBoardId
                 );
-
 
             if (matchingBoard) {
 
@@ -1058,12 +745,10 @@ function restoreCanvasStyleFromBoard() {
                     "blank"
                 );
 
-
                 const titleInput =
                     document.getElementById(
                         "documentTitle"
                     );
-
 
                 if (
                     titleInput &&
@@ -1072,8 +757,8 @@ function restoreCanvasStyleFromBoard() {
 
                     titleInput.value =
                         matchingBoard.name;
-                }
 
+                }
 
                 return;
             }
@@ -1081,43 +766,17 @@ function restoreCanvasStyleFromBoard() {
         } catch (error) {
 
             console.warn(
-                "Could not restore saved board style:",
+                "Could not restore board:",
                 error
             );
-        }
-    }
 
-
-    const pendingBoardName =
-        sessionStorage.getItem(
-            "currentBoardName"
-        );
-
-
-    if (pendingBoardName) {
-
-        const titleInput =
-            document.getElementById(
-                "documentTitle"
-            );
-
-
-        if (titleInput) {
-
-            titleInput.value =
-                pendingBoardName;
         }
 
-
-        sessionStorage.removeItem(
-            "currentBoardName"
-        );
     }
 
 
     const documentKey =
         getDocumentKey();
-
 
     try {
 
@@ -1128,7 +787,6 @@ function restoreCanvasStyleFromBoard() {
                 ) || "null"
             );
 
-
         if (
             savedDocument &&
             savedDocument.canvasStyle
@@ -1138,24 +796,20 @@ function restoreCanvasStyleFromBoard() {
                 savedDocument.canvasStyle
             );
 
+            const titleInput =
+                document.getElementById(
+                    "documentTitle"
+                );
 
             if (
+                titleInput &&
                 savedDocument.title
             ) {
 
-                const titleInput =
-                    document.getElementById(
-                        "documentTitle"
-                    );
+                titleInput.value =
+                    savedDocument.title;
 
-
-                if (titleInput) {
-
-                    titleInput.value =
-                        savedDocument.title;
-                }
             }
-
 
             return;
         }
@@ -1163,143 +817,55 @@ function restoreCanvasStyleFromBoard() {
     } catch (error) {
 
         console.warn(
-            "Could not restore document canvas style:",
+            "Could not restore document:",
             error
         );
+
     }
 
-
-    applyCanvasStyle(
-        "blank"
-    );
+    applyCanvasStyle("blank");
 }
 
 
 // ============================================================
-// ZOOM
-// ============================================================
-
-let zoom =
-    100;
-
-
-// ============================================================
-// CANVAS INITIALIZATION
+// CANVAS SETUP
 // ============================================================
 
 function setupCanvas() {
 
-    ctx.lineCap =
-        "round";
+    ctx.lineCap = "round";
 
-    ctx.lineJoin =
-        "round";
+    ctx.lineJoin = "round";
 
-    ctx.lineWidth =
-        4;
+    ctx.lineWidth = 4;
 
-    ctx.strokeStyle =
-        "#172033";
+    ctx.strokeStyle = "#172033";
 
-    ctx.globalAlpha =
-        1;
+    ctx.globalAlpha = 1;
 
     ctx.globalCompositeOperation =
         "source-over";
 }
 
 
-setupCanvas();
-
-restoreCanvasStyleFromBoard();
-
-
 // ============================================================
-// CANVAS RESIZE
-// ============================================================
-
-function resizeCanvasHeight(height) {
-
-    if (
-        !height ||
-        height < 100
-    ) {
-
-        height = 700;
-    }
-
-
-    const oldData =
-        canvas.toDataURL();
-
-
-    canvas.width =
-        notebookPage.clientWidth ||
-        1000;
-
-    canvas.height =
-        height;
-
-
-    canvas.style.width =
-        "100%";
-
-    canvas.style.height =
-        "100%";
-
-
-    setupCanvas();
-
-
-    if (oldData) {
-
-        const image =
-            new Image();
-
-
-        image.onload =
-            () => {
-
-                ctx.drawImage(
-                    image,
-                    0,
-                    0
-                );
-            };
-
-
-        image.src =
-            oldData;
-    }
-}
-
-
-// ============================================================
-// INITIAL CANVAS SIZE
+// INITIALIZE CANVAS
 // ============================================================
 
 function initializeCanvas() {
 
     const height =
-        notebookPage.offsetHeight ||
-        700;
-
+        notebookPage.offsetHeight || 700;
 
     canvas.width =
-        notebookPage.clientWidth ||
-        1000;
-
+        notebookPage.clientWidth || 1000;
 
     canvas.height =
         height;
 
+    canvas.style.width = "100%";
 
-    canvas.style.width =
-        "100%";
-
-    canvas.style.height =
-        "100%";
-
+    canvas.style.height = "100%";
 
     setupCanvas();
 }
@@ -1307,9 +873,11 @@ function initializeCanvas() {
 
 initializeCanvas();
 
+restoreCanvasStyleFromBoard();
+
 
 // ============================================================
-// SAVE STATE
+// HISTORY
 // ============================================================
 
 function saveState() {
@@ -1318,17 +886,17 @@ function saveState() {
         canvas.toDataURL()
     );
 
-
     if (
         undoStack.length >
         MAX_HISTORY
     ) {
 
         undoStack.shift();
+
     }
 
-
     redoStack = [];
+
 }
 
 
@@ -1350,35 +918,28 @@ function restoreCanvas(data) {
         return;
     }
 
+    const image = new Image();
 
-    const image =
-        new Image();
+    image.onload = () => {
 
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
 
-    image.onload =
-        () => {
+        ctx.drawImage(
+            image,
+            0,
+            0
+        );
 
-            ctx.clearRect(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
+        setupCanvas();
 
+    };
 
-            ctx.drawImage(
-                image,
-                0,
-                0
-            );
-
-
-            setupCanvas();
-        };
-
-
-    image.src =
-        data;
+    image.src = data;
 }
 
 
@@ -1391,7 +952,6 @@ function getMousePosition(e) {
     const rect =
         canvas.getBoundingClientRect();
 
-
     return {
 
         x:
@@ -1401,7 +961,9 @@ function getMousePosition(e) {
         y:
             (e.clientY - rect.top) *
             (canvas.height / rect.height)
+
     };
+
 }
 
 
@@ -1415,152 +977,106 @@ function setActiveTool(button) {
         .querySelectorAll(
             ".canvas-toolbar .tool"
         )
-        .forEach(
-            btn => {
+        .forEach(btn => {
 
-                btn.classList.remove(
-                    "active-tool"
-                );
-            }
-        );
+            btn.classList.remove(
+                "active-tool"
+            );
 
+        });
 
     if (button) {
 
         button.classList.add(
             "active-tool"
         );
+
     }
+
 }
 
-
-// ============================================================
-// ACTIVATE TOOL
-// ============================================================
 
 function activateTool(
     tool,
     button,
-    cursor
+    cursor = "crosshair"
 ) {
 
-    currentTool =
-        tool;
+    currentTool = tool;
 
+    setActiveTool(button);
 
-    setActiveTool(
-        button
-    );
+    canvas.style.cursor = cursor;
 
-
-    canvas.style.cursor =
-        cursor ||
-        "crosshair";
 }
 
 
 // ============================================================
-// PEN
+// TOOL BUTTONS
 // ============================================================
 
-if (drawBtn) {
-
-    drawBtn.addEventListener(
-        "click",
-        () => {
-
-            activateTool(
-                "pen",
-                drawBtn,
-                "crosshair"
-            );
-        }
-    );
-}
+drawBtn?.addEventListener(
+    "click",
+    () => activateTool(
+        "pen",
+        drawBtn,
+        "crosshair"
+    )
+);
 
 
-// ============================================================
-// HIGHLIGHTER
-// ============================================================
-
-if (highlighterBtn) {
-
-    highlighterBtn.addEventListener(
-        "click",
-        () => {
-
-            activateTool(
-                "highlighter",
-                highlighterBtn,
-                "crosshair"
-            );
-        }
-    );
-}
+eraserBtn?.addEventListener(
+    "click",
+    () => activateTool(
+        "eraser",
+        eraserBtn,
+        "crosshair"
+    )
+);
 
 
-// ============================================================
-// LIGHT PEN
-// ============================================================
-
-if (lightPenBtn) {
-
-    lightPenBtn.addEventListener(
-        "click",
-        () => {
-
-            activateTool(
-                "lightPen",
-                lightPenBtn,
-                "crosshair"
-            );
-        }
-    );
-}
+highlighterBtn?.addEventListener(
+    "click",
+    () => activateTool(
+        "highlighter",
+        highlighterBtn,
+        "crosshair"
+    )
+);
 
 
-// ============================================================
-// ERASER
-// ============================================================
+lightPenBtn?.addEventListener(
+    "click",
+    () => activateTool(
+        "lightPen",
+        lightPenBtn,
+        "crosshair"
+    )
+);
 
-if (eraserBtn) {
 
-    eraserBtn.addEventListener(
-        "click",
-        () => {
+selectTool?.addEventListener(
+    "click",
+    () => activateTool(
+        "select",
+        selectTool,
+        "default"
+    )
+);
 
-            activateTool(
-                "eraser",
-                eraserBtn,
-                "crosshair"
-            );
-        }
-    );
-}
+
+textBtn?.addEventListener(
+    "click",
+    () => activateTool(
+        "text",
+        textBtn,
+        "text"
+    )
+);
 
 
 // ============================================================
-// SELECT
-// ============================================================
-
-if (selectTool) {
-
-    selectTool.addEventListener(
-        "click",
-        () => {
-
-            activateTool(
-                "select",
-                selectTool,
-                "default"
-            );
-        }
-    );
-}
-
-
-// ============================================================
-// START DRAWING
+// DRAW START
 // ============================================================
 
 function startDrawing(e) {
@@ -1570,37 +1086,25 @@ function startDrawing(e) {
         currentTool === "text" ||
         currentTool === "shape"
     ) {
-
         return;
     }
 
-
-    isDrawing =
-        true;
-
+    isDrawing = true;
 
     const position =
         getMousePosition(e);
 
-
-    lastX =
-        position.x;
-
-    lastY =
-        position.y;
-
+    lastX = position.x;
+    lastY = position.y;
 
     currentStroke = [
-
         {
             x: lastX,
             y: lastY
         }
     ];
 
-
     saveState();
-
 
     ctx.beginPath();
 
@@ -1608,6 +1112,7 @@ function startDrawing(e) {
         lastX,
         lastY
     );
+
 }
 
 
@@ -1621,10 +1126,8 @@ function draw(e) {
         return;
     }
 
-
     const position =
         getMousePosition(e);
-
 
     const currentX =
         position.x;
@@ -1632,28 +1135,21 @@ function draw(e) {
     const currentY =
         position.y;
 
-
     currentStroke.push({
 
-        x:
-            currentX,
+        x: currentX,
 
-        y:
-            currentY
+        y: currentY
+
     });
 
 
-    // PEN
-
-    if (
-        currentTool === "pen"
-    ) {
+    if (currentTool === "pen") {
 
         ctx.globalCompositeOperation =
             "source-over";
 
-        ctx.globalAlpha =
-            1;
+        ctx.globalAlpha = 1;
 
         ctx.strokeStyle =
             colorPicker?.value ||
@@ -1661,24 +1157,20 @@ function draw(e) {
 
         ctx.lineWidth =
             Number(
-                brushSize?.value ||
-                4
+                brushSize?.value || 4
             );
+
     }
 
 
-    // HIGHLIGHTER
-
     else if (
-        currentTool ===
-        "highlighter"
+        currentTool === "highlighter"
     ) {
 
         ctx.globalCompositeOperation =
             "source-over";
 
-        ctx.globalAlpha =
-            0.28;
+        ctx.globalAlpha = 0.28;
 
         ctx.strokeStyle =
             colorPicker?.value ||
@@ -1686,24 +1178,20 @@ function draw(e) {
 
         ctx.lineWidth =
             Number(
-                brushSize?.value ||
-                4
+                brushSize?.value || 4
             ) * 3;
+
     }
 
 
-    // LIGHT PEN
-
     else if (
-        currentTool ===
-        "lightPen"
+        currentTool === "lightPen"
     ) {
 
         ctx.globalCompositeOperation =
             "source-over";
 
-        ctx.globalAlpha =
-            0.18;
+        ctx.globalAlpha = 0.18;
 
         ctx.strokeStyle =
             colorPicker?.value ||
@@ -1711,53 +1199,45 @@ function draw(e) {
 
         ctx.lineWidth =
             Number(
-                brushSize?.value ||
-                4
+                brushSize?.value || 4
             ) * 1.5;
+
     }
 
 
-    // ERASER
-
     else if (
-        currentTool ===
-        "eraser"
+        currentTool === "eraser"
     ) {
 
         ctx.globalCompositeOperation =
             "destination-out";
 
-        ctx.globalAlpha =
-            1;
+        ctx.globalAlpha = 1;
 
         ctx.lineWidth =
             Number(
-                brushSize?.value ||
-                4
+                brushSize?.value || 4
             ) * 2;
+
     }
 
 
     ctx.beginPath();
-
 
     ctx.moveTo(
         lastX,
         lastY
     );
 
-
     ctx.lineTo(
         currentX,
         currentY
     );
 
-
     ctx.stroke();
 
 
-    // SEND DRAWING
-
+    // SOCKET DRAW
     if (
         socket &&
         socket.connected
@@ -1767,17 +1247,13 @@ function draw(e) {
             "canvas-draw",
             {
 
-                x1:
-                    lastX,
+                x1: lastX,
 
-                y1:
-                    lastY,
+                y1: lastY,
 
-                x2:
-                    currentX,
+                x2: currentX,
 
-                y2:
-                    currentY,
+                y2: currentY,
 
                 color:
                     colorPicker?.value ||
@@ -1785,27 +1261,25 @@ function draw(e) {
 
                 lineWidth:
                     Number(
-                        brushSize?.value ||
-                        4
+                        brushSize?.value || 4
                     ),
 
-                tool:
-                    currentTool
+                tool: currentTool
+
             }
         );
+
     }
 
 
-    lastX =
-        currentX;
+    lastX = currentX;
+    lastY = currentY;
 
-    lastY =
-        currentY;
 }
 
 
 // ============================================================
-// RECEIVE DRAWING
+// RECEIVE DRAW
 // ============================================================
 
 if (socket) {
@@ -1818,18 +1292,14 @@ if (socket) {
                 return;
             }
 
-
             ctx.save();
 
-
             ctx.beginPath();
-
 
             ctx.moveTo(
                 data.x1,
                 data.y1
             );
-
 
             ctx.lineTo(
                 data.x2,
@@ -1837,64 +1307,56 @@ if (socket) {
             );
 
 
-            if (
-                data.tool ===
-                "eraser"
-            ) {
+            if (data.tool === "eraser") {
 
                 ctx.globalCompositeOperation =
                     "destination-out";
 
-                ctx.globalAlpha =
-                    1;
+                ctx.globalAlpha = 1;
 
                 ctx.lineWidth =
                     (data.lineWidth || 4) * 2;
+
             }
 
-
             else if (
-                data.tool ===
-                "highlighter"
+                data.tool === "highlighter"
             ) {
 
                 ctx.globalCompositeOperation =
                     "source-over";
 
-                ctx.globalAlpha =
-                    0.28;
+                ctx.globalAlpha = 0.28;
 
                 ctx.lineWidth =
                     (data.lineWidth || 4) * 3;
+
             }
 
-
             else if (
-                data.tool ===
-                "lightPen"
+                data.tool === "lightPen"
             ) {
 
                 ctx.globalCompositeOperation =
                     "source-over";
 
-                ctx.globalAlpha =
-                    0.18;
+                ctx.globalAlpha = 0.18;
 
                 ctx.lineWidth =
                     (data.lineWidth || 4) * 1.5;
-            }
 
+            }
 
             else {
 
                 ctx.globalCompositeOperation =
                     "source-over";
 
-                ctx.globalAlpha =
-                    1;
+                ctx.globalAlpha = 1;
 
                 ctx.lineWidth =
                     data.lineWidth || 4;
+
             }
 
 
@@ -1902,20 +1364,17 @@ if (socket) {
                 data.color ||
                 "#172033";
 
+            ctx.lineCap = "round";
 
-            ctx.lineCap =
-                "round";
-
-            ctx.lineJoin =
-                "round";
-
+            ctx.lineJoin = "round";
 
             ctx.stroke();
 
-
             ctx.restore();
+
         }
     );
+
 }
 
 
@@ -1929,35 +1388,27 @@ function stopDrawing() {
         return;
     }
 
-
-    isDrawing =
-        false;
-
+    isDrawing = false;
 
     ctx.closePath();
 
-
     if (
-        currentTool ===
-        "lightPen"
+        currentTool === "lightPen"
     ) {
 
         createLightPenStroke(
             currentStroke
         );
+
     }
 
-
-    ctx.globalAlpha =
-        1;
-
+    ctx.globalAlpha = 1;
 
     ctx.globalCompositeOperation =
         "source-over";
 
+    currentStroke = [];
 
-    currentStroke =
-        [];
 }
 
 
@@ -1971,75 +1422,47 @@ function createLightPenStroke(points) {
         !points ||
         points.length < 2
     ) {
-
         return;
     }
 
-
     const tempCanvas =
-        document.createElement(
-            "canvas"
-        );
+        document.createElement("canvas");
 
-
-    tempCanvas.width =
-        canvas.width;
-
-    tempCanvas.height =
-        canvas.height;
-
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
 
     tempCanvas.style.position =
         "absolute";
 
-    tempCanvas.style.left =
-        "0";
+    tempCanvas.style.left = "0";
+    tempCanvas.style.top = "0";
 
-    tempCanvas.style.top =
-        "0";
-
-    tempCanvas.style.width =
-        "100%";
-
-    tempCanvas.style.height =
-        "100%";
+    tempCanvas.style.width = "100%";
+    tempCanvas.style.height = "100%";
 
     tempCanvas.style.pointerEvents =
         "none";
 
-    tempCanvas.style.zIndex =
-        "20";
-
+    tempCanvas.style.zIndex = "20";
 
     const tempCtx =
         tempCanvas.getContext("2d");
 
-
-    tempCtx.lineCap =
-        "round";
-
-    tempCtx.lineJoin =
-        "round";
-
+    tempCtx.lineCap = "round";
+    tempCtx.lineJoin = "round";
 
     tempCtx.strokeStyle =
         colorPicker?.value ||
         "#ffffff";
 
-
     tempCtx.lineWidth =
         Number(
-            brushSize?.value ||
-            4
+            brushSize?.value || 4
         ) * 2;
 
-
-    tempCtx.globalAlpha =
-        0.48;
-
+    tempCtx.globalAlpha = 0.48;
 
     tempCtx.beginPath();
-
 
     points.forEach(
         (point, index) => {
@@ -2057,46 +1480,37 @@ function createLightPenStroke(points) {
                     point.x,
                     point.y
                 );
+
             }
+
         }
     );
 
-
     tempCtx.stroke();
-
 
     notebookPage.appendChild(
         tempCanvas
     );
 
+    setTimeout(() => {
 
-    setTimeout(
-        () => {
+        tempCanvas.style.transition =
+            "opacity 0.9s ease";
 
-            tempCanvas.style.transition =
-                "opacity 0.9s ease";
+        tempCanvas.style.opacity = "0";
 
-            tempCanvas.style.opacity =
-                "0";
+        setTimeout(
+            () => tempCanvas.remove(),
+            900
+        );
 
+    }, 2000);
 
-            setTimeout(
-                () => {
-
-                    tempCanvas.remove();
-
-                },
-                900
-            );
-
-        },
-        2000
-    );
 }
 
 
 // ============================================================
-// MOUSE EVENTS
+// CANVAS EVENTS
 // ============================================================
 
 canvas.addEventListener(
@@ -2121,7 +1535,7 @@ canvas.addEventListener(
 
 
 // ============================================================
-// TOUCH EVENTS
+// TOUCH
 // ============================================================
 
 canvas.addEventListener(
@@ -2130,15 +1544,11 @@ canvas.addEventListener(
 
         e.preventDefault();
 
-
-        if (!e.touches[0]) {
-            return;
+        if (e.touches[0]) {
+            startDrawing(
+                e.touches[0]
+            );
         }
-
-
-        startDrawing(
-            e.touches[0]
-        );
 
     },
     {
@@ -2153,15 +1563,11 @@ canvas.addEventListener(
 
         e.preventDefault();
 
-
-        if (!e.touches[0]) {
-            return;
+        if (e.touches[0]) {
+            draw(
+                e.touches[0]
+            );
         }
-
-
-        draw(
-            e.touches[0]
-        );
 
     },
     {
@@ -2189,151 +1595,118 @@ canvas.addEventListener(
 // COLOR
 // ============================================================
 
-if (colorPicker) {
+colorPicker?.addEventListener(
+    "input",
+    () => {
 
-    colorPicker.addEventListener(
-        "input",
-        () => {
+        if (
+            currentTool === "eraser"
+        ) {
 
-            if (
-                currentTool ===
-                "eraser"
-            ) {
+            activateTool(
+                "pen",
+                drawBtn
+            );
 
-                activateTool(
-                    "pen",
-                    drawBtn,
-                    "crosshair"
-                );
-            }
         }
-    );
-}
+
+    }
+);
 
 
 // ============================================================
 // UNDO
 // ============================================================
 
-if (undoBtn) {
+undoBtn?.addEventListener(
+    "click",
+    () => {
 
-    undoBtn.addEventListener(
-        "click",
-        () => {
-
-            if (
-                undoStack.length === 0
-            ) {
-
-                return;
-            }
-
-
-            redoStack.push(
-                canvas.toDataURL()
-            );
-
-
-            const previous =
-                undoStack.pop();
-
-
-            restoreCanvas(
-                previous
-            );
-
-
-            saveCurrentPage();
+        if (!undoStack.length) {
+            return;
         }
-    );
-}
+
+        redoStack.push(
+            canvas.toDataURL()
+        );
+
+        const previous =
+            undoStack.pop();
+
+        restoreCanvas(previous);
+
+        saveCurrentPage();
+
+    }
+);
 
 
 // ============================================================
 // REDO
 // ============================================================
 
-if (redoBtn) {
+redoBtn?.addEventListener(
+    "click",
+    () => {
 
-    redoBtn.addEventListener(
-        "click",
-        () => {
-
-            if (
-                redoStack.length === 0
-            ) {
-
-                return;
-            }
-
-
-            undoStack.push(
-                canvas.toDataURL()
-            );
-
-
-            const next =
-                redoStack.pop();
-
-
-            restoreCanvas(
-                next
-            );
-
-
-            saveCurrentPage();
+        if (!redoStack.length) {
+            return;
         }
-    );
-}
+
+        undoStack.push(
+            canvas.toDataURL()
+        );
+
+        const next =
+            redoStack.pop();
+
+        restoreCanvas(next);
+
+        saveCurrentPage();
+
+    }
+);
 
 
 // ============================================================
 // CLEAR
 // ============================================================
 
-if (clearBtn) {
+clearBtn?.addEventListener(
+    "click",
+    () => {
 
-    clearBtn.addEventListener(
-        "click",
-        () => {
+        saveState();
 
-            saveState();
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
 
+        saveCurrentPage();
 
-            ctx.clearRect(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-
-
-            saveCurrentPage();
-        }
-    );
-}
+    }
+);
 
 
 // ============================================================
-// SAVE CURRENT PAGE
+// SAVE PAGE
 // ============================================================
 
 function saveCurrentPage() {
 
-    if (
-        !pages[currentPage]
-    ) {
-
+    if (!pages[currentPage]) {
         return;
     }
-
 
     pages[currentPage].canvasData =
         canvas.toDataURL();
 
-
     pages[currentPage].height =
         notebookPage.offsetHeight;
+
 }
 
 
@@ -2347,44 +1720,29 @@ function loadPage(index) {
         index < 0 ||
         index >= pages.length
     ) {
-
         return;
     }
 
-
     saveCurrentPage();
 
-
-    currentPage =
-        index;
-
+    currentPage = index;
 
     const page =
         pages[currentPage];
 
-
     notebookPage.style.height =
-        `${page.height}px`;
-
+        `${page.height || 700}px`;
 
     canvas.width =
-        notebookPage.clientWidth ||
-        1000;
-
+        notebookPage.clientWidth || 1000;
 
     canvas.height =
-        page.height;
+        page.height || 700;
 
-
-    canvas.style.width =
-        "100%";
-
-    canvas.style.height =
-        "100%";
-
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
 
     setupCanvas();
-
 
     ctx.clearRect(
         0,
@@ -2393,32 +1751,29 @@ function loadPage(index) {
         canvas.height
     );
 
-
     if (page.canvasData) {
 
-        const image =
-            new Image();
+        const image = new Image();
 
+        image.onload = () => {
 
-        image.onload =
-            () => {
+            ctx.drawImage(
+                image,
+                0,
+                0
+            );
 
-                ctx.drawImage(
-                    image,
-                    0,
-                    0
-                );
+            setupCanvas();
 
-                setupCanvas();
-            };
-
+        };
 
         image.src =
             page.canvasData;
+
     }
 
-
     updatePageNumber();
+
 }
 
 
@@ -2432,7 +1787,9 @@ function updatePageNumber() {
 
         pageNumber.textContent =
             `${currentPage + 1} / ∞`;
+
     }
+
 }
 
 
@@ -2440,196 +1797,155 @@ function updatePageNumber() {
 // ADD PAGE
 // ============================================================
 
-if (addPageBtn) {
+addPageBtn?.addEventListener(
+    "click",
+    () => {
 
-    addPageBtn.addEventListener(
-        "click",
-        () => {
+        saveCurrentPage();
 
-            saveCurrentPage();
+        pages.push({
 
+            canvasData: null,
 
-            pages.push({
+            height: 700
 
-                canvasData:
-                    null,
+        });
 
-                height:
-                    700
-            });
+        currentPage =
+            pages.length - 1;
 
+        notebookPage.style.height =
+            "700px";
 
-            currentPage =
-                pages.length - 1;
+        canvas.width =
+            notebookPage.clientWidth || 1000;
 
+        canvas.height = 700;
 
-            notebookPage.style.height =
-                "700px";
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
 
+        setupCanvas();
 
-            canvas.width =
-                notebookPage.clientWidth ||
-                1000;
+        updatePageNumber();
 
-
-            canvas.height =
-                700;
-
-
-            ctx.clearRect(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-
-
-            setupCanvas();
-
-
-            updatePageNumber();
-        }
-    );
-}
+    }
+);
 
 
 // ============================================================
 // PREVIOUS PAGE
 // ============================================================
 
-if (previousPage) {
+previousPage?.addEventListener(
+    "click",
+    () => {
 
-    previousPage.addEventListener(
-        "click",
-        () => {
+        if (currentPage > 0) {
 
-            if (
-                currentPage > 0
-            ) {
+            loadPage(
+                currentPage - 1
+            );
 
-                loadPage(
-                    currentPage - 1
-                );
-            }
         }
-    );
-}
+
+    }
+);
 
 
 // ============================================================
 // NEXT PAGE
 // ============================================================
 
-if (nextPage) {
+nextPage?.addEventListener(
+    "click",
+    () => {
 
-    nextPage.addEventListener(
-        "click",
-        () => {
+        if (
+            currentPage <
+            pages.length - 1
+        ) {
 
-            if (
-                currentPage <
-                pages.length - 1
-            ) {
+            loadPage(
+                currentPage + 1
+            );
 
-                loadPage(
-                    currentPage + 1
-                );
+        } else {
 
-            } else if (addPageBtn) {
+            addPageBtn?.click();
 
-                addPageBtn.click();
-            }
         }
-    );
-}
+
+    }
+);
 
 
 // ============================================================
 // EXTEND PAGE
 // ============================================================
 
-if (extendPageBtn) {
+extendPageBtn?.addEventListener(
+    "click",
+    () => {
 
-    extendPageBtn.addEventListener(
-        "click",
-        () => {
+        saveCurrentPage();
 
-            saveCurrentPage();
+        const oldHeight =
+            notebookPage.offsetHeight;
 
+        const newHeight =
+            oldHeight + 500;
 
-            const oldHeight =
-                notebookPage.offsetHeight;
+        const oldCanvas =
+            document.createElement("canvas");
 
+        oldCanvas.width =
+            canvas.width;
 
-            const newHeight =
-                oldHeight + 500;
+        oldCanvas.height =
+            canvas.height;
 
+        const oldCtx =
+            oldCanvas.getContext("2d");
 
-            const oldCanvas =
-                document.createElement(
-                    "canvas"
-                );
+        oldCtx.drawImage(
+            canvas,
+            0,
+            0
+        );
 
+        notebookPage.style.height =
+            `${newHeight}px`;
 
-            oldCanvas.width =
-                canvas.width;
+        canvas.width =
+            notebookPage.clientWidth || 1000;
 
-            oldCanvas.height =
-                canvas.height;
+        canvas.height =
+            newHeight;
 
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
 
-            const oldCtx =
-                oldCanvas.getContext(
-                    "2d"
-                );
+        setupCanvas();
 
+        ctx.drawImage(
+            oldCanvas,
+            0,
+            0
+        );
 
-            oldCtx.drawImage(
-                canvas,
-                0,
-                0
-            );
+        pages[currentPage].height =
+            newHeight;
 
+        pages[currentPage].canvasData =
+            canvas.toDataURL();
 
-            notebookPage.style.height =
-                `${newHeight}px`;
-
-
-            canvas.width =
-                notebookPage.clientWidth ||
-                1000;
-
-
-            canvas.height =
-                newHeight;
-
-
-            canvas.style.width =
-                "100%";
-
-            canvas.style.height =
-                "100%";
-
-
-            setupCanvas();
-
-
-            ctx.drawImage(
-                oldCanvas,
-                0,
-                0
-            );
-
-
-            pages[currentPage].height =
-                newHeight;
-
-
-            pages[currentPage].canvasData =
-                canvas.toDataURL();
-        }
-    );
-}
+    }
+);
 
 
 // ============================================================
@@ -2642,78 +1958,52 @@ function updateZoom() {
 
         zoomValue.textContent =
             `${zoom}%`;
-    }
 
+    }
 
     notebookPage.style.transform =
         `scale(${zoom / 100})`;
 
-
     notebookPage.style.transformOrigin =
         "top center";
+
 }
 
 
-if (zoomIn) {
+zoomIn?.addEventListener(
+    "click",
+    () => {
 
-    zoomIn.addEventListener(
-        "click",
-        () => {
+        zoom =
+            Math.min(
+                200,
+                zoom + 10
+            );
 
-            zoom =
-                Math.min(
-                    200,
-                    zoom + 10
-                );
+        updateZoom();
 
-
-            updateZoom();
-        }
-    );
-}
+    }
+);
 
 
-if (zoomOut) {
+zoomOut?.addEventListener(
+    "click",
+    () => {
 
-    zoomOut.addEventListener(
-        "click",
-        () => {
+        zoom =
+            Math.max(
+                50,
+                zoom - 10
+            );
 
-            zoom =
-                Math.max(
-                    50,
-                    zoom - 10
-                );
+        updateZoom();
 
-
-            updateZoom();
-        }
-    );
-}
+    }
+);
 
 
 // ============================================================
 // TEXT TOOL
-// ============================================================
-
-if (textBtn) {
-
-    textBtn.addEventListener(
-        "click",
-        () => {
-
-            activateTool(
-                "text",
-                textBtn,
-                "text"
-            );
-        }
-    );
-}
-
-
-// ============================================================
-// CREATE TEXT ON CANVAS
 // ============================================================
 
 canvas.addEventListener(
@@ -2721,32 +2011,25 @@ canvas.addEventListener(
     e => {
 
         if (
-            currentTool !==
-            "text"
+            currentTool !== "text"
         ) {
-
             return;
         }
 
-
         const position =
             getMousePosition(e);
-
 
         const text =
             prompt(
                 "Enter your text:"
             );
 
-
         if (
             !text ||
             !text.trim()
         ) {
-
             return;
         }
-
 
         createTextObject(
             text.trim(),
@@ -2754,18 +2037,18 @@ canvas.addEventListener(
             position.y
         );
 
-
         activateTool(
             "select",
             selectTool,
             "default"
         );
+
     }
 );
 
 
 // ============================================================
-// CREATE TEXT OBJECT
+// TEXT OBJECT
 // ============================================================
 
 function createTextObject(
@@ -2778,70 +2061,47 @@ function createTextObject(
         return;
     }
 
-
     const element =
-        document.createElement(
-            "div"
-        );
+        document.createElement("div");
 
-
-    element.textContent =
-        text;
-
+    element.textContent = text;
 
     element.style.position =
         "absolute";
 
-
     element.style.left =
         `${x}px`;
-
 
     element.style.top =
         `${y}px`;
 
-
     element.style.fontSize =
         "22px";
 
-
     element.style.fontFamily =
         "Poppins, sans-serif";
-
 
     element.style.color =
         colorPicker?.value ||
         "#172033";
 
-
-    element.style.background =
-        "transparent";
-
-
     element.style.padding =
         "4px 8px";
-
 
     element.style.cursor =
         "move";
 
-
     element.style.pointerEvents =
         "auto";
 
-
-    element.dataset.type =
-        "text";
-
+    element.dataset.type = "text";
 
     objectLayer.appendChild(
         element
     );
 
+    makeDraggable(element);
 
-    makeDraggable(
-        element
-    );
 }
 
 
@@ -2851,14 +2111,10 @@ function createTextObject(
 
 function makeDraggable(element) {
 
-    let dragging =
-        false;
+    let dragging = false;
 
-    let offsetX =
-        0;
-
-    let offsetY =
-        0;
+    let offsetX = 0;
+    let offsetY = 0;
 
 
     element.addEventListener(
@@ -2866,35 +2122,28 @@ function makeDraggable(element) {
         e => {
 
             if (
-                currentTool !==
-                "select"
+                currentTool !== "select"
             ) {
-
                 return;
             }
 
-
-            dragging =
-                true;
-
+            dragging = true;
 
             const rect =
                 element.getBoundingClientRect();
-
 
             offsetX =
                 e.clientX -
                 rect.left;
 
-
             offsetY =
                 e.clientY -
                 rect.top;
 
-
             e.stopPropagation();
 
             e.preventDefault();
+
         }
     );
 
@@ -2907,21 +2156,19 @@ function makeDraggable(element) {
                 return;
             }
 
-
             const parentRect =
                 objectLayer.getBoundingClientRect();
-
 
             element.style.left =
                 `${e.clientX -
                     parentRect.left -
                     offsetX}px`;
 
-
             element.style.top =
                 `${e.clientY -
                     parentRect.top -
                     offsetY}px`;
+
         }
     );
 
@@ -2930,35 +2177,106 @@ function makeDraggable(element) {
         "mouseup",
         () => {
 
-            dragging =
-                false;
+            dragging = false;
+
         }
     );
+
 }
 
 
 // ============================================================
-// SHAPE TOOL
+// SHAPE SYSTEM
 // ============================================================
 
-if (shapeBtn) {
+let selectedShape = null;
 
-    shapeBtn.addEventListener(
-        "click",
-        () => {
+const shapePicker =
+    document.getElementById("shapePicker");
 
-            activateTool(
-                "shape",
-                shapeBtn,
-                "crosshair"
+const closeShapePicker =
+    document.getElementById("closeShapePicker");
+
+
+// ============================================================
+// OPEN SHAPE PICKER
+// ============================================================
+
+shapeBtn?.addEventListener(
+    "click",
+    e => {
+
+        e.stopPropagation();
+
+        if (shapePicker) {
+
+            shapePicker.classList.toggle(
+                "show"
             );
+
         }
-    );
-}
+
+    }
+);
 
 
-let shapeStart =
-    null;
+// ============================================================
+// CLOSE SHAPE PICKER
+// ============================================================
+
+closeShapePicker?.addEventListener(
+    "click",
+    () => {
+
+        shapePicker?.classList.remove(
+            "show"
+        );
+
+    }
+);
+
+
+// ============================================================
+// SHAPE OPTIONS
+// ============================================================
+
+document
+    .querySelectorAll(".shape-option")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                selectedShape =
+                    button.dataset.shape;
+
+                shapePicker?.classList.remove(
+                    "show"
+                );
+
+                activateTool(
+                    "shape",
+                    shapeBtn,
+                    "crosshair"
+                );
+
+                console.log(
+                    "Selected shape:",
+                    selectedShape
+                );
+
+            }
+        );
+
+    });
+
+
+// ============================================================
+// SHAPE START
+// ============================================================
+
+let shapeStart = null;
 
 
 canvas.addEventListener(
@@ -2966,37 +2284,40 @@ canvas.addEventListener(
     e => {
 
         if (
-            currentTool !==
-            "shape"
+            currentTool !== "shape" ||
+            !selectedShape
         ) {
-
             return;
         }
 
-
         shapeStart =
             getMousePosition(e);
+
     }
 );
 
+
+// ============================================================
+// SHAPE END
+// ============================================================
 
 canvas.addEventListener(
     "mouseup",
     e => {
 
         if (
-            currentTool !==
-            "shape" ||
-            !shapeStart
+            currentTool !== "shape" ||
+            !shapeStart ||
+            !selectedShape
         ) {
 
+            shapeStart = null;
             return;
-        }
 
+        }
 
         const end =
             getMousePosition(e);
-
 
         const x =
             Math.min(
@@ -3004,13 +2325,11 @@ canvas.addEventListener(
                 end.x
             );
 
-
         const y =
             Math.min(
                 shapeStart.y,
                 end.y
             );
-
 
         const width =
             Math.abs(
@@ -3018,13 +2337,11 @@ canvas.addEventListener(
                 shapeStart.x
             );
 
-
         const height =
             Math.abs(
                 end.y -
                 shapeStart.y
             );
-
 
         if (
             width >= 5 &&
@@ -3032,23 +2349,23 @@ canvas.addEventListener(
         ) {
 
             createShape(
+                selectedShape,
                 x,
                 y,
                 width,
                 height
             );
+
         }
 
-
-        shapeStart =
-            null;
-
+        shapeStart = null;
 
         activateTool(
             "select",
             selectTool,
             "default"
         );
+
     }
 );
 
@@ -3058,6 +2375,7 @@ canvas.addEventListener(
 // ============================================================
 
 function createShape(
+    shapeType,
     x,
     y,
     width,
@@ -3068,32 +2386,26 @@ function createShape(
         return;
     }
 
-
     const shape =
-        document.createElement(
-            "div"
-        );
-
+        document.createElement("div");
 
     shape.style.position =
         "absolute";
 
-
     shape.style.left =
         `${x}px`;
-
 
     shape.style.top =
         `${y}px`;
 
-
     shape.style.width =
         `${width}px`;
-
 
     shape.style.height =
         `${height}px`;
 
+    shape.style.boxSizing =
+        "border-box";
 
     shape.style.border =
         `2px solid ${
@@ -3101,95 +2413,135 @@ function createShape(
             "#172033"
         }`;
 
-
-    shape.style.borderRadius =
-        "8px";
-
-
-    shape.style.boxSizing =
-        "border-box";
-
+    shape.style.cursor =
+        "move";
 
     shape.style.pointerEvents =
         "auto";
 
+    shape.dataset.type =
+        shapeType;
 
-    shape.style.cursor =
-        "move";
+    shape.dataset.shape =
+        shapeType;
+
+
+    // ========================================================
+    // SHAPE STYLING
+    // ========================================================
+
+    if (shapeType === "circle") {
+
+        shape.style.borderRadius =
+            "50%";
+
+    }
+
+    else if (shapeType === "diamond") {
+
+        shape.style.transform =
+            "rotate(45deg)";
+
+    }
+
+    else if (shapeType === "triangle") {
+
+        shape.style.border = "none";
+
+        shape.style.width =
+            "0px";
+
+        shape.style.height =
+            "0px";
+
+        shape.style.borderLeft =
+            `${width / 2}px solid transparent`;
+
+        shape.style.borderRight =
+            `${width / 2}px solid transparent`;
+
+        shape.style.borderBottom =
+            `${height}px solid ${
+                colorPicker?.value ||
+                "#172033"
+            }`;
+
+    }
+
+    else if (shapeType === "parallelogram") {
+
+        shape.style.transform =
+            "skewX(-20deg)";
+
+    }
+
+    else if (shapeType === "heart") {
+
+        shape.style.borderRadius =
+            "50% 50% 0 0";
+
+        shape.style.transform =
+            "rotate(45deg)";
+
+    }
 
 
     objectLayer.appendChild(
         shape
     );
 
+    makeDraggable(shape);
 
-    makeDraggable(
-        shape
-    );
 }
 
 
 // ============================================================
-// IMAGE TOOL
+// IMAGE
 // ============================================================
 
-if (imageBtn) {
+imageBtn?.addEventListener(
+    "click",
+    () => {
 
-    imageBtn.addEventListener(
-        "click",
-        () => {
+        const input =
+            document.createElement("input");
 
-            const input =
-                document.createElement(
-                    "input"
-                );
+        input.type = "file";
 
+        input.accept = "image/*";
 
-            input.type =
-                "file";
+        input.addEventListener(
+            "change",
+            () => {
 
+                const file =
+                    input.files?.[0];
 
-            input.accept =
-                "image/*";
-
-
-            input.addEventListener(
-                "change",
-                () => {
-
-                    const file =
-                        input.files?.[0];
-
-
-                    if (!file) {
-                        return;
-                    }
-
-
-                    const reader =
-                        new FileReader();
-
-
-                    reader.onload =
-                        event => {
-
-                            createImageObject(
-                                event.target.result
-                            );
-                        };
-
-
-                    reader.readAsDataURL(
-                        file
-                    );
+                if (!file) {
+                    return;
                 }
-            );
 
+                const reader =
+                    new FileReader();
 
-            input.click();
-        }
-    );
-}
+                reader.onload =
+                    event => {
+
+                        createImageObject(
+                            event.target.result
+                        );
+
+                    };
+
+                reader.readAsDataURL(file);
+
+            }
+        );
+
+        input.click();
+
+    }
+);
 
 
 // ============================================================
@@ -3202,61 +2554,44 @@ function createImageObject(src) {
         return;
     }
 
-
     const image =
-        document.createElement(
-            "img"
-        );
+        document.createElement("img");
 
-
-    image.src =
-        src;
-
+    image.src = src;
 
     image.style.position =
         "absolute";
 
-
     image.style.left =
         "150px";
-
 
     image.style.top =
         "200px";
 
-
     image.style.width =
         "250px";
-
 
     image.style.maxWidth =
         "400px";
 
-
     image.style.borderRadius =
         "10px";
-
 
     image.style.boxShadow =
         "0 5px 20px rgba(0,0,0,0.12)";
 
-
     image.style.cursor =
         "move";
 
-
     image.style.pointerEvents =
         "auto";
-
 
     objectLayer.appendChild(
         image
     );
 
+    makeDraggable(image);
 
-    makeDraggable(
-        image
-    );
 }
 
 
@@ -3264,48 +2599,42 @@ function createImageObject(src) {
 // TABLE
 // ============================================================
 
-if (tableBtn) {
+tableBtn?.addEventListener(
+    "click",
+    () => {
 
-    tableBtn.addEventListener(
-        "click",
-        () => {
-
-            const rows =
-                Number(
-                    prompt(
-                        "Number of rows:",
-                        "3"
-                    )
-                );
-
-
-            const columns =
-                Number(
-                    prompt(
-                        "Number of columns:",
-                        "3"
-                    )
-                );
-
-
-            if (
-                !rows ||
-                !columns ||
-                rows < 1 ||
-                columns < 1
-            ) {
-
-                return;
-            }
-
-
-            createTable(
-                rows,
-                columns
+        const rows =
+            Number(
+                prompt(
+                    "Number of rows:",
+                    "3"
+                )
             );
+
+        const columns =
+            Number(
+                prompt(
+                    "Number of columns:",
+                    "3"
+                )
+            );
+
+        if (
+            !rows ||
+            !columns ||
+            rows < 1 ||
+            columns < 1
+        ) {
+            return;
         }
-    );
-}
+
+        createTable(
+            rows,
+            columns
+        );
+
+    }
+);
 
 
 // ============================================================
@@ -3321,36 +2650,26 @@ function createTable(
         return;
     }
 
-
     const table =
-        document.createElement(
-            "table"
-        );
-
+        document.createElement("table");
 
     table.style.position =
         "absolute";
 
-
     table.style.left =
         "200px";
-
 
     table.style.top =
         "300px";
 
-
     table.style.borderCollapse =
         "collapse";
-
 
     table.style.background =
         "#ffffff";
 
-
     table.style.pointerEvents =
         "auto";
-
 
     table.style.cursor =
         "move";
@@ -3365,7 +2684,6 @@ function createTable(
         const row =
             table.insertRow();
 
-
         for (
             let c = 0;
             c < columns;
@@ -3375,26 +2693,23 @@ function createTable(
             const cell =
                 row.insertCell();
 
-
             cell.textContent =
                 "Cell";
-
 
             cell.contentEditable =
                 "true";
 
-
             cell.style.border =
                 "1px solid #999";
-
 
             cell.style.padding =
                 "10px 15px";
 
-
             cell.style.minWidth =
                 "70px";
+
         }
+
     }
 
 
@@ -3402,11 +2717,86 @@ function createTable(
         table
     );
 
+    makeDraggable(table);
 
-    makeDraggable(
-        table
-    );
 }
+
+
+// ============================================================
+// STICKY NOTE
+// ============================================================
+
+stickyBtn?.addEventListener(
+    "click",
+    () => {
+
+        if (!objectLayer) {
+            return;
+        }
+
+        const text =
+            prompt(
+                "Enter sticky note:",
+                "Write something..."
+            );
+
+        if (
+            !text ||
+            !text.trim()
+        ) {
+            return;
+        }
+
+        const note =
+            document.createElement("div");
+
+        note.textContent =
+            text.trim();
+
+        note.style.position =
+            "absolute";
+
+        note.style.left =
+            "250px";
+
+        note.style.top =
+            "150px";
+
+        note.style.width =
+            "180px";
+
+        note.style.minHeight =
+            "120px";
+
+        note.style.padding =
+            "18px";
+
+        note.style.background =
+            "#fff3a6";
+
+        note.style.boxShadow =
+            "0 5px 15px rgba(0,0,0,0.15)";
+
+        note.style.borderRadius =
+            "8px";
+
+        note.style.cursor =
+            "move";
+
+        note.style.pointerEvents =
+            "auto";
+
+        note.dataset.type =
+            "sticky";
+
+        objectLayer.appendChild(
+            note
+        );
+
+        makeDraggable(note);
+
+    }
+);
 
 
 // ============================================================
@@ -3419,9 +2809,6 @@ document.addEventListener(
 
         const key =
             e.key.toLowerCase();
-
-
-        // CTRL + Z
 
         if (
             e.ctrlKey &&
@@ -3436,9 +2823,6 @@ document.addEventListener(
             return;
         }
 
-
-        // CTRL + Y
-
         if (
             e.ctrlKey &&
             key === "y"
@@ -3450,9 +2834,6 @@ document.addEventListener(
 
             return;
         }
-
-
-        // CTRL + SHIFT + Z
 
         if (
             e.ctrlKey &&
@@ -3471,16 +2852,11 @@ document.addEventListener(
         const target =
             e.target;
 
-
         if (
             target &&
             (
-                target.tagName ===
-                    "INPUT" ||
-
-                target.tagName ===
-                    "TEXTAREA" ||
-
+                target.tagName === "INPUT" ||
+                target.tagName === "TEXTAREA" ||
                 target.isContentEditable
             )
         ) {
@@ -3489,25 +2865,18 @@ document.addEventListener(
         }
 
 
-        // P = PEN
-
         if (key === "p") {
             drawBtn?.click();
         }
-
-
-        // E = ERASER
 
         if (key === "e") {
             eraserBtn?.click();
         }
 
-
-        // H = HIGHLIGHTER
-
         if (key === "h") {
             highlighterBtn?.click();
         }
+
     }
 );
 
@@ -3523,14 +2892,8 @@ if (drawBtn) {
         drawBtn,
         "crosshair"
     );
+
 }
-
-
-// ============================================================
-// PAGE NUMBER
-// ============================================================
-
-updatePageNumber();
 
 
 // ============================================================
@@ -3541,23 +2904,18 @@ function saveDocument() {
 
     saveCurrentPage();
 
-
     const titleInput =
         document.getElementById(
             "documentTitle"
         );
 
-
     const documentData = {
 
-        pages:
-            pages,
+        pages,
 
-        currentPage:
-            currentPage,
+        currentPage,
 
-        zoom:
-            zoom,
+        zoom,
 
         title:
             titleInput?.value ||
@@ -3565,19 +2923,28 @@ function saveDocument() {
 
         canvasStyle:
             currentCanvasStyle
-    };
 
+    };
 
     const documentKey =
         getDocumentKey();
 
+    try {
 
-    localStorage.setItem(
-        documentKey,
-        JSON.stringify(
-            documentData
-        )
-    );
+        localStorage.setItem(
+            documentKey,
+            JSON.stringify(documentData)
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Could not save document:",
+            error
+        );
+
+    }
+
 }
 
 
@@ -3590,17 +2957,16 @@ function loadDocument() {
     const documentKey =
         getDocumentKey();
 
-
     const saved =
         localStorage.getItem(
             documentKey
         );
 
-
     if (!saved) {
+        updatePageNumber();
+        updateZoom();
         return;
     }
-
 
     try {
 
@@ -3609,14 +2975,13 @@ function loadDocument() {
 
 
         if (
-            Array.isArray(
-                data.pages
-            ) &&
-            data.pages.length > 0
+            Array.isArray(data.pages) &&
+            data.pages.length
         ) {
 
             pages =
                 data.pages;
+
         }
 
 
@@ -3633,6 +2998,7 @@ function loadDocument() {
                     ),
                     pages.length - 1
                 );
+
         }
 
 
@@ -3649,6 +3015,7 @@ function loadDocument() {
                         data.zoom
                     )
                 );
+
         }
 
 
@@ -3657,6 +3024,7 @@ function loadDocument() {
             applyCanvasStyle(
                 data.canvasStyle
             );
+
         }
 
 
@@ -3665,7 +3033,6 @@ function loadDocument() {
                 "documentTitle"
             );
 
-
         if (
             titleInput &&
             data.title
@@ -3673,37 +3040,29 @@ function loadDocument() {
 
             titleInput.value =
                 data.title;
+
         }
 
 
         const page =
             pages[currentPage];
 
-
         notebookPage.style.height =
             `${page.height || 700}px`;
 
-
         canvas.width =
-            notebookPage.clientWidth ||
-            1000;
-
+            notebookPage.clientWidth || 1000;
 
         canvas.height =
-            page.height ||
-            700;
-
+            page.height || 700;
 
         canvas.style.width =
             "100%";
 
-
         canvas.style.height =
             "100%";
 
-
         setupCanvas();
-
 
         ctx.clearRect(
             0,
@@ -3718,7 +3077,6 @@ function loadDocument() {
             const image =
                 new Image();
 
-
             image.onload =
                 () => {
 
@@ -3728,13 +3086,13 @@ function loadDocument() {
                         0
                     );
 
-
                     setupCanvas();
-                };
 
+                };
 
             image.src =
                 page.canvasData;
+
         }
 
 
@@ -3748,7 +3106,9 @@ function loadDocument() {
             "Could not load LiveCanvas:",
             error
         );
+
     }
+
 }
 
 
@@ -3767,7 +3127,7 @@ setInterval(
 
 
 // ============================================================
-// SAVE BEFORE LEAVING
+// SAVE BEFORE LEAVE
 // ============================================================
 
 window.addEventListener(
@@ -3781,7 +3141,7 @@ window.addEventListener(
 
 
 // ============================================================
-// LOAD SAVED DOCUMENT
+// LOAD
 // ============================================================
 
 loadDocument();
