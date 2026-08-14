@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Saved Boards - LiveCanvas</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Use same handwritten script font family as home page -->
+    <style>
+        :root{ --card-bg: #ffffff }
+        body{ background: #ffffff; font-family: Poppins, sans-serif }
+        .container{
+            min-height: calc(100vh - 84px);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            padding:40px 20px;
+        }
+
+        .board-shell{
+            width:100%;
+            max-width:1200px;
+            height:540px;
+            border-radius:24px;
+            background: var(--card-bg);
+            border: none;
+            box-shadow: none;
+            display:flex;
+            flex-direction:column;
+            overflow:hidden;
+            position:relative;
+        }
+
+        .board-header{
+            /* pin to extreme left of viewport */
+            position:fixed;
+            left:18px;
+            top:18px;
+            display:flex;
+            align-items:center;
+            gap:10px;
+            z-index:30;
+            padding:6px 8px;
+            background:transparent;
+        }
+
+        .board-header .logo-img{ width:48px; height:48px; object-fit:contain }
+
+        .board-header h2{
+            font-family: 'Outfit', 'Source Sans Pro', sans-serif;
+            font-weight:700;
+            letter-spacing:1px;
+            margin:0;
+            font-size:28px;
+            color:#0f172a;
+            line-height:1;
+        }
+
+        .board-body{
+            flex:1 1 auto;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            flex-direction:column;
+            gap:18px;
+            color:#334155;
+        }
+
+        .empty-title{
+            font-size:20px;
+            color:#0f172a;
+            font-weight:600;
+        }
+
+        .create-main{
+            appearance:none;
+            border:2px dashed #9ca3af;
+            background:transparent;
+            padding:28px 36px;
+            border-radius:18px;
+            cursor:pointer;
+            color:#374151;
+            font-weight:600;
+            display:flex;
+            align-items:center;
+            gap:12px;
+        }
+
+        .create-main img{ width:58px; opacity:0.9 }
+
+        /* graphic bottom center (visible, fixed to viewport) */
+        .graphic{
+            position:fixed;
+            bottom:10px;
+            left:50%;
+            transform:translateX(-50%);
+            pointer-events:none;
+            width:80vw;
+            max-width:none;
+            height:auto;
+            opacity:1;
+            z-index:10;
+        }
+
+        /* Overlay heading displayed on top of the graphic */
+        .graphic-overlay{
+            position:fixed;
+            left:50%;
+            transform:translateX(-50%);
+            /* moved lower so it's closer to the graphic */
+            bottom:400px;
+            pointer-events:none;
+            z-index:11;
+            text-align:center;
+            width:100%;
+        }
+
+        .graphic-overlay .overlay-title{
+            font-family: 'Outfit', 'Source Sans Pro', sans-serif;
+            font-size:36px;
+            font-weight:700;
+            margin:0;
+            color:#000; /* plain black as requested */
+        }
+
+        .graphic-overlay .overlay-actions{
+            margin-top:18px;
+        }
+
+        /* circular floating plus button */
+        .overlay-create{
+            pointer-events:auto; /* allow clicking */
+            width:50px;
+            height:50px;
+            padding:0;
+            border-radius:50%;
+            border:none;
+            overflow:hidden;
+            /* solid blue from provided image */
+            background:#0052cc;
+            display:inline-grid;
+            place-items:center;
+            color:#fff;
+            cursor:pointer;
+            box-shadow:0 14px 34px rgba(0,82,204,0.16), 0 6px 18px rgba(0,0,0,0.08);
+            transform:translateY(0);
+            transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;
+        }
+
+        .overlay-create .plus{
+            font-size:20px;
+            line-height:1;
+            font-weight:800;
+            display:inline-block;
+            transform:translateY(-2px);
+            letter-spacing:-2px;
+        }
+
+        .overlay-create:hover{
+            transform:translateY(-6px) scale(1.03);
+            box-shadow:0 30px 60px rgba(0,82,204,0.22), 0 12px 30px rgba(0,0,0,0.12);
+            filter:brightness(1.02);
+        }
+
+        .overlay-create:active{
+            transform:translateY(-2px) scale(.98);
+        }
+
+        /* fun modal styling */
+        .modal-backdrop{
+            position:fixed;inset:0;background:rgba(15,23,42,0.42);display:none;align-items:center;justify-content:center;z-index:60;
+            backdrop-filter:blur(2px);
+            opacity:0;
+            transition:opacity .2s ease;
+        }
+
+        .modal-backdrop.visible{
+            display:flex;
+            opacity:1;
+        }
+
+        .modal{
+            background:#f3f1f8;
+            padding:0 18px 16px;
+            border-radius:26px;
+            width:min(420px, calc(100vw - 26px));
+            box-shadow:0 20px 60px rgba(15, 23, 42, 0.12);
+            border:3px solid rgba(50, 50, 70, 0.08);
+            overflow:hidden;
+            max-height:78vh;
+            transform:translateY(8px) scale(.98);
+            transition:transform .2s ease, opacity .2s ease;
+            position:relative;
+        }
+
+        .modal-backdrop.visible .modal{
+            transform:translateY(0) scale(1);
+        }
+
+        .modal-close{
+            position:absolute;
+            top:14px;
+            right:14px;
+            width:34px;
+            height:34px;
+            border-radius:50%;
+            border:none;
+            background:rgba(255,255,255,0.7);
+            color:#4b5563;
+            font-size:22px;
+            line-height:1;
+            cursor:pointer;
+            display:grid;
+            place-items:center;
+            box-shadow:0 6px 16px rgba(15, 23, 42, 0.08);
+            transition:all .2s ease;
+            z-index:2;
+        }
+
+        .modal-close:hover{background:#fff;transform:translateY(-1px)}
+        .modal-close:active{transform:translateY(0)}
+
+        .modal-hero{
+            display:block;
+            width:100%;
+            max-width:420px;
+            margin:0 auto 6px;
+            height:180px;
+            object-fit:contain;
+            object-position:center;
+            border-radius:0;
+            background:transparent;
+        }
+
+        .modal-header{
+            margin-bottom:10px;
+            padding-right:40px;
+        }
+
+        .modal h3{
+            margin:0;
+            color:#1b1a2d;
+            font-family: 'Poppins', 'Outfit', sans-serif;
+            font-size:28px;
+            font-weight:800;
+            letter-spacing:-0.05em;
+            line-height:1.1;
+        }
+
+        .modal-subtitle{
+            margin:6px 0 0;
+            color:#6b7280;
+            font-family:'Poppins', 'Source Sans Pro', sans-serif;
+            font-size:14px;
+            font-weight:500;
+        }
+
+        .modal .row{margin-bottom:14px}
+
+        .modal label{
+            display:block;
+            font-size:15px;
+            color:#1f2430;
+            margin-bottom:8px;
+            font-family:'Poppins', 'Outfit', sans-serif;
+            font-weight:600;
+            letter-spacing:-0.02em;
+        }
+
+        .modal input[type="text"]{
+            width:100%;
+            padding:12px 14px;
+            border:1px solid #dfe4ee;
+            border-radius:12px;
+            background:#f9f9fb;
+            box-shadow:inset 0 1px 0 rgba(255,255,255,0.8);
+            font-family:'Poppins', 'Source Sans Pro', sans-serif;
+            font-size:15px;
+            color:#1f2937;
+            transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+        }
+
+        .modal input[type="text"]::placeholder{color:#94a3b8}
+
+        .modal input[type="text"]:focus{
+            outline:none;
+            border-color:rgba(124,58,237,0.6);
+            box-shadow:0 0 0 4px rgba(124,58,237,0.12), inset 0 1px 0 rgba(255,255,255,0.8);
+            background:#fff;
+        }
+
+        .modal .options{display:flex;gap:8px;flex-wrap:wrap}
+
+        .option-btn{
+            position:relative;
+            display:flex;
+            align-items:center;
+            gap:8px;
+            padding:10px 12px;
+            border-radius:12px;
+            border:1px solid #dfe3ed;
+            background:#f8f8fb;
+            cursor:pointer;
+            font-family:'Poppins', 'Outfit', sans-serif;
+            font-size:15px;
+            font-weight:600;
+            color:#3b3d4d;
+            transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+        }
+
+        .option-btn:hover{
+            transform:translateY(-1px);
+            box-shadow:0 8px 16px rgba(15,23,42,0.06);
+        }
+
+        .option-btn:focus-visible{
+            outline:none;
+            box-shadow:0 0 0 3px rgba(124,58,237,0.15);
+        }
+
+        .option-btn.active{
+            background:linear-gradient(90deg,#7c3aed,#2563eb);
+            color:#fff;
+            border-color:transparent;
+            box-shadow:0 8px 24px rgba(124,58,237,0.12);
+        }
+
+        .option-preview{
+            width:18px;
+            height:18px;
+            border-radius:5px;
+            border:1.5px solid currentColor;
+            background:rgba(255,255,255,0.18);
+            position:relative;
+            flex-shrink:0;
+        }
+
+        .option-btn[data-value="grid"] .option-preview{
+            background-image:linear-gradient(to right, rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.7) 1px, transparent 1px);
+            background-size:6px 6px;
+            border-color:currentColor;
+        }
+
+        .option-btn[data-value="dots"] .option-preview{
+            background-image:radial-gradient(circle, rgba(255,255,255,0.8) 1.5px, transparent 1.6px);
+            background-size:8px 8px;
+            border-color:currentColor;
+        }
+
+        .option-btn[data-value="plain"] .option-preview{
+            background:#fff;
+        }
+
+        .option-btn[data-value="lines"] .option-preview{
+            background-image:linear-gradient(to bottom, transparent 0, transparent 5px, rgba(255,255,255,0.7) 5px, rgba(255,255,255,0.7) 6px, transparent 6px);
+            background-size:100% 12px;
+            border-color:currentColor;
+        }
+
+        .option-btn.active .option-preview{
+            border-color:#fff;
+        }
+
+        .option-check{
+            display:none;
+        }
+
+        .modal .actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px}
+
+        .modal .actions .left-note{font-size:12px;color:#6b7280}
+
+        .btn{padding:11px 18px;border-radius:12px;border:none;cursor:pointer;font-family:'Poppins', 'Outfit', sans-serif;font-weight:700;font-size:16px;transition:all .18s ease}
+
+        .btn.primary{background:linear-gradient(90deg,#5b4ce6,#3d6bf7);color:#fff;box-shadow:0 12px 30px rgba(79,86,242,0.22)}
+        .btn.primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 16px 36px rgba(79,86,242,0.28)}
+        .btn.primary:active:not(:disabled){transform:translateY(0)}
+        .btn.primary:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+
+        .btn.ghost{background:transparent;border:1px solid #dfe3ed;color:#2f3440}
+        .btn.ghost:hover{background:#fff;transform:translateY(-1px)}
+
+        @media(max-width:640px){
+            .board-shell{height:500px;padding:12px}
+            .modal{width:min(92vw, 420px);padding:0 14px 14px}
+            .modal-hero{height:150px;max-width:320px}
+            .modal h3{font-size:24px}
+            .option-btn{flex:1 1 calc(50% - 8px);justify-content:center}
+            .modal .actions{gap:10px}
+            .btn{flex:1}
+            .board-header h2{font-size:24px}
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="board-shell" role="main">
+            <div class="board-header">
+                
+                <h2 style="margin:0">Live Canvas</h2>
+            </div>
+
+            <div class="board-body">
+                <!-- Empty state removed; overlay heading placed above the graphic -->
+            </div>
+
+            <img src="assets/saved.png" alt="saved graphic" class="graphic">
+
+            <div class="graphic-overlay">
+                <h1 class="overlay-title">You have no boards</h1>
+                <h1 class="overlay-title">Create your first one now</h1>
+                <div class="overlay-actions">
+                    <button id="openCreate" class="overlay-create" aria-label="Create new board"><span class="plus">+</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="backdrop" class="modal-backdrop">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <button type="button" class="modal-close" id="closeModalBtn" aria-label="Close create board modal">×</button>
+            <img src="assets/popup.png" alt="Create board illustration" class="modal-hero">
+            <div class="modal-header">
+                <h3 id="modalTitle">Create New Board</h3>
+            </div>
+            <div class="row">
+                <label for="boardName">Board name</label>
+                <input id="boardName" type="text" placeholder="e.g. Project Ideas" autocomplete="off">
+            </div>
+            <div class="row">
+                <label>Canvas style</label>
+                <div class="options" id="options" role="radiogroup" aria-label="Canvas style options">
+                    <button type="button" class="option-btn" data-value="grid" aria-pressed="false">
+                        <span class="option-preview" aria-hidden="true"></span>
+                        <span>Grid</span>
+                        <span class="option-check" aria-hidden="true">✓</span>
+                    </button>
+                    <button type="button" class="option-btn" data-value="dots" aria-pressed="false">
+                        <span class="option-preview" aria-hidden="true"></span>
+                        <span>Dots</span>
+                        <span class="option-check" aria-hidden="true">✓</span>
+                    </button>
+                    <button type="button" class="option-btn" data-value="blank" aria-pressed="true">
+                        <span class="option-preview" aria-hidden="true"></span>
+                        <span>Blank</span>
+                        <span class="option-check" aria-hidden="true">✓</span>
+                    </button>
+                    <button type="button" class="option-btn" data-value="lines" aria-pressed="false">
+                        <span class="option-preview" aria-hidden="true"></span>
+                        <span>Lines</span>
+                        <span class="option-check" aria-hidden="true">✓</span>
+                    </button>
+                </div>
+            </div>
+            <div class="actions">
+                <button id="cancelBtn" class="btn ghost" type="button">Cancel</button>
+                <button id="createBtn" class="btn primary" type="button" disabled>Create board</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Require login
+        try{
+            const user = JSON.parse(localStorage.getItem('loggedInUser'));
+            if(!user){
+                window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+            }
+        }catch(e){
+            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+        }
+
+        const backdrop = document.getElementById('backdrop');
+        const openCreate = document.getElementById('openCreate');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const createBtn = document.getElementById('createBtn');
+        const optionsEl = document.getElementById('options');
+        const boardNameInput = document.getElementById('boardName');
+
+        let selectedOption = 'blank';
+
+        function updateCreateButtonState(){
+            const hasValue = boardNameInput.value.trim().length > 0;
+            createBtn.disabled = !hasValue;
+        }
+
+        function openModal(){
+            backdrop.classList.add('visible');
+            setTimeout(() => {
+                boardNameInput.focus();
+                boardNameInput.setSelectionRange(boardNameInput.value.length, boardNameInput.value.length);
+            }, 50);
+        }
+
+        function closeModal(){
+            backdrop.classList.remove('visible');
+            boardNameInput.value = '';
+            updateCreateButtonState();
+            selectedOption = 'blank';
+            Array.from(optionsEl.children).forEach(btn => {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-pressed', 'false');
+            });
+            const blankOption = optionsEl.querySelector('[data-value="blank"]');
+            if (blankOption) {
+                blankOption.classList.add('active');
+                blankOption.setAttribute('aria-pressed', 'true');
+            }
+        }
+
+        if (openCreate) openCreate.addEventListener('click', openModal);
+        cancelBtn.addEventListener('click', closeModal);
+        closeModalBtn.addEventListener('click', closeModal);
+        backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) closeModal(); });
+
+        document.addEventListener('keydown', (e)=>{
+            if (!backdrop.classList.contains('visible')) return;
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'Enter' && !createBtn.disabled) {
+                createBtn.click();
+            }
+        });
+
+        boardNameInput.addEventListener('input', updateCreateButtonState);
+
+        // options handler
+        optionsEl.addEventListener('click', (e)=>{
+            const btn = e.target.closest('.option-btn');
+            if(!btn) return;
+            selectedOption = btn.dataset.value;
+            Array.from(optionsEl.children).forEach(b => {
+                const isActive = b === btn;
+                b.classList.toggle('active', isActive);
+                b.setAttribute('aria-pressed', String(isActive));
+            });
+        });
+
+        const blankOption = optionsEl.querySelector('[data-value="blank"]');
+        if (blankOption) {
+            blankOption.classList.add('active');
+            blankOption.setAttribute('aria-pressed', 'true');
+        }
+
+        updateCreateButtonState();
+
+        createBtn.addEventListener('click', ()=>{
+            const name = boardNameInput.value.trim();
+            if (!name) return;
+            const boards = JSON.parse(localStorage.getItem('savedBoards')||'[]');
+            const id = 'B' + Date.now().toString(36);
+            const board = {
+                id,
+                name,
+                template: selectedOption,
+                canvasStyle: selectedOption === 'blank' ? 'blank' : selectedOption,
+                created: Date.now()
+            };
+            boards.unshift(board);
+            localStorage.setItem('savedBoards', JSON.stringify(boards));
+
+            // pass newly created board id and selected canvas style to index via sessionStorage
+            sessionStorage.setItem('currentBoardId', id);
+            sessionStorage.setItem('currentCanvasStyle', selectedOption);
+            // ensure solo mode
+            sessionStorage.removeItem('roomId');
+            // navigate to canvas
+            window.location.href = 'index.html';
+        });
+    </script>
+
+</body>
+
+</html>

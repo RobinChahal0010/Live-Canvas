@@ -149,6 +149,12 @@
 
     <!-- Login JavaScript -->
 
+    <script>
+        const existingUser = localStorage.getItem('loggedInUser');
+        if (existingUser) {
+            window.location.href = 'saved.html';
+        }
+    </script>
     <script src="login.js"></script>
 
 </body>

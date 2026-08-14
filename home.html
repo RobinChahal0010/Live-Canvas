@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Canvas - Welcome</title>
-    <link rel="icon" type="image/png" href="assets/icon.png">
+    <link rel="icon" type="image/png" href="assets/logo.png">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1338,7 +1338,7 @@
             startNowBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 const logged = localStorage.getItem('loggedInUser');
-                const target = 'index.html';
+                const target = 'saved.html';
                 if (logged) {
                     window.location.href = target;
                 } else {

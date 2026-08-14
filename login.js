@@ -80,37 +80,8 @@ if (loginBtn) {
 
 
 
-        // ========================================================
-        // REDIRECT
-        // ========================================================
-
-        const params =
-            new URLSearchParams(
-                window.location.search
-            );
-
-
-        const redirect =
-            params.get("redirect");
-
-
-        console.log(
-            "Login redirect:",
-            redirect
-        );
-
-
-        if (redirect) {
-
-            window.location.href =
-                redirect;
-
-        } else {
-
-            window.location.href =
-                "room.html";
-
-        }
+        // Always send user to Saved Boards after login
+        window.location.href = "saved.html";
 
     });
 
