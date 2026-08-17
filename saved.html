@@ -571,7 +571,7 @@
             sessionStorage.setItem('currentCanvasStyle', selectedOption);
             sessionStorage.setItem('currentBoardName', name);
             // ensure solo mode
-            sessionStorage.removeItem('roomId');
+            sessionStorage.removeItem('roomId',id);
             // navigate to canvas
             window.location.href = 'index.html';
         });

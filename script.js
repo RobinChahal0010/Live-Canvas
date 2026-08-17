@@ -1,22 +1,25 @@
 // ============================================================
 // LIVE CANVAS - COMPLETE SCRIPT
-// ROOM + AUTH + SOCKET + CANVAS + TOOLS + SHAPES + PAGES
+// BOARD + AUTH + SOCKET + CANVAS + TOOLS + SHAPES + PAGES
 // ============================================================
 
 
 // ============================================================
-// ROOM
+// BOARD
 // ============================================================
 
 const urlParams = new URLSearchParams(window.location.search);
-const roomId = urlParams.get("room");
+
+const boardId =
+    urlParams.get("board") ||
+    sessionStorage.getItem("currentBoardId");
 
 let socket = null;
 
 console.log("================================");
 console.log("LIVE CANVAS");
 console.log("Current URL:", window.location.href);
-console.log("Room ID:", roomId);
+console.log("Board ID:", boardId);
 console.log("================================");
 
 
@@ -106,24 +109,7 @@ let currentUsername =
     loggedInUser?.name || "User";
 
 
-// ============================================================
-// ROOM AUTH
-// ============================================================
 
-if (roomId && !loggedInUser) {
-
-    console.log("Room requires login.");
-
-    const redirectUrl =
-        window.location.pathname +
-        window.location.search;
-
-    window.location.replace(
-        "login.html?redirect=" +
-        encodeURIComponent(redirectUrl)
-    );
-
-}
 
 
 // ============================================================
@@ -158,7 +144,7 @@ if (logoutBtn) {
 
         localStorage.removeItem("loggedInUser");
 
-        sessionStorage.removeItem("roomUsername");
+        
 
         if (socket) {
             socket.disconnect();
