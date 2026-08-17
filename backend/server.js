@@ -18,7 +18,7 @@ app.get("/", (req, res) => {
         path.join(
             __dirname,
             "..",
-            "room.html"
+            "home.html"
         )
     );
 
