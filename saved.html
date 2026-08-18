@@ -9,17 +9,17 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
     <!-- Use same handwritten script font family as home page -->
     <style>
         :root{ --card-bg: #ffffff }
-        body{ background: #ffffff; font-family: Poppins, sans-serif }
+        body{ background: #f7f6f2; font-family: Poppins, sans-serif }
         .container{
             min-height: calc(100vh - 84px);
             display:flex;
             align-items:center;
             justify-content:center;
-            padding:40px 20px;
+            padding:40px 20px 28px;
         }
 
         .board-shell{
@@ -27,7 +27,7 @@
             max-width:1200px;
             height:540px;
             border-radius:24px;
-            background: var(--card-bg);
+            background:transparent;
             border: none;
             box-shadow: none;
             display:flex;
@@ -37,7 +37,6 @@
         }
 
         .board-header{
-            /* pin to extreme left of viewport */
             position:fixed;
             left:18px;
             top:18px;
@@ -49,7 +48,7 @@
             background:transparent;
         }
 
-        .board-header .logo-img{ width:48px; height:48px; object-fit:contain }
+        .board-header .logo-img{ width:38px; height:38px; object-fit:contain }
 
         .board-header h2{
             font-family: 'Outfit', 'Source Sans Pro', sans-serif;
@@ -69,6 +68,113 @@
             flex-direction:column;
             gap:18px;
             color:#334155;
+            background:transparent;
+        }
+
+        .board-grid{
+            width:100%;
+            height:100%;
+            display:grid;
+            grid-template-columns:repeat(auto-fill, 220px);
+            align-content:start;
+            justify-content:start;
+            gap:18px;
+            padding:92px 0 28px;
+            overflow:auto;
+            box-sizing:border-box;
+        }
+
+        .boards-heading{
+            grid-column:1 / -1;
+            justify-self:center;
+            font-family:'Poppins', 'Outfit', sans-serif;
+            font-size:28px;
+            font-weight:700;
+            color:#111827;
+            margin:0 0 14px;
+        }
+
+        .board-card{
+            background:transparent;
+            border:0;
+            border-radius:14px;
+            box-shadow:none;
+            width:220px;
+            height:220px;
+            padding:0;
+            position:relative;
+            display:flex;
+            flex-direction:column;
+            justify-content:flex-start;
+            cursor:pointer;
+            transition:transform .2s ease, filter .2s ease;
+        }
+
+        .board-card-preview{
+            width:100%;
+            height:100%;
+            background:var(--board-background, #2f5be3);
+            border-radius:14px;
+            clip-path:polygon(0 12%, 34% 12%, 42% 0, 72% 0, 78% 12%, 100% 12%, 100% 100%, 0 100%);
+            transition:transform .2s ease, background-color .2s ease;
+        }
+
+        .has-boards .board-card-preview{
+            transform-origin:center;
+        }
+
+        .has-boards .overlay-create{
+            position:fixed;
+            right:28px;
+            bottom:28px;
+            z-index:40;
+        }
+
+        .has-boards .graphic-overlay{
+            display:block !important;
+            bottom:0;
+        }
+
+        .has-boards .graphic-overlay .overlay-title{
+            display:none;
+        }
+
+        .board-card:hover{
+            transform:translateY(-6px);
+            filter:drop-shadow(0 12px 12px rgba(15,23,42,0.15));
+        }
+
+        .board-card-name{
+            position:absolute;
+            top:22px;
+            left:18px;
+            right:18px;
+            z-index:2;
+            font-family:'Poppins', 'Outfit', sans-serif;
+            font-size:19px;
+            font-weight:700;
+            color:#ffffff;
+            margin:0;
+            line-height:1.2;
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }
+
+        .board-card-date{
+            position:absolute;
+            top:52px;
+            left:18px;
+            right:18px;
+            z-index:2;
+            font-family:'Poppins', 'Outfit', sans-serif;
+            font-size:12px;
+            color:rgba(255,255,255,0.86);
+            margin:0;
+        }
+
+        .board-card:hover .board-card-preview{
+            transform:scale(1.03);
         }
 
         .empty-title{
@@ -402,17 +508,17 @@
     <div class="container">
         <div class="board-shell" role="main">
             <div class="board-header">
-                
+                <img src="assets/logo.png" alt="LiveCanvas" class="logo-img">
                 <h2 style="margin:0">Live Canvas</h2>
             </div>
 
-            <div class="board-body">
-                <!-- Empty state removed; overlay heading placed above the graphic -->
+            <div id="boardBody" class="board-body">
+                <div id="boardList" class="board-grid" hidden></div>
             </div>
 
-            <img src="assets/saved.png" alt="saved graphic" class="graphic">
+            <img id="emptyGraphic" src="assets/saved.png" alt="saved graphic" class="graphic">
 
-            <div class="graphic-overlay">
+            <div id="emptyOverlay" class="graphic-overlay">
                 <h1 class="overlay-title">You have no boards</h1>
                 <h1 class="overlay-title">Create your first one now</h1>
                 <div class="overlay-actions">
@@ -433,11 +539,11 @@
             <div class="modal-header">
                 <h3 id="modalTitle">Create New Board</h3>
             </div>
-            <div class="row">
-                <label for="boardName">Board name</label>
+            <div class="row" id="boardNameRow">
+                <label id="boardNameLabel" for="boardName">Board name</label>
                 <input id="boardName" type="text" placeholder="e.g. Project Ideas" autocomplete="off">
             </div>
-            <div class="row">
+            <div class="row" id="styleRow">
                 <label>Canvas style</label>
                 <div class="options" id="options" role="radiogroup" aria-label="Canvas style options">
                     <button type="button" class="option-btn" data-value="grid" aria-pressed="false">
@@ -482,11 +588,89 @@
         const createBtn = document.getElementById('createBtn');
         const optionsEl = document.getElementById('options');
         const boardNameInput = document.getElementById('boardName');
+        const boardNameLabel = document.getElementById('boardNameLabel');
+        const boardNameRow = document.getElementById('boardNameRow');
+        const styleRow = document.getElementById('styleRow');
+        const boardList = document.getElementById('boardList');
+        const emptyGraphic = document.getElementById('emptyGraphic');
+        const emptyOverlay = document.getElementById('emptyOverlay');
         const modalTabs = document.querySelectorAll('.modal-tab');
         const modalTitle = document.getElementById('modalTitle');
         const modalHeroImage = document.getElementById('modalHeroImage');
 
-        let selectedOption = 'blank';
+        let selectedOption = 'grid';
+
+        const boardColorPairs = [
+            { background: '#2f5be3', accent: '#ff646b' },
+            { background: '#168f8b', accent: '#ffcf56' },
+            { background: '#7b3fc6', accent: '#62d7c5' },
+            { background: '#e85d3f', accent: '#4a62d8' },
+            { background: '#246b52', accent: '#f78da7' }
+        ];
+
+        function formatBoardDate(value) {
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) {
+                return 'Recently';
+            }
+            return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function createBoardId(existingBoards) {
+            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let boardId = '';
+
+            do {
+                boardId = Array.from({ length: 8 }, () =>
+                    alphabet[Math.floor(Math.random() * alphabet.length)]
+                ).join('');
+            } while (existingBoards.some(board => board.id === boardId));
+
+            return boardId;
+        }
+
+        function renderBoardList() {
+            const boards = JSON.parse(localStorage.getItem('savedBoards') || '[]');
+            const hasBoards = Array.isArray(boards) && boards.length > 0;
+
+            if (hasBoards) {
+                document.querySelector('.board-shell').classList.add('has-boards');
+                boardList.hidden = false;
+                boardList.innerHTML = boards.map((board, index) => {
+                    const colors = boardColorPairs[index % boardColorPairs.length];
+                    return `
+                    <div class="board-card" style="--board-background:${colors.background};--board-accent:${colors.accent}" data-board-id="${board.id || ''}" data-board-name="${(board.name || 'Untitled').replace(/"/g, '&quot;')}">
+                        <h3 class="board-card-name">${(board.name || 'Untitled').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</h3>
+                        <div class="board-card-date">${formatBoardDate(board.created || Date.now())}</div>
+                        <div class="board-card-preview"></div>
+                    </div>
+                `;
+                }).join('');
+
+                boardList.insertAdjacentHTML('afterbegin', '<h2 class="boards-heading">Your Boards</h2>');
+
+                boardList.querySelectorAll('.board-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const boardId = card.getAttribute('data-board-id');
+                        const boardName = card.getAttribute('data-board-name');
+                        if (!boardId) return;
+                        sessionStorage.setItem('currentBoardId', boardId);
+                        sessionStorage.setItem('currentBoardName', boardName);
+                        window.location.href = `index.html?board=${encodeURIComponent(boardId)}`;
+                    });
+                });
+
+                emptyGraphic.style.display = 'none';
+                emptyOverlay.style.display = 'block';
+                return;
+            }
+
+            boardList.hidden = true;
+            boardList.innerHTML = '';
+            document.querySelector('.board-shell').classList.remove('has-boards');
+            emptyGraphic.style.display = 'block';
+            emptyOverlay.style.display = 'block';
+        }
 
         function updateCreateButtonState(){
             const hasValue = boardNameInput.value.trim().length > 0;
@@ -510,7 +694,9 @@
             const isJoin = mode === 'join';
             modalTitle.textContent = isJoin ? 'Join Board' : 'Create New Board';
             createBtn.textContent = isJoin ? 'Join board' : 'Create board';
-            boardNameInput.placeholder = isJoin ? 'Enter board code' : 'e.g. Project Ideas';
+            boardNameLabel.textContent = isJoin ? 'Enter the code' : 'Board name';
+            boardNameInput.placeholder = isJoin ? 'Enter the code' : 'e.g. Project Ideas';
+            styleRow.style.display = isJoin ? 'none' : 'block';
             if (modalHeroImage) {
                 modalHeroImage.src = isJoin ? 'assets/join.png' : 'assets/popup.png';
                 modalHeroImage.alt = isJoin ? 'Join board illustration' : 'Create board illustration';
@@ -525,15 +711,15 @@
             backdrop.classList.remove('visible');
             boardNameInput.value = '';
             updateCreateButtonState();
-            selectedOption = 'blank';
+            selectedOption = 'grid';
             Array.from(optionsEl.children).forEach(btn => {
                 btn.classList.remove('active');
                 btn.setAttribute('aria-pressed', 'false');
             });
-            const blankOption = optionsEl.querySelector('[data-value="blank"]');
-            if (blankOption) {
-                blankOption.classList.add('active');
-                blankOption.setAttribute('aria-pressed', 'true');
+            const gridOption = optionsEl.querySelector('[data-value="grid"]');
+            if (gridOption) {
+                gridOption.classList.add('active');
+                gridOption.setAttribute('aria-pressed', 'true');
             }
             setActiveTab('create');
         }
@@ -570,19 +756,48 @@
             });
         });
 
-        const blankOption = optionsEl.querySelector('[data-value="blank"]');
-        if (blankOption) {
-            blankOption.classList.add('active');
-            blankOption.setAttribute('aria-pressed', 'true');
+        const gridOption = optionsEl.querySelector('[data-value="grid"]');
+        if (gridOption) {
+            gridOption.classList.add('active');
+            gridOption.setAttribute('aria-pressed', 'true');
         }
 
+        renderBoardList();
         updateCreateButtonState();
 
         createBtn.addEventListener('click', ()=>{
             const name = boardNameInput.value.trim();
             if (!name) return;
-            const boards = JSON.parse(localStorage.getItem('savedBoards')||'[]');
-            const id = 'B' + Date.now().toString(36);
+
+            const boards = JSON.parse(localStorage.getItem('savedBoards') || '[]');
+            const isJoinMode = document.querySelector('.modal-tab.active')?.dataset.mode === 'join';
+
+            if (isJoinMode) {
+                const boardId = name.replace(/[^a-z0-9]/gi, '').toUpperCase();
+                if (!boardId) return;
+                const existing = boards.find(board => String(board.id || '').toUpperCase() === boardId);
+                const joinedBoard = existing || {
+                    id: boardId,
+                    name: boardId,
+                    template: selectedOption,
+                    canvasStyle: selectedOption === 'blank' ? 'blank' : selectedOption,
+                    created: Date.now()
+                };
+
+                if (!existing) {
+                    boards.unshift(joinedBoard);
+                    localStorage.setItem('savedBoards', JSON.stringify(boards));
+                }
+
+                sessionStorage.setItem('currentBoardId', boardId);
+                sessionStorage.setItem('currentCanvasStyle', selectedOption);
+                sessionStorage.setItem('currentBoardName', joinedBoard.name || boardId);
+                closeModal();
+                renderBoardList();
+                return;
+            }
+
+            const id = createBoardId(boards);
             const board = {
                 id,
                 name,
@@ -593,13 +808,14 @@
             boards.unshift(board);
             localStorage.setItem('savedBoards', JSON.stringify(boards));
 
-            // pass newly created board id and selected canvas style to index via sessionStorage
             sessionStorage.setItem('currentBoardId', id);
             sessionStorage.setItem('currentCanvasStyle', selectedOption);
             sessionStorage.setItem('currentBoardName', name);
-            // ensure solo mode
-           window.location.href =
-    `index.html?board=${encodeURIComponent(id)}`;
+            closeModal();
+            renderBoardList();
+
+            const newBoardCard = boardList.querySelector(`[data-board-id="${id}"]`);
+            newBoardCard?.focus();
         });
     </script>
 

@@ -5,7 +5,17 @@ const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+    cors: {
+        origin: [
+            "http://127.0.0.1:5500",
+            "http://localhost:5500",
+            "http://127.0.0.1:3000",
+            "http://localhost:3000"
+        ],
+        methods: ["GET", "POST"]
+    }
+});
 
 
 // ============================================================
@@ -255,6 +265,28 @@ io.on("connection", (socket) => {
                 data
             );
 
+        }
+    );
+
+    socket.on(
+        "cursor-move",
+        data => {
+            if (
+                !socket.boardId ||
+                !data ||
+                typeof data.x !== "number" ||
+                typeof data.y !== "number"
+            ) {
+                return;
+            }
+
+            socket.to(socket.boardId).emit("cursor-move", {
+                socketId: socket.id,
+                username: socket.username,
+                x: data.x,
+                y: data.y,
+                visible: Boolean(data.visible)
+            });
         }
     );
 

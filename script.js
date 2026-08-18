@@ -120,7 +120,7 @@ if (loginHeaderBtn) {
 
     loginHeaderBtn.addEventListener("click", () => {
 
-        window.location.href = "login.html";
+        window.location.href = "home.html";
 
     });
 
@@ -256,7 +256,7 @@ if (
 
     console.log("Connecting to board:", boardId);
 
-    socket = io();
+    socket = io("http://127.0.0.1:3000");
 
 
     socket.on("connect", () => {
@@ -336,6 +336,34 @@ if (
 const shareBtn =
     document.getElementById("shareBtn");
 
+const boardCodeBtn =
+    document.getElementById("boardCodeBtn");
+
+const boardCodeElement =
+    document.getElementById("boardCode");
+
+if (boardCodeElement) {
+    boardCodeElement.textContent = boardId || "Unavailable";
+}
+
+if (boardCodeBtn) {
+    boardCodeBtn.addEventListener("click", async () => {
+        if (!boardId) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(boardId);
+            boardCodeBtn.textContent = "Copied";
+            setTimeout(() => {
+                boardCodeBtn.innerHTML = `Code: <span id="boardCode">${boardId}</span>`;
+            }, 1200);
+        } catch (error) {
+            console.error("Could not copy board code:", error);
+        }
+    });
+}
+
 if (shareBtn) {
 
     shareBtn.addEventListener("click", async () => {
@@ -348,24 +376,23 @@ if (shareBtn) {
         const shareUrl =
             `${window.location.origin}${window.location.pathname}?board=${encodeURIComponent(boardId)}`;
 
+        const shareMessage =
+            `You have been invited to collaborate\nBoard code: ${boardId}\n${shareUrl}`;
+
         try {
 
             if (navigator.share) {
 
                 await navigator.share({
                     title: "LiveCanvas Board",
-                    text: `Join my LiveCanvas board: ${boardId}`,
+                    text: shareMessage,
                     url: shareUrl
                 });
 
             } else {
 
                 await navigator.clipboard.writeText(
-                    shareUrl
-                );
-
-                alert(
-                    "Board link copied!"
+                    shareMessage
                 );
 
             }
@@ -401,6 +428,87 @@ const paperBackground =
 
 const objectLayer =
     document.getElementById("objectLayer");
+
+const canvasPointers =
+    document.getElementById("canvasPointers");
+
+const localCanvasPointer =
+    document.getElementById("localCanvasPointer");
+
+const pointerColors = [
+    "#ef4444",
+    "#f97316",
+    "#eab308",
+    "#22c55e",
+    "#06b6d4",
+    "#3b82f6",
+    "#8b5cf6",
+    "#ec4899"
+];
+
+const remotePointers = new Map();
+const localPointerColor =
+    pointerColors[Math.floor(Math.random() * pointerColors.length)];
+
+function getPointerColor(socketId) {
+    if (!remotePointers.has(socketId)) {
+        const color = pointerColors[
+            remotePointers.size % pointerColors.length
+        ];
+        remotePointers.set(socketId, { color });
+    }
+    return remotePointers.get(socketId).color;
+}
+
+function updatePointer(pointer, data, color) {
+    pointer.style.left = `${data.x}px`;
+    pointer.style.top = `${data.y}px`;
+    pointer.style.setProperty("--pointer-color", color);
+    pointer.dataset.username = data.username || "User";
+    pointer.style.display = data.visible ? "block" : "none";
+}
+
+if (notebookPage && localCanvasPointer) {
+    notebookPage.addEventListener("mousemove", event => {
+        const bounds = notebookPage.getBoundingClientRect();
+        const x = event.clientX - bounds.left;
+        const y = event.clientY - bounds.top;
+        const data = { x, y, visible: true };
+
+        updatePointer(
+            localCanvasPointer,
+            { ...data, username: currentUsername },
+            localPointerColor
+        );
+
+        if (socket?.connected) {
+            socket.emit("cursor-move", data);
+        }
+    });
+
+    notebookPage.addEventListener("mouseleave", () => {
+        localCanvasPointer.style.display = "none";
+        if (socket?.connected) {
+            socket.emit("cursor-move", { x: 0, y: 0, visible: false });
+        }
+    });
+}
+
+if (socket && canvasPointers) {
+    socket.on("cursor-move", data => {
+        if (!data?.socketId) return;
+
+        let pointer = document.getElementById(`pointer-${data.socketId}`);
+        if (!pointer) {
+            pointer = document.createElement("div");
+            pointer.id = `pointer-${data.socketId}`;
+            pointer.className = "canvas-pointer remote-canvas-pointer";
+            canvasPointers.appendChild(pointer);
+        }
+
+        updatePointer(pointer, data, getPointerColor(data.socketId));
+    });
+}
 
 
 // ============================================================

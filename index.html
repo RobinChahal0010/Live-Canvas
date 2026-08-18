@@ -11,6 +11,12 @@
 
     <title>LiveCanvas</title>
 
+    <script>
+        if (!new URLSearchParams(window.location.search).has("board")) {
+            window.location.replace("home.html");
+        }
+    </script>
+
     <link
         rel="icon"
         type="image/png"
@@ -174,11 +180,11 @@
     </button>
 
     <button
-        class="more-btn"
-        type="button">
-
-        <i class="fa-solid fa-ellipsis-vertical"></i>
-
+        class="board-code-btn"
+        id="boardCodeBtn"
+        type="button"
+        title="Copy board code">
+        Code: <span id="boardCode">-</span>
     </button>
 
 </div>
@@ -506,6 +512,9 @@
                 id="notebookPage"
                 data-canvas-style="blank">
 
+                <div id="canvasPointers" aria-hidden="true"></div>
+                <div id="localCanvasPointer" class="canvas-pointer local-canvas-pointer" aria-hidden="true"></div>
+
 
                 <!-- PAPER BACKGROUND -->
 
@@ -636,7 +645,7 @@
      JAVASCRIPT
 ===================================================== -->
 
-<script src="/socket.io/socket.io.js"></script>
+<script src="http://127.0.0.1:3000/socket.io/socket.io.js"></script>
 
 <script src="script.js"></script>
 
