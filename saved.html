@@ -571,9 +571,8 @@
             sessionStorage.setItem('currentCanvasStyle', selectedOption);
             sessionStorage.setItem('currentBoardName', name);
             // ensure solo mode
-            sessionStorage.removeItem('roomId',id);
-            // navigate to canvas
-            window.location.href = 'index.html';
+           window.location.href =
+    `index.html?board=${encodeURIComponent(id)}`;
         });
     </script>
 

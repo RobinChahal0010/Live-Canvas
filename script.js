@@ -177,12 +177,12 @@ function updateCollaborators(users = []) {
         .querySelectorAll(".avatar")
         .forEach(avatar => avatar.remove());
 
-    if (!roomId) {
+    if (!boardId) {
 
-        collaborators.style.display = "none";
-        return;
+    collaborators.style.display = "none";
+    return;
 
-    }
+}
 
     collaborators.style.display = "flex";
 
@@ -249,12 +249,12 @@ function updateCollaborators(users = []) {
 // ============================================================
 
 if (
-    roomId &&
+    boardId &&
     loggedInUser &&
     typeof io === "function"
 ) {
 
-    console.log("Connecting to room:", roomId);
+    console.log("Connecting to board:", boardId);
 
     socket = io();
 
@@ -268,7 +268,7 @@ if (
 
         socket.emit(
             "join-room",
-            roomId,
+            boardId,
             loggedInUser.name || "User"
         );
 
@@ -277,23 +277,18 @@ if (
 
     socket.on("room-joined", data => {
 
-        console.log("ROOM JOINED:", data);
+    console.log("BOARD JOINED:", data);
 
-        currentUsername =
-            data.username ||
-            loggedInUser.name ||
-            "User";
+    currentUsername =
+        data.username ||
+        loggedInUser.name ||
+        "User";
 
-        sessionStorage.setItem(
-            "roomUsername",
-            currentUsername
-        );
+    updateCollaborators(
+        data.users || []
+    );
 
-        updateCollaborators(
-            data.users || []
-        );
-
-    });
+});
 
 
     socket.on("user-joined", data => {
@@ -345,38 +340,32 @@ if (shareBtn) {
 
     shareBtn.addEventListener("click", async () => {
 
-        if (!roomId) {
-
-            alert(
-                "You are currently in Solo mode."
-            );
-
+        if (!boardId) {
+            alert("Board not found.");
             return;
         }
 
-        const shareText =
-            `Join my LiveCanvas room!\n\nRoom Code: ${roomId}`;
+        const shareUrl =
+            `${window.location.origin}${window.location.pathname}?board=${encodeURIComponent(boardId)}`;
 
         try {
 
             if (navigator.share) {
 
                 await navigator.share({
-
-                    title: "LiveCanvas Room",
-
-                    text: shareText
-
+                    title: "LiveCanvas Board",
+                    text: `Join my LiveCanvas board: ${boardId}`,
+                    url: shareUrl
                 });
 
             } else {
 
                 await navigator.clipboard.writeText(
-                    roomId
+                    shareUrl
                 );
 
                 alert(
-                    `Room code copied!\n\n${roomId}`
+                    "Board link copied!"
                 );
 
             }
@@ -669,16 +658,15 @@ function applyCanvasStyle(style) {
 
 function getDocumentKey() {
 
-    const boardId =
-        sessionStorage.getItem("currentBoardId");
+    const currentBoardId =
+        sessionStorage.getItem("currentBoardId") ||
+        boardId;
 
-    if (boardId) {
-        return `liveCanvasDocument_${boardId}`;
+    if (!currentBoardId) {
+        return null;
     }
 
-    return roomId
-        ? `liveCanvasDocument_${roomId}`
-        : "liveCanvasDocument_solo";
+    return `liveCanvasDocument_${currentBoardId}`;
 }
 
 
@@ -2928,6 +2916,10 @@ function saveDocument() {
             "Could not save document:",
             error
         );
+        if (!documentKey) {
+    console.warn("No board ID. Document not saved.");
+    return;
+}
 
     }
 
@@ -2953,6 +2945,11 @@ function loadDocument() {
         updateZoom();
         return;
     }
+        if (!documentKey) {
+    updatePageNumber();
+    updateZoom();
+    return;
+}
 
     try {
 

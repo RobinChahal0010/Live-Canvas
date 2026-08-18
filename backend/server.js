@@ -52,25 +52,25 @@ io.on("connection", (socket) => {
 
 
     // ========================================================
-    // JOIN ROOM
+    // JOIN BOARD
     // ========================================================
 
     socket.on(
         "join-room",
-        (roomId, username) => {
+        (boardId, username) => {
 
             // ------------------------------------------------
-            // VALIDATE ROOM
+            // VALIDATE BOARD
             // ------------------------------------------------
 
             if (
-                !roomId ||
-                typeof roomId !== "string" ||
-                !roomId.trim()
+                !boardId ||
+                typeof boardId !== "string" ||
+                !boardId.trim()
             ) {
 
                 console.log(
-                    "Join rejected: invalid room"
+                    "Join rejected: invalid board"
                 );
 
                 return;
@@ -95,8 +95,12 @@ io.on("connection", (socket) => {
             }
 
 
-            roomId =
-                roomId.trim();
+            // ------------------------------------------------
+            // CLEAN DATA
+            // ------------------------------------------------
+
+            boardId =
+                boardId.trim();
 
             username =
                 username.trim();
@@ -109,21 +113,21 @@ io.on("connection", (socket) => {
             socket.username =
                 username;
 
-            socket.roomId =
-                roomId;
+            socket.boardId =
+                boardId;
 
 
             // ------------------------------------------------
-            // JOIN SOCKET.IO ROOM
+            // JOIN SOCKET.IO BOARD ROOM
             // ------------------------------------------------
 
             socket.join(
-                roomId
+                boardId
             );
 
 
             console.log(
-                `${username} joined room ${roomId}`
+                `${username} joined board ${boardId}`
             );
 
 
@@ -131,15 +135,15 @@ io.on("connection", (socket) => {
             // GET CURRENT USERS
             // ------------------------------------------------
 
-            const room =
+            const board =
                 io.sockets.adapter.rooms.get(
-                    roomId
+                    boardId
                 );
 
 
             const users =
-                room
-                    ? [...room]
+                board
+                    ? [...board]
                         .map(
                             socketId => {
 
@@ -150,6 +154,7 @@ io.on("connection", (socket) => {
 
                                 return userSocket
                                     ?.username;
+
                             }
                         )
                         .filter(Boolean)
@@ -161,8 +166,8 @@ io.on("connection", (socket) => {
 
 
             console.log(
-                "Room:",
-                roomId
+                "Board:",
+                boardId
             );
 
             console.log(
@@ -177,15 +182,15 @@ io.on("connection", (socket) => {
 
 
             // =================================================
-            // SEND ROOM DATA TO CURRENT USER
+            // SEND BOARD DATA TO CURRENT USER
             // =================================================
 
             socket.emit(
                 "room-joined",
                 {
 
-                    roomId:
-                        roomId,
+                    boardId:
+                        boardId,
 
                     username:
                         username,
@@ -195,6 +200,7 @@ io.on("connection", (socket) => {
 
                     users:
                         users
+
                 }
             );
 
@@ -204,7 +210,7 @@ io.on("connection", (socket) => {
             // =================================================
 
             socket.to(
-                roomId
+                boardId
             ).emit(
                 "user-joined",
                 {
@@ -217,6 +223,7 @@ io.on("connection", (socket) => {
 
                     users:
                         users
+
                 }
             );
 
@@ -233,7 +240,7 @@ io.on("connection", (socket) => {
         (data) => {
 
             if (
-                !socket.roomId ||
+                !socket.boardId ||
                 !data
             ) {
 
@@ -242,7 +249,7 @@ io.on("connection", (socket) => {
 
 
             socket.to(
-                socket.roomId
+                socket.boardId
             ).emit(
                 "canvas-draw",
                 data
@@ -267,15 +274,15 @@ io.on("connection", (socket) => {
 
 
             if (
-                !socket.roomId
+                !socket.boardId
             ) {
 
                 return;
             }
 
 
-            const roomId =
-                socket.roomId;
+            const boardId =
+                socket.boardId;
 
 
             const username =
@@ -284,20 +291,19 @@ io.on("connection", (socket) => {
 
 
             // ------------------------------------------------
-            // IMPORTANT
             // Socket.IO removes the socket from the room
             // before disconnect event is handled.
             // ------------------------------------------------
 
-            const room =
+            const board =
                 io.sockets.adapter.rooms.get(
-                    roomId
+                    boardId
                 );
 
 
             const users =
-                room
-                    ? [...room]
+                board
+                    ? [...board]
                         .map(
                             socketId => {
 
@@ -308,6 +314,7 @@ io.on("connection", (socket) => {
 
                                 return userSocket
                                     ?.username;
+
                             }
                         )
                         .filter(Boolean)
@@ -319,7 +326,7 @@ io.on("connection", (socket) => {
 
 
             console.log(
-                `${username} left room ${roomId}`
+                `${username} left board ${boardId}`
             );
 
 
@@ -340,7 +347,7 @@ io.on("connection", (socket) => {
             // ------------------------------------------------
 
             socket.to(
-                roomId
+                boardId
             ).emit(
                 "user-left",
                 {
@@ -353,6 +360,7 @@ io.on("connection", (socket) => {
 
                     users:
                         users
+
                 }
             );
 
