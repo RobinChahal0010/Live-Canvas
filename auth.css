@@ -249,6 +249,25 @@ body {
 
 }
 
+.form-message {
+    min-height: 20px;
+    margin: 0 0 14px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    display: none;
+}
+
+.form-message.error {
+    color: #dc2626;
+    display: block;
+}
+
+.form-message.success {
+    color: #15803d;
+    display: block;
+}
+
 
 /* =========================
    BUTTON

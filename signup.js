@@ -1,5 +1,32 @@
 const signupBtn = document.getElementById("signupBtn");
-signupBtn.addEventListener("click", function () {
+
+function setFormMessage(message, type = "error") {
+    const messageBox = document.getElementById("formMessage");
+    if (!messageBox) return;
+
+    messageBox.textContent = message;
+    messageBox.className = `form-message ${type}`;
+}
+
+async function hashPassword(password) {
+    const text = password.trim();
+    if (typeof crypto !== "undefined" && crypto.subtle) {
+        const buffer = new TextEncoder().encode(text);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+        return Array.from(new Uint8Array(hashBuffer))
+            .map((byte) => byte.toString(16).padStart(2, "0"))
+            .join("");
+    }
+
+    let hash = 2166136261;
+    for (let i = 0; i < text.length; i++) {
+        hash ^= text.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(16);
+}
+
+signupBtn.addEventListener("click", async function () {
     const name =
             document.getElementById("name")
                 .value
@@ -9,20 +36,16 @@ signupBtn.addEventListener("click", function () {
     const password = document.getElementById("password").value.trim();
 
     if (name ==="" || email === "" || password === "") {
-        alert("Please fill all fields.");
+        setFormMessage("Please fill all fields.");
         return;
     }
     if (name.length < 2) {
-
-            alert(
-                "Name must be at least 2 characters."
-            );
-
-            return;
-        }
+        setFormMessage("Name must be at least 2 characters.");
+        return;
+    }
 
     if (password.length < 6) {
-        alert("Password must be at least 6 characters.");
+        setFormMessage("Password must be at least 6 characters.");
         return;
     }
 
@@ -33,15 +56,15 @@ signupBtn.addEventListener("click", function () {
     });
 
     if (existingUser) {
-        alert(
-            "This email is already registered. Please login."
-        );
+        setFormMessage("Account already exists.");
         return;
     }
+
+    const passwordHash = await hashPassword(password);
     const newUser = {
         name: name,
         email: email,
-        password: password
+        password: passwordHash
     };
 
     users.push(newUser);
@@ -50,7 +73,6 @@ signupBtn.addEventListener("click", function () {
         JSON.stringify(users)
     );
 
-    // Auto-login the newly created user and redirect
     const loggedInUser = {
         name: newUser.name,
         email: newUser.email

@@ -187,8 +187,8 @@
         .modal{
             background:#f3f1f8;
             padding:0 18px 16px;
-            border-radius:26px;
-            width:min(420px, calc(100vw - 26px));
+            border-radius:22px;
+            width:min(420px, calc(100vw - 24px));
             box-shadow:0 20px 60px rgba(15, 23, 42, 0.12);
             border:3px solid rgba(50, 50, 70, 0.08);
             overflow:hidden;
@@ -202,35 +202,45 @@
             transform:translateY(0) scale(1);
         }
 
-        .modal-close{
-            position:absolute;
-            top:14px;
-            right:14px;
-            width:34px;
-            height:34px;
-            border-radius:50%;
-            border:none;
-            background:rgba(255,255,255,0.7);
-            color:#4b5563;
-            font-size:22px;
-            line-height:1;
-            cursor:pointer;
-            display:grid;
-            place-items:center;
-            box-shadow:0 6px 16px rgba(15, 23, 42, 0.08);
-            transition:all .2s ease;
-            z-index:2;
+        .modal-top-tabs{
+            display:flex;
+            gap:10px;
+            background:rgba(255,255,255,0.45);
+            padding:8px;
+            border-radius:999px;
+            margin:16px auto 12px;
+            border:1px solid rgba(148, 163, 184, 0.2);
         }
 
-        .modal-close:hover{background:#fff;transform:translateY(-1px)}
-        .modal-close:active{transform:translateY(0)}
+        .modal-tab{
+            flex:1;
+            border:none;
+            border-radius:999px;
+            background:transparent;
+            color:#1f2937;
+            font-weight:700;
+            font-size:14px;
+            padding:10px 14px;
+            cursor:pointer;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:8px;
+            transition:background .2s ease, color .2s ease, transform .2s ease;
+        }
+
+        .modal-tab.active{
+            background:#2563eb;
+            color:white;
+            box-shadow:0 10px 18px rgba(37,99,235,0.22);
+        }
 
         .modal-hero{
             display:block;
             width:100%;
-            max-width:420px;
+            max-width:380px;
             margin:0 auto 6px;
-            height:180px;
+            height:170px;
             object-fit:contain;
             object-position:center;
             border-radius:0;
@@ -320,54 +330,44 @@
 
         .option-btn:focus-visible{
             outline:none;
-            box-shadow:0 0 0 3px rgba(124,58,237,0.15);
+            box-shadow:0 0 0 3px rgba(37,99,235,0.12);
         }
 
         .option-btn.active{
-            background:linear-gradient(90deg,#7c3aed,#2563eb);
-            color:#fff;
-            border-color:transparent;
-            box-shadow:0 8px 24px rgba(124,58,237,0.12);
+            background:transparent;
+            color:#1f2937;
+            border-color:#dfe3ed;
+            box-shadow:none;
         }
 
         .option-preview{
             width:18px;
             height:18px;
             border-radius:5px;
-            border:1.5px solid currentColor;
-            background:rgba(255,255,255,0.18);
+            border:1.5px solid #cbd5e1;
+            background:#fff;
             position:relative;
             flex-shrink:0;
-        }
-
-        .option-btn[data-value="grid"] .option-preview{
-            background-image:linear-gradient(to right, rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.7) 1px, transparent 1px);
-            background-size:6px 6px;
-            border-color:currentColor;
-        }
-
-        .option-btn[data-value="dots"] .option-preview{
-            background-image:radial-gradient(circle, rgba(255,255,255,0.8) 1.5px, transparent 1.6px);
-            background-size:8px 8px;
-            border-color:currentColor;
-        }
-
-        .option-btn[data-value="plain"] .option-preview{
-            background:#fff;
-        }
-
-        .option-btn[data-value="lines"] .option-preview{
-            background-image:linear-gradient(to bottom, transparent 0, transparent 5px, rgba(255,255,255,0.7) 5px, rgba(255,255,255,0.7) 6px, transparent 6px);
-            background-size:100% 12px;
-            border-color:currentColor;
-        }
-
-        .option-btn.active .option-preview{
-            border-color:#fff;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
         }
 
         .option-check{
             display:none;
+            font-size:12px;
+            font-weight:800;
+            line-height:1;
+            color:#fff;
+        }
+
+        .option-btn.active .option-preview{
+            background:#2563eb;
+            border-color:#2563eb;
+        }
+
+        .option-btn.active .option-check{
+            display:inline-block;
         }
 
         .modal .actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px}
@@ -376,8 +376,8 @@
 
         .btn{padding:11px 18px;border-radius:12px;border:none;cursor:pointer;font-family:'Poppins', 'Outfit', sans-serif;font-weight:700;font-size:16px;transition:all .18s ease}
 
-        .btn.primary{background:linear-gradient(90deg,#5b4ce6,#3d6bf7);color:#fff;box-shadow:0 12px 30px rgba(79,86,242,0.22)}
-        .btn.primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 16px 36px rgba(79,86,242,0.28)}
+        .btn.primary{background:#2563eb;color:#fff;box-shadow:0 12px 30px rgba(37,99,235,0.25)}
+        .btn.primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 16px 36px rgba(37,99,235,0.32)}
         .btn.primary:active:not(:disabled){transform:translateY(0)}
         .btn.primary:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
 
@@ -425,8 +425,11 @@
     <!-- Modal -->
     <div id="backdrop" class="modal-backdrop">
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-            <button type="button" class="modal-close" id="closeModalBtn" aria-label="Close create board modal">×</button>
-            <img src="assets/popup.png" alt="Create board illustration" class="modal-hero">
+            <div class="modal-top-tabs" aria-label="Create or join board options">
+                <button type="button" class="modal-tab active" data-mode="create">Create</button>
+                <button type="button" class="modal-tab" data-mode="join">Join</button>
+            </div>
+            <img id="modalHeroImage" src="assets/popup.png" alt="Create board illustration" class="modal-hero">
             <div class="modal-header">
                 <h3 id="modalTitle">Create New Board</h3>
             </div>
@@ -438,24 +441,20 @@
                 <label>Canvas style</label>
                 <div class="options" id="options" role="radiogroup" aria-label="Canvas style options">
                     <button type="button" class="option-btn" data-value="grid" aria-pressed="false">
-                        <span class="option-preview" aria-hidden="true"></span>
+                        <span class="option-preview" aria-hidden="true"><span class="option-check">✓</span></span>
                         <span>Grid</span>
-                        <span class="option-check" aria-hidden="true">✓</span>
                     </button>
                     <button type="button" class="option-btn" data-value="dots" aria-pressed="false">
-                        <span class="option-preview" aria-hidden="true"></span>
+                        <span class="option-preview" aria-hidden="true"><span class="option-check">✓</span></span>
                         <span>Dots</span>
-                        <span class="option-check" aria-hidden="true">✓</span>
                     </button>
                     <button type="button" class="option-btn" data-value="blank" aria-pressed="true">
-                        <span class="option-preview" aria-hidden="true"></span>
+                        <span class="option-preview" aria-hidden="true"><span class="option-check">✓</span></span>
                         <span>Blank</span>
-                        <span class="option-check" aria-hidden="true">✓</span>
                     </button>
                     <button type="button" class="option-btn" data-value="lines" aria-pressed="false">
-                        <span class="option-preview" aria-hidden="true"></span>
+                        <span class="option-preview" aria-hidden="true"><span class="option-check">✓</span></span>
                         <span>Lines</span>
-                        <span class="option-check" aria-hidden="true">✓</span>
                     </button>
                 </div>
             </div>
@@ -480,10 +479,12 @@
         const backdrop = document.getElementById('backdrop');
         const openCreate = document.getElementById('openCreate');
         const cancelBtn = document.getElementById('cancelBtn');
-        const closeModalBtn = document.getElementById('closeModalBtn');
         const createBtn = document.getElementById('createBtn');
         const optionsEl = document.getElementById('options');
         const boardNameInput = document.getElementById('boardName');
+        const modalTabs = document.querySelectorAll('.modal-tab');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalHeroImage = document.getElementById('modalHeroImage');
 
         let selectedOption = 'blank';
 
@@ -500,6 +501,26 @@
             }, 50);
         }
 
+        function setActiveTab(mode){
+            modalTabs.forEach(tab => {
+                const active = tab.dataset.mode === mode;
+                tab.classList.toggle('active', active);
+            });
+
+            const isJoin = mode === 'join';
+            modalTitle.textContent = isJoin ? 'Join Board' : 'Create New Board';
+            createBtn.textContent = isJoin ? 'Join board' : 'Create board';
+            boardNameInput.placeholder = isJoin ? 'Enter board code' : 'e.g. Project Ideas';
+            if (modalHeroImage) {
+                modalHeroImage.src = isJoin ? 'assets/join.png' : 'assets/popup.png';
+                modalHeroImage.alt = isJoin ? 'Join board illustration' : 'Create board illustration';
+            }
+            if (isJoin) {
+                boardNameInput.value = '';
+            }
+            updateCreateButtonState();
+        }
+
         function closeModal(){
             backdrop.classList.remove('visible');
             boardNameInput.value = '';
@@ -514,11 +535,15 @@
                 blankOption.classList.add('active');
                 blankOption.setAttribute('aria-pressed', 'true');
             }
+            setActiveTab('create');
         }
+
+        modalTabs.forEach(tab => {
+            tab.addEventListener('click', () => setActiveTab(tab.dataset.mode));
+        });
 
         if (openCreate) openCreate.addEventListener('click', openModal);
         cancelBtn.addEventListener('click', closeModal);
-        closeModalBtn.addEventListener('click', closeModal);
         backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) closeModal(); });
 
         document.addEventListener('keydown', (e)=>{
@@ -530,6 +555,8 @@
         });
 
         boardNameInput.addEventListener('input', updateCreateButtonState);
+
+        setActiveTab('create');
 
         // options handler
         optionsEl.addEventListener('click', (e)=>{
