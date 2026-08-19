@@ -287,8 +287,171 @@ if (
     updateCollaborators(
         data.users || []
     );
+    if (data.boardState) {
+
+        applyServerBoardState(
+            data.boardState
+        );
+
+    }
 
 });
+// ============================================================
+// APPLY SERVER BOARD STATE
+// ============================================================
+
+function applyServerBoardState(boardState) {
+
+    if (!boardState) {
+        return;
+    }
+
+    console.log(
+        "Restoring board from server:",
+        boardState
+    );
+
+    // --------------------------------------------------------
+    // CANVAS STYLE
+    // --------------------------------------------------------
+
+    if (boardState.canvasStyle) {
+
+        applyCanvasStyle(
+            boardState.canvasStyle
+        );
+
+    }
+
+    // --------------------------------------------------------
+    // PAGES
+    // --------------------------------------------------------
+
+    if (
+        Array.isArray(boardState.pages) &&
+        boardState.pages.length > 0
+    ) {
+
+        pages =
+            boardState.pages;
+
+    }
+
+    // --------------------------------------------------------
+    // CURRENT PAGE
+    // --------------------------------------------------------
+
+    if (
+        typeof boardState.currentPage === "number"
+    ) {
+
+        currentPage =
+            Math.min(
+                Math.max(
+                    boardState.currentPage,
+                    0
+                ),
+                pages.length - 1
+            );
+
+    }
+
+    // --------------------------------------------------------
+    // ZOOM
+    // --------------------------------------------------------
+
+    if (
+        typeof boardState.zoom === "number"
+    ) {
+
+        zoom =
+            Math.min(
+                200,
+                Math.max(
+                    50,
+                    boardState.zoom
+                )
+            );
+
+    }
+
+    // --------------------------------------------------------
+    // TITLE
+    // --------------------------------------------------------
+
+    const titleInput =
+        document.getElementById(
+            "documentTitle"
+        );
+
+    if (
+        titleInput &&
+        boardState.title
+    ) {
+
+        titleInput.value =
+            boardState.title;
+
+    }
+
+    // --------------------------------------------------------
+    // LOAD CURRENT PAGE
+    // --------------------------------------------------------
+
+    const page =
+        pages[currentPage];
+
+    if (!page) {
+        return;
+    }
+
+    notebookPage.style.height =
+        `${page.height || 700}px`;
+
+    canvas.width =
+        notebookPage.clientWidth || 1000;
+
+    canvas.height =
+        page.height || 700;
+
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+
+    setupCanvas();
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    if (page.canvasData) {
+
+        const image =
+            new Image();
+
+        image.onload = () => {
+
+            ctx.drawImage(
+                image,
+                0,
+                0
+            );
+
+            setupCanvas();
+
+        };
+
+        image.src =
+            page.canvasData;
+
+    }
+
+    updatePageNumber();
+    updateZoom();
+
+}
 
 
     socket.on("user-joined", data => {
@@ -315,7 +478,16 @@ if (
         );
 
     });
+    socket.on(
+    "board-state-update",
+    boardState => {
 
+        applyServerBoardState(
+            boardState
+        );
+
+    }
+);
 
     socket.on("connect_error", error => {
 
@@ -760,6 +932,8 @@ function applyCanvasStyle(style) {
 
     paperBackground.style.backgroundPosition =
         "0 0";
+
+    
 }
 
 
@@ -1202,6 +1376,50 @@ function startDrawing(e) {
 
 
 // ============================================================
+// SYNC BOARD STATE WITH SERVER
+// ============================================================
+
+function syncBoardState() {
+
+    if (
+        !socket ||
+        !socket.connected ||
+        !boardId
+    ) {
+        return;
+    }
+
+    saveCurrentPage();
+
+    const titleInput =
+        document.getElementById(
+            "documentTitle"
+        );
+
+    const boardState = {
+
+        pages,
+
+        currentPage,
+
+        zoom,
+
+        title:
+            titleInput?.value ||
+            "Study Notes",
+
+        canvasStyle:
+            currentCanvasStyle
+
+    };
+
+    socket.emit(
+        "board-state-update",
+        boardState
+    );
+
+}
+// ============================================================
 // DRAW
 // ============================================================
 
@@ -1494,6 +1712,10 @@ function stopDrawing() {
 
     currentStroke = [];
 
+    saveCurrentPage();
+
+    syncBoardState();
+
 }
 
 
@@ -1771,6 +1993,7 @@ clearBtn?.addEventListener(
         );
 
         saveCurrentPage();
+        syncBoardState();
 
     }
 );
@@ -1858,6 +2081,7 @@ function loadPage(index) {
     }
 
     updatePageNumber();
+    syncBoardState();
 
 }
 
@@ -1917,6 +2141,7 @@ addPageBtn?.addEventListener(
         setupCanvas();
 
         updatePageNumber();
+        syncBoardState();
 
     }
 );
@@ -2028,6 +2253,8 @@ extendPageBtn?.addEventListener(
 
         pages[currentPage].canvasData =
             canvas.toDataURL();
+
+        syncBoardState();
 
     }
 );

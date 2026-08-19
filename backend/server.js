@@ -5,25 +5,13 @@ const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-    cors: {
-        origin: [
-            "http://127.0.0.1:5500",
-            "http://localhost:5500",
-            "http://127.0.0.1:3000",
-            "http://localhost:3000"
-        ],
-        methods: ["GET", "POST"]
-    }
-});
-
+const io = new Server(server);
 
 // ============================================================
-// SERVE ROOM PAGE
+// SERVE HOME PAGE
 // ============================================================
 
 app.get("/", (req, res) => {
-
     res.sendFile(
         path.join(
             __dirname,
@@ -31,9 +19,7 @@ app.get("/", (req, res) => {
             "home.html"
         )
     );
-
 });
-
 
 // ============================================================
 // STATIC FILES
@@ -48,18 +34,52 @@ app.use(
     )
 );
 
+// ============================================================
+// BOARD STATE
+// ============================================================
+
+// boardId -> board state
+const boards = new Map();
+
+function getBoardState(boardId) {
+
+    if (!boards.has(boardId)) {
+
+        boards.set(boardId, {
+
+            // Drawing pages
+            pages: [
+                {
+                    canvasData: null,
+                    height: 700
+                }
+            ],
+
+            currentPage: 0,
+
+            zoom: 100,
+
+            title: "Study Notes",
+
+            canvasStyle: "blank"
+
+        });
+
+    }
+
+    return boards.get(boardId);
+}
 
 // ============================================================
 // SOCKET CONNECTION
 // ============================================================
 
-io.on("connection", (socket) => {
+io.on("connection", socket => {
 
     console.log(
         "User connected:",
         socket.id
     );
-
 
     // ========================================================
     // JOIN BOARD
@@ -69,34 +89,19 @@ io.on("connection", (socket) => {
         "join-room",
         (boardId, username) => {
 
-            // ------------------------------------------------
-            // VALIDATE BOARD
-            // ------------------------------------------------
-
             if (
                 !boardId ||
                 typeof boardId !== "string" ||
                 !boardId.trim()
             ) {
-
-                console.log(
-                    "Join rejected: invalid board"
-                );
-
                 return;
             }
-
-
-            // ------------------------------------------------
-            // VALIDATE USERNAME
-            // ------------------------------------------------
 
             if (
                 !username ||
                 typeof username !== "string" ||
                 !username.trim()
             ) {
-
                 console.log(
                     "Join rejected: username missing"
                 );
@@ -104,142 +109,87 @@ io.on("connection", (socket) => {
                 return;
             }
 
+            boardId = boardId.trim();
+            username = username.trim();
 
-            // ------------------------------------------------
-            // CLEAN DATA
-            // ------------------------------------------------
+            socket.username = username;
+            socket.boardId = boardId;
 
-            boardId =
-                boardId.trim();
-
-            username =
-                username.trim();
-
-
-            // ------------------------------------------------
-            // STORE USER INFO
-            // ------------------------------------------------
-
-            socket.username =
-                username;
-
-            socket.boardId =
-                boardId;
-
-
-            // ------------------------------------------------
-            // JOIN SOCKET.IO BOARD ROOM
-            // ------------------------------------------------
-
-            socket.join(
-                boardId
-            );
-
+            // Join Socket.IO room
+            socket.join(boardId);
 
             console.log(
                 `${username} joined board ${boardId}`
             );
 
+            // Get/create board state
+            const boardState =
+                getBoardState(boardId);
 
-            // ------------------------------------------------
-            // GET CURRENT USERS
-            // ------------------------------------------------
+            // =================================================
+            // GET USERS
+            // =================================================
 
-            const board =
+            const room =
                 io.sockets.adapter.rooms.get(
                     boardId
                 );
 
-
             const users =
-                board
-                    ? [...board]
-                        .map(
-                            socketId => {
+                room
+                    ? [...room]
+                        .map(socketId => {
 
-                                const userSocket =
-                                    io.sockets.sockets.get(
-                                        socketId
-                                    );
+                            const userSocket =
+                                io.sockets.sockets.get(
+                                    socketId
+                                );
 
-                                return userSocket
-                                    ?.username;
+                            return userSocket?.username;
 
-                            }
-                        )
+                        })
                         .filter(Boolean)
                     : [];
-
 
             const userCount =
                 users.length;
 
-
-            console.log(
-                "Board:",
-                boardId
-            );
-
-            console.log(
-                "Users:",
-                users
-            );
-
-            console.log(
-                "User count:",
-                userCount
-            );
-
-
             // =================================================
-            // SEND BOARD DATA TO CURRENT USER
+            // SEND BOARD STATE TO NEW USER
             // =================================================
 
             socket.emit(
                 "room-joined",
                 {
+                    roomId: boardId,
 
-                    boardId:
-                        boardId,
+                    username,
 
-                    username:
-                        username,
+                    userCount,
 
-                    userCount:
-                        userCount,
+                    users,
 
-                    users:
-                        users
-
+                    boardState
                 }
             );
 
-
             // =================================================
-            // SEND UPDATED USERS TO OTHER USERS
+            // TELL OTHER USERS
             // =================================================
 
-            socket.to(
-                boardId
-            ).emit(
+            socket.to(boardId).emit(
                 "user-joined",
                 {
+                    username,
 
-                    username:
-                        username,
+                    userCount,
 
-                    userCount:
-                        userCount,
-
-                    users:
-                        users
-
+                    users
                 }
             );
 
         }
     );
-
 
     // ========================================================
     // CANVAS DRAW SYNC
@@ -247,17 +197,16 @@ io.on("connection", (socket) => {
 
     socket.on(
         "canvas-draw",
-        (data) => {
+        data => {
 
             if (
                 !socket.boardId ||
                 !data
             ) {
-
                 return;
             }
 
-
+            // Forward live stroke
             socket.to(
                 socket.boardId
             ).emit(
@@ -268,28 +217,74 @@ io.on("connection", (socket) => {
         }
     );
 
+    // ========================================================
+    // BOARD STATE UPDATE
+    // ========================================================
+
     socket.on(
-        "cursor-move",
+        "board-state-update",
         data => {
+
             if (
                 !socket.boardId ||
                 !data ||
-                typeof data.x !== "number" ||
-                typeof data.y !== "number"
+                typeof data !== "object"
             ) {
                 return;
             }
 
-            socket.to(socket.boardId).emit("cursor-move", {
-                socketId: socket.id,
-                username: socket.username,
-                x: data.x,
-                y: data.y,
-                visible: Boolean(data.visible)
-            });
+            const boardState =
+                getBoardState(
+                    socket.boardId
+                );
+
+            // Update only supplied properties
+            if (
+                Array.isArray(data.pages)
+            ) {
+                boardState.pages =
+                    data.pages;
+            }
+
+            if (
+                typeof data.currentPage === "number"
+            ) {
+                boardState.currentPage =
+                    data.currentPage;
+            }
+
+            if (
+                typeof data.zoom === "number"
+            ) {
+                boardState.zoom =
+                    data.zoom;
+            }
+
+            if (
+                typeof data.title === "string"
+            ) {
+                boardState.title =
+                    data.title;
+            }
+
+            if (
+                typeof data.canvasStyle === "string"
+            ) {
+                boardState.canvasStyle =
+                    data.canvasStyle;
+            }
+
+            // Send updated state to everyone
+            // except sender
+            socket.to(
+                socket.boardId
+            ).emit(
+                "board-state-update",
+                boardState
+            );
+
         }
     );
-
 
     // ========================================================
     // USER DISCONNECT
@@ -304,95 +299,51 @@ io.on("connection", (socket) => {
                 socket.id
             );
 
-
-            if (
-                !socket.boardId
-            ) {
-
+            if (!socket.boardId) {
                 return;
             }
 
-
             const boardId =
                 socket.boardId;
-
 
             const username =
                 socket.username ||
                 "Unknown User";
 
-
-            // ------------------------------------------------
-            // Socket.IO removes the socket from the room
-            // before disconnect event is handled.
-            // ------------------------------------------------
-
-            const board =
+            const room =
                 io.sockets.adapter.rooms.get(
                     boardId
                 );
 
-
             const users =
-                board
-                    ? [...board]
-                        .map(
-                            socketId => {
+                room
+                    ? [...room]
+                        .map(socketId => {
 
-                                const userSocket =
-                                    io.sockets.sockets.get(
-                                        socketId
-                                    );
+                            const userSocket =
+                                io.sockets.sockets.get(
+                                    socketId
+                                );
 
-                                return userSocket
-                                    ?.username;
+                            return userSocket?.username;
 
-                            }
-                        )
+                        })
                         .filter(Boolean)
                     : [];
 
-
             const userCount =
                 users.length;
-
-
-            console.log(
-                `${username} left board ${boardId}`
-            );
-
-
-            console.log(
-                "Remaining users:",
-                users
-            );
-
-
-            console.log(
-                "Remaining user count:",
-                userCount
-            );
-
-
-            // ------------------------------------------------
-            // INFORM REMAINING USERS
-            // ------------------------------------------------
 
             socket.to(
                 boardId
             ).emit(
                 "user-left",
                 {
+                    username,
 
-                    username:
-                        username,
+                    userCount,
 
-                    userCount:
-                        userCount,
-
-                    users:
-                        users
-
+                    users
                 }
             );
 
@@ -400,7 +351,6 @@ io.on("connection", (socket) => {
     );
 
 });
-
 
 // ============================================================
 // START SERVER
