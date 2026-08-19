@@ -9,815 +9,1393 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&family=Source+Sans+Pro:wght@400;600;700&display=swap"
+        rel="stylesheet">
     <!-- Use same handwritten script font family as home page -->
     <style>
-        :root{ --card-bg: #ffffff }
-        body{ background: #f7f6f2; font-family: Poppins, sans-serif }
-        .container{
-            min-height: calc(100vh - 84px);
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            padding:40px 20px 28px;
+        :root {
+            --card-bg: #ffffff
         }
 
-        .board-shell{
-            width:100%;
-            max-width:1200px;
-            height:540px;
-            border-radius:24px;
-            background:transparent;
+        body {
+            background: #f7f6f2;
+            font-family: Poppins, sans-serif
+        }
+
+        .board-shell {
+            width: 100%;
+            min-height: 100vh;
+            padding: 96px 40px 40px;
+            box-sizing: border-box;
+            height: auto;
+            background: transparent;
             border: none;
             box-shadow: none;
-            display:flex;
-            flex-direction:column;
-            overflow:hidden;
-            position:relative;
+            display: flex;
+            flex-direction: column;
+            overflow: visible;
+            position: relative;
         }
 
-        .board-header{
-            position:fixed;
-            left:18px;
-            top:18px;
-            display:flex;
-            align-items:center;
-            gap:10px;
-            z-index:30;
-            padding:6px 8px;
-            background:transparent;
+        .board-header {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 40;
+            padding: 16px 40px;
+            background: transparent;
+            box-sizing: border-box;
+            pointer-events: none;
         }
 
-        .board-header .logo-img{ width:38px; height:38px; object-fit:contain }
+        .board-header > * {
+            pointer-events: auto;
+        }
 
-        .board-header h2{
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-brand .logo-img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain
+        }
+
+        .header-brand h2 {
             font-family: 'Outfit', 'Source Sans Pro', sans-serif;
-            font-weight:700;
-            letter-spacing:1px;
-            margin:0;
-            font-size:28px;
-            color:#0f172a;
-            line-height:1;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            margin: 0;
+            font-size: 22px;
+            color: #0f172a;
+            line-height: 1;
         }
 
-        .board-body{
-            flex:1 1 auto;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            flex-direction:column;
-            gap:18px;
-            color:#334155;
-            background:transparent;
+        .badge-experiment {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            border: 1px solid #94a3b8;
+            font-size: 10px;
+            font-weight: 700;
+            color: #475569;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.7);
         }
 
-        .board-grid{
-            width:100%;
-            height:100%;
-            display:grid;
-            grid-template-columns:repeat(auto-fill, 220px);
-            align-content:start;
-            justify-content:start;
-            gap:18px;
-            padding:92px 0 28px;
-            overflow:auto;
-            box-sizing:border-box;
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: relative;
         }
 
-        .boards-heading{
-            grid-column:1 / -1;
-            justify-self:center;
-            font-family:'Poppins', 'Outfit', sans-serif;
-            font-size:28px;
-            font-weight:700;
-            color:#111827;
-            margin:0 0 14px;
+        .user-avatar-wrap {
+            position: relative;
+            width: 42px;
+            height: 42px;
+            cursor: pointer;
+            flex-shrink: 0;
         }
 
-        .board-card{
-            background:transparent;
-            border:0;
-            border-radius:14px;
-            box-shadow:none;
-            width:220px;
-            height:220px;
-            padding:0;
-            position:relative;
-            display:flex;
-            flex-direction:column;
-            justify-content:flex-start;
-            cursor:pointer;
-            transition:transform .2s ease, filter .2s ease;
+        .user-avatar-ring {
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            background: conic-gradient(#f472b6, #fb923c, #facc15, #34d399, #60a5fa, #a78bfa, #f472b6);
+            z-index: 0;
+            transition: transform .15s ease;
         }
 
-        .board-card-preview{
-            width:100%;
-            height:100%;
-            background:var(--board-background, #2f5be3);
-            border-radius:14px;
-            clip-path:polygon(0 12%, 34% 12%, 42% 0, 72% 0, 78% 12%, 100% 12%, 100% 100%, 0 100%);
-            transition:transform .2s ease, background-color .2s ease;
+        .user-avatar-wrap:hover .user-avatar-ring {
+            transform: scale(1.08);
         }
 
-        .has-boards .board-card-preview{
-            transform-origin:center;
+        .user-avatar {
+            position: relative;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2.5px solid #f7f6f2;
+            z-index: 1;
+            display: block;
         }
 
-        .has-boards .overlay-create{
-            position:fixed;
-            right:28px;
-            bottom:28px;
-            z-index:40;
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
-        .has-boards .graphic-overlay{
-            display:block !important;
-            bottom:0;
+        .user-menu-dropdown {
+            position: absolute;
+            right: 0;
+            top: 54px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.13), 0 4px 16px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            width: 240px;
+            padding: 8px;
+            display: none;
+            flex-direction: column;
+            z-index: 50;
         }
 
-        .has-boards .graphic-overlay .overlay-title{
-            display:none;
+        .user-menu-dropdown.open {
+            display: flex;
+            animation: menuFadeIn .15s ease;
         }
 
-        .board-card:hover{
-            transform:translateY(-6px);
-            filter:drop-shadow(0 12px 12px rgba(15,23,42,0.15));
+        @keyframes menuFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .board-card-name{
-            position:absolute;
-            top:22px;
-            left:18px;
-            right:18px;
-            z-index:2;
-            font-family:'Poppins', 'Outfit', sans-serif;
-            font-size:19px;
-            font-weight:700;
-            color:#ffffff;
-            margin:0;
-            line-height:1.2;
-            overflow:hidden;
-            text-overflow:ellipsis;
-            white-space:nowrap;
+        .user-menu-profile-row {
+            padding: 10px 14px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            margin-bottom: 4px;
         }
 
-        .board-card-date{
-            position:absolute;
-            top:52px;
-            left:18px;
-            right:18px;
-            z-index:2;
-            font-family:'Poppins', 'Outfit', sans-serif;
-            font-size:12px;
-            color:rgba(255,255,255,0.86);
-            margin:0;
+        .user-menu-profile-name {
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
         }
 
-        .board-card:hover .board-card-preview{
-            transform:scale(1.03);
+        .user-menu-profile-email {
+            font-family: 'Poppins', sans-serif;
+            font-size: 11.5px;
+            color: #94a3b8;
+            margin: 2px 0 0;
         }
 
-        .empty-title{
-            font-size:20px;
-            color:#0f172a;
-            font-weight:600;
+        .user-menu-item {
+            padding: 11px 14px;
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e293b;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            width: 100%;
+            box-sizing: border-box;
+            transition: background .15s ease;
         }
 
-        .create-main{
-            appearance:none;
-            border:2px dashed #9ca3af;
-            background:transparent;
-            padding:28px 36px;
-            border-radius:18px;
-            cursor:pointer;
-            color:#374151;
-            font-weight:600;
-            display:flex;
-            align-items:center;
-            gap:12px;
+        .user-menu-item:hover {
+            background: #f8fafc;
         }
 
-        .create-main img{ width:58px; opacity:0.9 }
-
-        /* graphic bottom center (visible, fixed to viewport) */
-        .graphic{
-            position:fixed;
-            bottom:10px;
-            left:50%;
-            transform:translateX(-50%);
-            pointer-events:none;
-            width:80vw;
-            max-width:none;
-            height:auto;
-            opacity:1;
-            z-index:10;
+        .user-menu-item svg {
+            flex-shrink: 0;
+            color: #475569;
         }
 
-        /* Overlay heading displayed on top of the graphic */
-        .graphic-overlay{
-            position:fixed;
-            left:50%;
-            transform:translateX(-50%);
-            /* moved lower so it's closer to the graphic */
-            bottom:400px;
-            pointer-events:none;
-            z-index:11;
-            text-align:center;
-            width:100%;
+        .user-menu-divider {
+            height: 1px;
+            background: #f1f5f9;
+            margin: 6px 0;
         }
 
-        .graphic-overlay .overlay-title{
-            font-family: 'Outfit', 'Source Sans Pro', sans-serif;
-            font-size:36px;
-            font-weight:700;
-            margin:0;
-            color:#000; /* plain black as requested */
+        .user-menu-item.danger {
+            color: #ef4444;
         }
 
-        .graphic-overlay .overlay-actions{
-            margin-top:18px;
+        .user-menu-item.danger svg {
+            color: #ef4444;
         }
 
-        /* circular floating plus button */
-        .overlay-create{
-            pointer-events:auto; /* allow clicking */
-            width:50px;
-            height:50px;
-            padding:0;
-            border-radius:50%;
-            border:none;
-            overflow:hidden;
-            /* solid blue from provided image */
-            background:#0052cc;
-            display:inline-grid;
-            place-items:center;
-            color:#fff;
-            cursor:pointer;
-            box-shadow:0 14px 34px rgba(0,82,204,0.16), 0 6px 18px rgba(0,0,0,0.08);
-            transform:translateY(0);
-            transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;
+        .board-body {
+            flex: 1 1 auto;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            flex-direction: column;
+            color: #334155;
+            background: transparent;
+            width: 100%;
         }
 
-        .overlay-create .plus{
-            font-size:20px;
-            line-height:1;
-            font-weight:800;
-            display:inline-block;
-            transform:translateY(-2px);
-            letter-spacing:-2px;
+        .projects-hero {
+            margin: 6px 0 20px 0;
+            text-align: left;
         }
 
-        .overlay-create:hover{
-            transform:translateY(-6px) scale(1.03);
-            box-shadow:0 30px 60px rgba(0,82,204,0.22), 0 12px 30px rgba(0,0,0,0.12);
-            filter:brightness(1.02);
+        .projects-hero h1 {
+            font-family: 'Outfit', 'Poppins', sans-serif;
+            font-size: 42px;
+            font-weight: 800;
+            color: #111827;
+            letter-spacing: -0.6px;
+            margin: 0 0 6px 0;
+            line-height: 1.15;
         }
 
-        .overlay-create:active{
-            transform:translateY(-2px) scale(.98);
+        .projects-hero p {
+            font-family: 'Poppins', sans-serif;
+            font-size: 15px;
+            color: #6b7280;
+            margin: 0;
+            font-weight: 400;
+        }
+
+        .projects-toolbar {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            box-sizing: border-box;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .btn-new-project {
+            appearance: none;
+            border: none;
+            background: #2563eb;
+            color: #ffffff;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 10px 22px;
+            border-radius: 9999px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+            transition: all .2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .btn-new-project:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.38);
+        }
+
+        .btn-new-project:active {
+            transform: translateY(0);
+        }
+
+        .search-pill-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 280px;
+        }
+
+        .search-pill-icon {
+            position: absolute;
+            left: 16px;
+            color: #9ca3af;
+            pointer-events: none;
+        }
+
+        .search-pill-input {
+            width: 100%;
+            padding: 10px 36px 10px 42px;
+            border-radius: 9999px;
+            border: 1.5px solid #e5e7eb;
+            background: #ffffff;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            color: #1f2937;
+            outline: none;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+            transition: all .2s ease;
+        }
+
+        .search-pill-input:focus {
+            border-color: #9333ea;
+            box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.15);
+        }
+
+        .search-pill-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .search-pill-clear {
+            position: absolute;
+            right: 12px;
+            background: #f3f4f6;
+            border: none;
+            color: #6b7280;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all .15s ease;
+        }
+
+        .search-pill-clear:hover {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        .sort-pill-btn {
+            appearance: none;
+            background: #ffffff;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 9999px;
+            padding: 9px 18px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+            transition: all .2s ease;
+        }
+
+        .sort-pill-btn:hover {
+            border-color: #d1d5db;
+            background: #f9fafb;
+        }
+
+        .sort-menu-dropdown {
+            position: absolute;
+            right: 0;
+            top: 46px;
+            background: #ffffff;
+            border-radius: 14px;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+            border: 1px solid #e2e8f0;
+            width: 170px;
+            padding: 6px;
+            display: none;
+            flex-direction: column;
+            z-index: 50;
+        }
+
+        .sort-menu-dropdown.open {
+            display: flex;
+        }
+
+        .sort-option {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: #334155;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            transition: background .15s ease;
+        }
+
+        .sort-option:hover,
+        .sort-option.active {
+            background: #f1f5f9;
+            color: #9333ea;
+            font-weight: 600;
+        }
+
+        .boards-no-results {
+            grid-column: 1 / -1;
+            padding: 40px 10px;
+            color: #64748b;
+            font-family: 'Poppins', 'Outfit', sans-serif;
+            font-size: 15px;
+            text-align: left;
+        }
+
+        .boards-no-results p {
+            margin: 0 0 12px;
+        }
+
+        .board-grid {
+            width: 100%;
+            height: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 220px);
+            align-content: start;
+            justify-content: start;
+            gap: 24px 20px;
+            padding: 16px 0 32px 4px;
+            overflow: visible;
+            box-sizing: border-box;
+        }
+
+        .board-card {
+            background: transparent;
+            border: 0;
+            border-radius: 18px;
+            box-shadow: none;
+            width: 220px;
+            height: 205px;
+            padding: 0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            cursor: pointer;
+            transition: transform .22s cubic-bezier(0.34, 1.56, 0.64, 1), filter .22s ease;
+            filter: drop-shadow(0 6px 14px rgba(15, 23, 42, 0.08));
+        }
+
+        .board-card-folder {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        .folder-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .board-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            filter: drop-shadow(0 16px 22px rgba(15, 23, 42, 0.14));
+        }
+
+        .board-card-content {
+            position: absolute;
+            top: 82px;
+            left: 22px;
+            right: 22px;
+            bottom: 20px;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            pointer-events: none;
+        }
+
+        .board-card-name {
+            font-family: 'Poppins', 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.25;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            word-break: break-word;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+        }
+
+        .board-card-date {
+            font-family: 'Poppins', 'Outfit', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 6px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
         }
 
         /* fun modal styling */
-        .modal-backdrop{
-            position:fixed;inset:0;background:rgba(15,23,42,0.42);display:none;align-items:center;justify-content:center;z-index:60;
-            backdrop-filter:blur(2px);
-            opacity:0;
-            transition:opacity .2s ease;
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.42);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+            backdrop-filter: blur(2px);
+            opacity: 0;
+            transition: opacity .2s ease;
         }
 
-        .modal-backdrop.visible{
-            display:flex;
-            opacity:1;
+        .modal-backdrop.visible {
+            display: flex;
+            opacity: 1;
         }
 
-        .modal{
-            background:#f3f1f8;
-            padding:0 18px 16px;
-            border-radius:22px;
-            width:min(420px, calc(100vw - 24px));
-            box-shadow:0 20px 60px rgba(15, 23, 42, 0.12);
-            border:3px solid rgba(50, 50, 70, 0.08);
-            overflow:hidden;
-            max-height:78vh;
-            transform:translateY(8px) scale(.98);
-            transition:transform .2s ease, opacity .2s ease;
-            position:relative;
+        .modal {
+            background: #f3f1f8;
+            padding: 0 18px 16px;
+            border-radius: 22px;
+            width: min(420px, calc(100vw - 24px));
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+            border: 3px solid rgba(50, 50, 70, 0.08);
+            overflow: hidden;
+            max-height: 78vh;
+            transform: translateY(8px) scale(.98);
+            transition: transform .2s ease, opacity .2s ease;
+            position: relative;
         }
 
-        .modal-backdrop.visible .modal{
-            transform:translateY(0) scale(1);
+        .modal-backdrop.visible .modal {
+            transform: translateY(0) scale(1);
         }
 
-        .modal-top-tabs{
-            display:flex;
-            gap:10px;
-            background:rgba(255,255,255,0.45);
-            padding:8px;
-            border-radius:999px;
-            margin:16px auto 12px;
-            border:1px solid rgba(148, 163, 184, 0.2);
+        .modal-top-tabs {
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.45);
+            padding: 8px;
+            border-radius: 999px;
+            margin: 16px auto 12px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
         }
 
-        .modal-tab{
-            flex:1;
-            border:none;
-            border-radius:999px;
-            background:transparent;
-            color:#1f2937;
-            font-weight:700;
-            font-size:14px;
-            padding:10px 14px;
-            cursor:pointer;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            gap:8px;
-            transition:background .2s ease, color .2s ease, transform .2s ease;
+        .modal-tab {
+            flex: 1;
+            border: none;
+            border-radius: 999px;
+            background: transparent;
+            color: #1f2937;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 10px 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background .2s ease, color .2s ease, transform .2s ease;
         }
 
-        .modal-tab.active{
-            background:#2563eb;
-            color:white;
-            box-shadow:0 10px 18px rgba(37,99,235,0.22);
+        .modal-tab.active {
+            background: #2563eb;
+            color: white;
+            box-shadow: 0 10px 18px rgba(37, 99, 235, 0.22);
         }
 
-        .modal-hero{
-            display:block;
-            width:100%;
-            max-width:380px;
-            margin:0 auto 6px;
-            height:170px;
-            object-fit:contain;
-            object-position:center;
-            border-radius:0;
-            background:transparent;
+        .modal-hero {
+            display: block;
+            width: 100%;
+            max-width: 380px;
+            margin: 0 auto 6px;
+            height: 170px;
+            object-fit: contain;
+            object-position: center;
+            border-radius: 0;
+            background: transparent;
         }
 
-        .modal-header{
-            margin-bottom:10px;
-            padding-right:40px;
+        .modal-header {
+            margin-bottom: 10px;
+            padding-right: 40px;
         }
 
-        .modal h3{
-            margin:0;
-            color:#1b1a2d;
+        .modal h3 {
+            margin: 0;
+            color: #1b1a2d;
             font-family: 'Poppins', 'Outfit', sans-serif;
-            font-size:28px;
-            font-weight:800;
-            letter-spacing:-0.05em;
-            line-height:1.1;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            line-height: 1.1;
         }
 
-        .modal-subtitle{
-            margin:6px 0 0;
-            color:#6b7280;
-            font-family:'Poppins', 'Source Sans Pro', sans-serif;
-            font-size:14px;
-            font-weight:500;
+        .modal-subtitle {
+            margin: 6px 0 0;
+            color: #6b7280;
+            font-family: 'Poppins', 'Source Sans Pro', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
         }
 
-        .modal .row{margin-bottom:14px}
-
-        .modal label{
-            display:block;
-            font-size:15px;
-            color:#1f2430;
-            margin-bottom:8px;
-            font-family:'Poppins', 'Outfit', sans-serif;
-            font-weight:600;
-            letter-spacing:-0.02em;
+        .modal .row {
+            margin-bottom: 14px
         }
 
-        .modal input[type="text"]{
-            width:100%;
-            padding:12px 14px;
-            border:1px solid #dfe4ee;
-            border-radius:12px;
-            background:#f9f9fb;
-            box-shadow:inset 0 1px 0 rgba(255,255,255,0.8);
-            font-family:'Poppins', 'Source Sans Pro', sans-serif;
-            font-size:15px;
-            color:#1f2937;
-            transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+        .modal label {
+            display: block;
+            font-size: 15px;
+            color: #1f2430;
+            margin-bottom: 8px;
+            font-family: 'Poppins', 'Outfit', sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.02em;
         }
 
-        .modal input[type="text"]::placeholder{color:#94a3b8}
-
-        .modal input[type="text"]:focus{
-            outline:none;
-            border-color:rgba(124,58,237,0.6);
-            box-shadow:0 0 0 4px rgba(124,58,237,0.12), inset 0 1px 0 rgba(255,255,255,0.8);
-            background:#fff;
+        .modal input[type="text"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #dfe4ee;
+            border-radius: 12px;
+            background: #f9f9fb;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            font-family: 'Poppins', 'Source Sans Pro', sans-serif;
+            font-size: 15px;
+            color: #1f2937;
+            transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
         }
 
-        .modal .options{display:flex;gap:8px;flex-wrap:wrap}
-
-        .option-btn{
-            position:relative;
-            display:flex;
-            align-items:center;
-            gap:8px;
-            padding:10px 12px;
-            border-radius:12px;
-            border:1px solid #dfe3ed;
-            background:#f8f8fb;
-            cursor:pointer;
-            font-family:'Poppins', 'Outfit', sans-serif;
-            font-size:15px;
-            font-weight:600;
-            color:#3b3d4d;
-            transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+        .modal input[type="text"]::placeholder {
+            color: #94a3b8
         }
 
-        .option-btn:hover{
-            transform:translateY(-1px);
-            box-shadow:0 8px 16px rgba(15,23,42,0.06);
+        .modal input[type="text"]:focus {
+            outline: none;
+            border-color: rgba(124, 58, 237, 0.6);
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            background: #fff;
         }
 
-        .option-btn:focus-visible{
-            outline:none;
-            box-shadow:0 0 0 3px rgba(37,99,235,0.12);
+        .modal .options {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap
         }
 
-        .option-btn.active{
-            background:transparent;
-            color:#1f2937;
-            border-color:#dfe3ed;
-            box-shadow:none;
+        .option-btn {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid #dfe3ed;
+            background: #f8f8fb;
+            cursor: pointer;
+            font-family: 'Poppins', 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            color: #3b3d4d;
+            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
         }
 
-        .option-preview{
-            width:18px;
-            height:18px;
-            border-radius:5px;
-            border:1.5px solid #cbd5e1;
-            background:#fff;
-            position:relative;
-            flex-shrink:0;
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
+        .option-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
         }
 
-        .option-check{
-            display:none;
-            font-size:12px;
-            font-weight:800;
-            line-height:1;
-            color:#fff;
+        .option-btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
         }
 
-        .option-btn.active .option-preview{
-            background:#2563eb;
-            border-color:#2563eb;
+        .option-btn.active {
+            background: transparent;
+            color: #1f2937;
+            border-color: #dfe3ed;
+            box-shadow: none;
         }
 
-        .option-btn.active .option-check{
-            display:inline-block;
+        .option-preview {
+            width: 18px;
+            height: 18px;
+            border-radius: 5px;
+            border: 1.5px solid #cbd5e1;
+            background: #fff;
+            position: relative;
+            flex-shrink: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .modal .actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:18px}
+        .option-check {
+            display: none;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1;
+            color: #fff;
+        }
 
-        .modal .actions .left-note{font-size:12px;color:#6b7280}
+        .option-btn.active .option-preview {
+            background: #2563eb;
+            border-color: #2563eb;
+        }
 
-        .btn{padding:11px 18px;border-radius:12px;border:none;cursor:pointer;font-family:'Poppins', 'Outfit', sans-serif;font-weight:700;font-size:16px;transition:all .18s ease}
+        .option-btn.active .option-check {
+            display: inline-block;
+        }
 
-        .btn.primary{background:#2563eb;color:#fff;box-shadow:0 12px 30px rgba(37,99,235,0.25)}
-        .btn.primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 16px 36px rgba(37,99,235,0.32)}
-        .btn.primary:active:not(:disabled){transform:translateY(0)}
-        .btn.primary:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+        .modal .actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-top: 18px
+        }
 
-        .btn.ghost{background:transparent;border:1px solid #dfe3ed;color:#2f3440}
-        .btn.ghost:hover{background:#fff;transform:translateY(-1px)}
+        .modal .actions .left-note {
+            font-size: 12px;
+            color: #6b7280
+        }
 
-        @media(max-width:640px){
-            .board-shell{height:500px;padding:12px}
-            .modal{width:min(92vw, 420px);padding:0 14px 14px}
-            .modal-hero{height:150px;max-width:320px}
-            .modal h3{font-size:24px}
-            .option-btn{flex:1 1 calc(50% - 8px);justify-content:center}
-            .modal .actions{gap:10px}
-            .btn{flex:1}
-            .board-header h2{font-size:24px}
+        .btn {
+            padding: 11px 18px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Poppins', 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            transition: all .18s ease
+        }
+
+        .btn.primary {
+            background: #2563eb;
+            color: #fff;
+            box-shadow: 0 12px 30px rgba(37, 99, 235, 0.25)
+        }
+
+        .btn.primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 36px rgba(37, 99, 235, 0.32)
+        }
+
+        .btn.primary:active:not(:disabled) {
+            transform: translateY(0)
+        }
+
+        .btn.primary:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+            box-shadow: none
+        }
+
+        .btn.ghost {
+            background: transparent;
+            border: 1px solid #dfe3ed;
+            color: #2f3440
+        }
+
+        .btn.ghost:hover {
+            background: #fff;
+            transform: translateY(-1px)
+        }
+
+        @media(max-width:640px) {
+            .board-shell {
+                min-height: 100vh;
+                padding: 84px 20px 24px;
+            }
+
+            .modal {
+                width: min(92vw, 420px);
+                padding: 0 14px 14px
+            }
+
+            .modal-hero {
+                height: 150px;
+                max-width: 320px
+            }
+
+            .modal h3 {
+                font-size: 24px
+            }
+
+            .option-btn {
+                flex: 1 1 calc(50% - 8px);
+                justify-content: center
+            }
+
+            .modal .actions {
+                gap: 10px
+            }
+
+            .btn {
+                flex: 1
+            }
+
+            .board-header h2 {
+                font-size: 24px
+            }
         }
     </style>
 </head>
 
 <body>
 
-    <div class="container">
-        <div class="board-shell" role="main">
-            <div class="board-header">
+    <div class="board-shell" role="main">
+
+        <!-- Floating nav: no background container -->
+        <div class="board-header">
+            <div class="header-brand">
                 <img src="assets/logo.png" alt="LiveCanvas" class="logo-img">
-                <h2 style="margin:0">Live Canvas</h2>
+                <h2>Live Canvas</h2>
             </div>
-
-            <div id="boardBody" class="board-body">
-                <div id="boardList" class="board-grid" hidden></div>
-            </div>
-
-            <img id="emptyGraphic" src="assets/saved.png" alt="saved graphic" class="graphic">
-
-            <div id="emptyOverlay" class="graphic-overlay">
-                <h1 class="overlay-title">You have no boards</h1>
-                <h1 class="overlay-title">Create your first one now</h1>
-                <div class="overlay-actions">
-                    <button id="openCreate" class="overlay-create" aria-label="Create new board"><span class="plus">+</span></button>
+            <div class="header-actions">
+                <div class="user-avatar-wrap" id="userAvatarBtn" title="Account">
+                    <div class="user-avatar-ring"></div>
+                    <div class="user-avatar">
+                        <img id="userProfileImg" src="assets/profile/1.png" alt="Profile">
+                    </div>
+                </div>
+                <div class="user-menu-dropdown" id="userMenuDropdown">
+                    <div class="user-menu-profile-row">
+                        <p class="user-menu-profile-name" id="userMenuName">User</p>
+                        <p class="user-menu-profile-email" id="userMenuEmail"></p>
+                    </div>
+                    <a href="index.html?board=new" class="user-menu-item">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12h8M12 8v8"/></svg>
+                        Whiteboard
+                    </a>
+                    <a href="room.html" class="user-menu-item">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        Rooms
+                    </a>
+                    <div class="user-menu-divider"></div>
+                    <button type="button" class="user-menu-item danger" id="logoutBtn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        Sign out
+                    </button>
                 </div>
             </div>
         </div>
-    </div>
+        <div id="boardBody" class="board-body">
+            <div class="projects-hero">
+                <h1>Your Projects</h1>
+                <p>Pick up where you left off, or start something new.</p>
+            </div>
 
-    <!-- Modal -->
-    <div id="backdrop" class="modal-backdrop">
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-            <div class="modal-top-tabs" aria-label="Create or join board options">
-                <button type="button" class="modal-tab active" data-mode="create">Create</button>
-                <button type="button" class="modal-tab" data-mode="join">Join</button>
-            </div>
-            <img id="modalHeroImage" src="assets/popup.png" alt="Create board illustration" class="modal-hero">
-            <div class="modal-header">
-                <h3 id="modalTitle">Create New Board</h3>
-            </div>
-            <div class="row" id="boardNameRow">
-                <label id="boardNameLabel" for="boardName">Board name</label>
-                <input id="boardName" type="text" placeholder="e.g. Project Ideas" autocomplete="off">
-            </div>
-            <div class="row" id="styleRow">
-                <label>Canvas style</label>
-                <div class="options" id="options" role="radiogroup" aria-label="Canvas style options">
-                    <button type="button" class="option-btn" data-value="grid" aria-pressed="false">
-                        <span class="option-preview" aria-hidden="true"><span class="option-check">✓</span></span>
-                        <span>Grid</span>
+            <div class="projects-toolbar">
+                <div class="toolbar-left">
+                    <button type="button" id="newBoardBtn" class="btn-new-project">
+                        <span style="font-size:16px;line-height:1;font-weight:700;">+</span>
+                        <span>New Project</span>
                     </button>
-                    <button type="button" class="option-btn" data-value="dots" aria-pressed="false">
-                        <span class="option-preview" aria-hidden="true"><span class="option-check">✓</span></span>
-                        <span>Dots</span>
+                    <div class="search-pill-wrap">
+                        <svg class="search-pill-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor"
+                            stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="boardSearchInput" class="search-pill-input"
+                            placeholder="Search projects..." autocomplete="off">
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <button type="button" id="sortBtn" class="sort-pill-btn" aria-haspopup="true">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2"
+                            fill="none" stroke-linecap="round">
+                            <line x1="4" y1="7" x2="20" y2="7"></line>
+                            <line x1="4" y1="12" x2="16" y2="12"></line>
+                            <line x1="4" y1="17" x2="12" y2="17"></line>
+                        </svg>
+                        <span id="sortLabel">Recent</span>
+                        <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5"
+                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
                     </button>
-                    <button type="button" class="option-btn" data-value="blank" aria-pressed="true">
-                        <span class="option-preview" aria-hidden="true"><span class="option-check">✓</span></span>
-                        <span>Blank</span>
-                    </button>
-                    <button type="button" class="option-btn" data-value="lines" aria-pressed="false">
-                        <span class="option-preview" aria-hidden="true"><span class="option-check">✓</span></span>
-                        <span>Lines</span>
-                    </button>
+                    <div class="sort-menu-dropdown" id="sortDropdown">
+                        <button type="button" class="sort-option active" data-sort="recent">Recent</button>
+                        <button type="button" class="sort-option" data-sort="name">Alphabetical</button>
+                        <button type="button" class="sort-option" data-sort="oldest">Oldest</button>
+                    </div>
                 </div>
             </div>
-            <div class="actions">
-                <button id="cancelBtn" class="btn ghost" type="button">Cancel</button>
-                <button id="createBtn" class="btn primary" type="button" disabled>Create board</button>
+
+            <div id="boardList" class="board-grid"></div>
+        </div>
+
+        <img id="emptyGraphic" src="assets/saved.png" alt="saved graphic" class="graphic" style="display:none;">
+
+        <div id="emptyOverlay" class="graphic-overlay" style="display:none;">
+            <h1 class="overlay-title">You have no boards</h1>
+            <h1 class="overlay-title">Create your first one now</h1>
+        </div>
+
+        <!-- Modal -->
+        <div id="backdrop" class="modal-backdrop">
+            <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+                <div class="modal-top-tabs" aria-label="Create or join board options">
+                    <button type="button" class="modal-tab active" data-mode="create">Create</button>
+                    <button type="button" class="modal-tab" data-mode="join">Join</button>
+                </div>
+                <img id="modalHeroImage" src="assets/popup.png" alt="Create board illustration" class="modal-hero">
+                <div class="modal-header">
+                    <h3 id="modalTitle">Create New Board</h3>
+                </div>
+                <div class="row" id="boardNameRow">
+                    <label id="boardNameLabel" for="boardName">Board name</label>
+                    <input id="boardName" type="text" placeholder="e.g. Project Ideas" autocomplete="off">
+                </div>
+                <div class="row" id="styleRow">
+                    <label>Canvas style</label>
+                    <div class="options" id="options" role="radiogroup" aria-label="Canvas style options">
+                        <button type="button" class="option-btn" data-value="grid" aria-pressed="false">
+                            <span class="option-preview" aria-hidden="true"><span class="option-check">✓</span></span>
+                            <span>Grid</span>
+                        </button>
+                        <button type="button" class="option-btn" data-value="dots" aria-pressed="false">
+                            <span class="option-preview" aria-hidden="true"><span class="option-check">✓</span></span>
+                            <span>Dots</span>
+                        </button>
+                        <button type="button" class="option-btn" data-value="blank" aria-pressed="true">
+                            <span class="option-preview" aria-hidden="true"><span class="option-check">✓</span></span>
+                            <span>Blank</span>
+                        </button>
+                        <button type="button" class="option-btn" data-value="lines" aria-pressed="false">
+                            <span class="option-preview" aria-hidden="true"><span class="option-check">✓</span></span>
+                            <span>Lines</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button id="cancelBtn" class="btn ghost" type="button">Cancel</button>
+                    <button id="createBtn" class="btn primary" type="button" disabled>Create board</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <script>
-        // Require login
-        try{
-            const user = JSON.parse(localStorage.getItem('loggedInUser'));
-            if(!user){
+        <script>
+            // Require login
+            try {
+                const user = JSON.parse(localStorage.getItem('loggedInUser'));
+                if (!user) {
+                    window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+                }
+            } catch (e) {
                 window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
             }
-        }catch(e){
-            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
-        }
 
-        const backdrop = document.getElementById('backdrop');
-        const openCreate = document.getElementById('openCreate');
-        const cancelBtn = document.getElementById('cancelBtn');
-        const createBtn = document.getElementById('createBtn');
-        const optionsEl = document.getElementById('options');
-        const boardNameInput = document.getElementById('boardName');
-        const boardNameLabel = document.getElementById('boardNameLabel');
-        const boardNameRow = document.getElementById('boardNameRow');
-        const styleRow = document.getElementById('styleRow');
-        const boardList = document.getElementById('boardList');
-        const emptyGraphic = document.getElementById('emptyGraphic');
-        const emptyOverlay = document.getElementById('emptyOverlay');
-        const modalTabs = document.querySelectorAll('.modal-tab');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalHeroImage = document.getElementById('modalHeroImage');
+            const backdrop = document.getElementById('backdrop');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const createBtn = document.getElementById('createBtn');
+            const optionsEl = document.getElementById('options');
+            const boardNameInput = document.getElementById('boardName');
+            const boardNameLabel = document.getElementById('boardNameLabel');
+            const boardNameRow = document.getElementById('boardNameRow');
+            const styleRow = document.getElementById('styleRow');
+            const boardList = document.getElementById('boardList');
+            const emptyGraphic = document.getElementById('emptyGraphic');
+            const emptyOverlay = document.getElementById('emptyOverlay');
+            const modalTabs = document.querySelectorAll('.modal-tab');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalHeroImage = document.getElementById('modalHeroImage');
 
-        let selectedOption = 'grid';
+            const newBoardBtn = document.getElementById('newBoardBtn');
+            const sortBtn = document.getElementById('sortBtn');
+            const sortDropdown = document.getElementById('sortDropdown');
+            const sortLabel = document.getElementById('sortLabel');
+            const userAvatarBtn = document.getElementById('userAvatarBtn');
+            const userMenuDropdown = document.getElementById('userMenuDropdown');
+            const userMenuName = document.getElementById('userMenuName');
+            const userMenuEmail = document.getElementById('userMenuEmail');
+            const userProfileImg = document.getElementById('userProfileImg');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const boardSearchInput = document.getElementById('boardSearchInput');
+            const boardSearchClear = document.getElementById('boardSearchClear');
 
-        const boardColorPairs = [
-            { background: '#2f5be3', accent: '#ff646b' },
-            { background: '#168f8b', accent: '#ffcf56' },
-            { background: '#7b3fc6', accent: '#62d7c5' },
-            { background: '#e85d3f', accent: '#4a62d8' },
-            { background: '#246b52', accent: '#f78da7' }
-        ];
+            let currentSearchQuery = '';
+            let currentSort = 'recent';
+            let selectedOption = 'grid';
 
-        function formatBoardDate(value) {
-            const date = new Date(value);
-            if (Number.isNaN(date.getTime())) {
-                return 'Recently';
+            // Load user info and assign random profile picture (stored in localStorage)
+            try {
+                const user = JSON.parse(localStorage.getItem('loggedInUser'));
+                if (user) {
+                    // Set name and email in dropdown
+                    if (userMenuName) userMenuName.textContent = user.name || user.email || 'User';
+                    if (userMenuEmail) userMenuEmail.textContent = user.email || '';
+
+                    // Assign or retrieve random profile picture index
+                    let profileIdx = localStorage.getItem('userProfilePicIdx');
+                    if (!profileIdx) {
+                        profileIdx = Math.floor(Math.random() * 5) + 1;
+                        localStorage.setItem('userProfilePicIdx', profileIdx);
+                    }
+                    if (userProfileImg) userProfileImg.src = `assets/profile/${profileIdx}.png`;
+                }
+            } catch (e) { }
+
+            const boardColorPairs = [
+                { color: '#ea9ec5', tab: '#f3b4d1', dark: '#cc598e' },
+                { color: '#97c8f4', tab: '#b5dbfa', dark: '#68a5db' },
+                { color: '#b9a7ea', tab: '#cfc2f2', dark: '#8f77cf' },
+                { color: '#8ad8c4', tab: '#aae5d5', dark: '#52b097' },
+                { color: '#f7b09c', tab: '#fac5b6', dark: '#d9765e' },
+                { color: '#f5d378', tab: '#f8df9a', dark: '#cca13d' }
+            ];
+
+            function getBoardColor(board, index) {
+                if (typeof board.colorIndex === 'number' && !isNaN(board.colorIndex)) {
+                    return boardColorPairs[((board.colorIndex % boardColorPairs.length) + boardColorPairs.length) % boardColorPairs.length];
+                }
+                if (board.id) {
+                    let hash = 0;
+                    for (let i = 0; i < board.id.length; i++) {
+                        hash = (hash * 31 + board.id.charCodeAt(i)) % boardColorPairs.length;
+                    }
+                    return boardColorPairs[Math.abs(hash)];
+                }
+                return boardColorPairs[index % boardColorPairs.length];
             }
-            return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-        }
 
-        function createBoardId(existingBoards) {
-            const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let boardId = '';
+            function formatBoardDate(value) {
+                const date = new Date(value);
+                if (Number.isNaN(date.getTime())) {
+                    return 'Recently';
+                }
+                return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            }
 
-            do {
-                boardId = Array.from({ length: 8 }, () =>
-                    alphabet[Math.floor(Math.random() * alphabet.length)]
-                ).join('');
-            } while (existingBoards.some(board => board.id === boardId));
+            function createBoardId(existingBoards) {
+                const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let boardId = '';
 
-            return boardId;
-        }
+                do {
+                    boardId = Array.from({ length: 8 }, () =>
+                        alphabet[Math.floor(Math.random() * alphabet.length)]
+                    ).join('');
+                } while (existingBoards.some(board => board.id === boardId));
 
-        function renderBoardList() {
-            const boards = JSON.parse(localStorage.getItem('savedBoards') || '[]');
-            const hasBoards = Array.isArray(boards) && boards.length > 0;
+                return boardId;
+            }
 
-            if (hasBoards) {
-                document.querySelector('.board-shell').classList.add('has-boards');
-                boardList.hidden = false;
-                boardList.innerHTML = boards.map((board, index) => {
-                    const colors = boardColorPairs[index % boardColorPairs.length];
-                    return `
-                    <div class="board-card" style="--board-background:${colors.background};--board-accent:${colors.accent}" data-board-id="${board.id || ''}" data-board-name="${(board.name || 'Untitled').replace(/"/g, '&quot;')}">
-                        <h3 class="board-card-name">${(board.name || 'Untitled').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</h3>
-                        <div class="board-card-date">${formatBoardDate(board.created || Date.now())}</div>
-                        <div class="board-card-preview"></div>
-                    </div>
-                `;
-                }).join('');
+            function renderBoardList() {
+                const boards = JSON.parse(localStorage.getItem('savedBoards') || '[]');
+                const hasBoards = Array.isArray(boards) && boards.length > 0;
 
-                boardList.insertAdjacentHTML('afterbegin', '<h2 class="boards-heading">Your Boards</h2>');
-
-                boardList.querySelectorAll('.board-card').forEach(card => {
-                    card.addEventListener('click', () => {
-                        const boardId = card.getAttribute('data-board-id');
-                        const boardName = card.getAttribute('data-board-name');
-                        if (!boardId) return;
-                        sessionStorage.setItem('currentBoardId', boardId);
-                        sessionStorage.setItem('currentBoardName', boardName);
-                        window.location.href = `index.html?board=${encodeURIComponent(boardId)}`;
+                if (hasBoards) {
+                    let needsSave = false;
+                    boards.forEach((b, i) => {
+                        if (typeof b.colorIndex !== 'number') {
+                            b.colorIndex = (boards.length - 1 - i) % boardColorPairs.length;
+                            needsSave = true;
+                        }
                     });
+                    if (needsSave) {
+                        localStorage.setItem('savedBoards', JSON.stringify(boards));
+                    }
+
+                    document.querySelector('.board-shell').classList.add('has-boards');
+                    boardList.hidden = false;
+
+                    const query = currentSearchQuery.trim().toLowerCase();
+                    let filteredBoards = query
+                        ? boards.filter(board =>
+                            (board.name || '').toLowerCase().includes(query) ||
+                            (board.id || '').toLowerCase().includes(query)
+                        )
+                        : [...boards];
+
+                    if (currentSort === 'name') {
+                        filteredBoards.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                    } else if (currentSort === 'oldest') {
+                        filteredBoards.sort((a, b) => (a.created || 0) - (b.created || 0));
+                    } else {
+                        filteredBoards.sort((a, b) => (b.created || 0) - (a.created || 0));
+                    }
+
+                    if (filteredBoards.length > 0) {
+                        boardList.innerHTML = filteredBoards.map((board, index) => {
+                            const colors = getBoardColor(board, index);
+                            return `
+                        <div class="board-card" style="--board-color:${colors.color};--board-tab:${colors.tab};--board-dark:${colors.dark};" data-board-id="${board.id || ''}" data-board-name="${(board.name || 'Untitled').replace(/"/g, '&quot;')}">
+                            <div class="board-card-folder">
+                                <svg class="folder-svg" viewBox="0 0 220 200" fill="none" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Back Tab -->
+                                    <path d="M 10 32 C 10 18 18 10 32 10 L 92 10 C 104 10 110 18 112 30 L 114 36 L 198 36 C 210 36 216 42 216 54 L 216 176 C 216 190 206 198 192 198 L 34 198 C 20 198 10 190 10 176 Z" fill="var(--board-tab, #f3b4d1)"/>
+                                    
+                                    <!-- Dark Inner Fold / Shadow Crease -->
+                                    <path d="M 10 46 C 10 36 18 30 28 30 L 198 30 C 208 30 216 36 216 46 L 216 60 C 200 48 150 44 116 44 C 74 44 26 50 10 68 Z" fill="var(--board-dark, #cc598e)"/>
+                                    
+                                    <!-- Front Flap with smooth s-curve notch -->
+                                    <path d="M 10 62 C 10 52 16 46 26 46 L 102 46 C 110 46 114 38 118 32 C 122 28 126 26 134 26 L 196 26 C 208 26 216 34 216 46 L 216 174 C 216 188 206 198 192 198 L 34 198 C 20 198 10 188 10 174 Z" fill="var(--board-color, #ea9ec5)"/>
+                                </svg>
+                            </div>
+                            <div class="board-card-content">
+                                <h3 class="board-card-name">${(board.name || 'Untitled').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</h3>
+                                <div class="board-card-date">${formatBoardDate(board.created || Date.now())}</div>
+                            </div>
+                        </div>
+                    `;
+                        }).join('');
+
+                        boardList.querySelectorAll('.board-card').forEach(card => {
+                            card.addEventListener('click', () => {
+                                const boardId = card.getAttribute('data-board-id');
+                                const boardName = card.getAttribute('data-board-name');
+                                if (!boardId) return;
+                                sessionStorage.setItem('currentBoardId', boardId);
+                                sessionStorage.setItem('currentBoardName', boardName);
+                                window.location.href = `index.html?board=${encodeURIComponent(boardId)}`;
+                            });
+                        });
+                    } else {
+                        boardList.innerHTML = `
+                        <div class="boards-no-results">
+                            <p>No boards found matching "<strong>${query.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</strong>"</p>
+                            <button type="button" class="btn ghost" id="clearSearchBtn" style="padding:7px 16px;font-size:13px;border-radius:10px;">Clear search</button>
+                        </div>
+                    `;
+                        document.getElementById('clearSearchBtn')?.addEventListener('click', () => {
+                            currentSearchQuery = '';
+                            boardSearchInput.value = '';
+                            boardSearchClear.style.display = 'none';
+                            renderBoardList();
+                            boardSearchInput.focus();
+                        });
+                    }
+
+                    emptyGraphic.style.display = 'none';
+                    emptyOverlay.style.display = 'none';
+                    return;
+                }
+
+                boardList.hidden = true;
+                boardList.innerHTML = '';
+                document.querySelector('.board-shell').classList.remove('has-boards');
+                emptyGraphic.style.display = 'block';
+                emptyOverlay.style.display = 'block';
+            }
+
+            if (newBoardBtn) {
+                newBoardBtn.addEventListener('click', openModal);
+            }
+
+            if (boardSearchInput) {
+                boardSearchInput.addEventListener('input', (e) => {
+                    currentSearchQuery = e.target.value;
+                    if (boardSearchClear) {
+                        boardSearchClear.style.display = currentSearchQuery ? 'flex' : 'none';
+                    }
+                    renderBoardList();
+                });
+            }
+
+            if (boardSearchClear) {
+                boardSearchClear.addEventListener('click', () => {
+                    currentSearchQuery = '';
+                    boardSearchInput.value = '';
+                    boardSearchClear.style.display = 'none';
+                    renderBoardList();
+                    boardSearchInput.focus();
+                });
+            }
+
+            userAvatarBtn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userMenuDropdown?.classList.toggle('open');
+                sortDropdown?.classList.remove('open');
+            });
+
+            sortBtn?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sortDropdown?.classList.toggle('open');
+                userMenuDropdown?.classList.remove('open');
+            });
+
+            document.querySelectorAll('.sort-option').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    const s = opt.getAttribute('data-sort');
+                    currentSort = s;
+                    document.querySelectorAll('.sort-option').forEach(o => o.classList.toggle('active', o === opt));
+                    if (sortLabel) sortLabel.textContent = opt.textContent;
+                    sortDropdown?.classList.remove('open');
+                    renderBoardList();
+                });
+            });
+
+            document.addEventListener('click', () => {
+                userMenuDropdown?.classList.remove('open');
+                sortDropdown?.classList.remove('open');
+            });
+
+            logoutBtn?.addEventListener('click', () => {
+                localStorage.removeItem('loggedInUser');
+                window.location.href = 'login.html';
+            });
+
+            function updateCreateButtonState() {
+                const hasValue = boardNameInput.value.trim().length > 0;
+                createBtn.disabled = !hasValue;
+            }
+
+            function openModal() {
+                backdrop.classList.add('visible');
+                setTimeout(() => {
+                    boardNameInput.focus();
+                    boardNameInput.setSelectionRange(boardNameInput.value.length, boardNameInput.value.length);
+                }, 50);
+            }
+
+            function setActiveTab(mode) {
+                modalTabs.forEach(tab => {
+                    const active = tab.dataset.mode === mode;
+                    tab.classList.toggle('active', active);
                 });
 
-                emptyGraphic.style.display = 'none';
-                emptyOverlay.style.display = 'block';
-                return;
+                const isJoin = mode === 'join';
+                modalTitle.textContent = isJoin ? 'Join Board' : 'Create New Board';
+                createBtn.textContent = isJoin ? 'Join board' : 'Create board';
+                boardNameLabel.textContent = isJoin ? 'Enter the code' : 'Board name';
+                boardNameInput.placeholder = isJoin ? 'Enter the code' : 'e.g. Project Ideas';
+                styleRow.style.display = isJoin ? 'none' : 'block';
+                if (modalHeroImage) {
+                    modalHeroImage.src = isJoin ? 'assets/join.png' : 'assets/popup.png';
+                    modalHeroImage.alt = isJoin ? 'Join board illustration' : 'Create board illustration';
+                }
+                if (isJoin) {
+                    boardNameInput.value = '';
+                }
+                updateCreateButtonState();
             }
 
-            boardList.hidden = true;
-            boardList.innerHTML = '';
-            document.querySelector('.board-shell').classList.remove('has-boards');
-            emptyGraphic.style.display = 'block';
-            emptyOverlay.style.display = 'block';
-        }
-
-        function updateCreateButtonState(){
-            const hasValue = boardNameInput.value.trim().length > 0;
-            createBtn.disabled = !hasValue;
-        }
-
-        function openModal(){
-            backdrop.classList.add('visible');
-            setTimeout(() => {
-                boardNameInput.focus();
-                boardNameInput.setSelectionRange(boardNameInput.value.length, boardNameInput.value.length);
-            }, 50);
-        }
-
-        function setActiveTab(mode){
-            modalTabs.forEach(tab => {
-                const active = tab.dataset.mode === mode;
-                tab.classList.toggle('active', active);
-            });
-
-            const isJoin = mode === 'join';
-            modalTitle.textContent = isJoin ? 'Join Board' : 'Create New Board';
-            createBtn.textContent = isJoin ? 'Join board' : 'Create board';
-            boardNameLabel.textContent = isJoin ? 'Enter the code' : 'Board name';
-            boardNameInput.placeholder = isJoin ? 'Enter the code' : 'e.g. Project Ideas';
-            styleRow.style.display = isJoin ? 'none' : 'block';
-            if (modalHeroImage) {
-                modalHeroImage.src = isJoin ? 'assets/join.png' : 'assets/popup.png';
-                modalHeroImage.alt = isJoin ? 'Join board illustration' : 'Create board illustration';
-            }
-            if (isJoin) {
+            function closeModal() {
+                backdrop.classList.remove('visible');
                 boardNameInput.value = '';
+                updateCreateButtonState();
+                selectedOption = 'grid';
+                Array.from(optionsEl.children).forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-pressed', 'false');
+                });
+                const gridOption = optionsEl.querySelector('[data-value="grid"]');
+                if (gridOption) {
+                    gridOption.classList.add('active');
+                    gridOption.setAttribute('aria-pressed', 'true');
+                }
+                setActiveTab('create');
             }
-            updateCreateButtonState();
-        }
 
-        function closeModal(){
-            backdrop.classList.remove('visible');
-            boardNameInput.value = '';
-            updateCreateButtonState();
-            selectedOption = 'grid';
-            Array.from(optionsEl.children).forEach(btn => {
-                btn.classList.remove('active');
-                btn.setAttribute('aria-pressed', 'false');
+            modalTabs.forEach(tab => {
+                tab.addEventListener('click', () => setActiveTab(tab.dataset.mode));
             });
+
+            cancelBtn.addEventListener('click', closeModal);
+            backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
+
+            document.addEventListener('keydown', (e) => {
+                if (!backdrop.classList.contains('visible')) return;
+                if (e.key === 'Escape') closeModal();
+                if (e.key === 'Enter' && !createBtn.disabled) {
+                    createBtn.click();
+                }
+            });
+
+            boardNameInput.addEventListener('input', updateCreateButtonState);
+
+            setActiveTab('create');
+
+            // options handler
+            optionsEl.addEventListener('click', (e) => {
+                const btn = e.target.closest('.option-btn');
+                if (!btn) return;
+                selectedOption = btn.dataset.value;
+                Array.from(optionsEl.children).forEach(b => {
+                    const isActive = b === btn;
+                    b.classList.toggle('active', isActive);
+                    b.setAttribute('aria-pressed', String(isActive));
+                });
+            });
+
             const gridOption = optionsEl.querySelector('[data-value="grid"]');
             if (gridOption) {
                 gridOption.classList.add('active');
                 gridOption.setAttribute('aria-pressed', 'true');
             }
-            setActiveTab('create');
-        }
 
-        modalTabs.forEach(tab => {
-            tab.addEventListener('click', () => setActiveTab(tab.dataset.mode));
-        });
+            renderBoardList();
+            updateCreateButtonState();
 
-        if (openCreate) openCreate.addEventListener('click', openModal);
-        cancelBtn.addEventListener('click', closeModal);
-        backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) closeModal(); });
+            createBtn.addEventListener('click', () => {
+                const name = boardNameInput.value.trim();
+                if (!name) return;
 
-        document.addEventListener('keydown', (e)=>{
-            if (!backdrop.classList.contains('visible')) return;
-            if (e.key === 'Escape') closeModal();
-            if (e.key === 'Enter' && !createBtn.disabled) {
-                createBtn.click();
-            }
-        });
+                const boards = JSON.parse(localStorage.getItem('savedBoards') || '[]');
+                const isJoinMode = document.querySelector('.modal-tab.active')?.dataset.mode === 'join';
 
-        boardNameInput.addEventListener('input', updateCreateButtonState);
+                if (isJoinMode) {
+                    const boardId = name.replace(/[^a-z0-9]/gi, '').toUpperCase();
+                    if (!boardId) return;
+                    const existing = boards.find(board => String(board.id || '').toUpperCase() === boardId);
+                    const joinedBoard = existing || {
+                        id: boardId,
+                        name: boardId,
+                        template: selectedOption,
+                        canvasStyle: selectedOption === 'blank' ? 'blank' : selectedOption,
+                        colorIndex: boards.length % boardColorPairs.length,
+                        created: Date.now()
+                    };
 
-        setActiveTab('create');
+                    if (!existing) {
+                        boards.unshift(joinedBoard);
+                        localStorage.setItem('savedBoards', JSON.stringify(boards));
+                    }
 
-        // options handler
-        optionsEl.addEventListener('click', (e)=>{
-            const btn = e.target.closest('.option-btn');
-            if(!btn) return;
-            selectedOption = btn.dataset.value;
-            Array.from(optionsEl.children).forEach(b => {
-                const isActive = b === btn;
-                b.classList.toggle('active', isActive);
-                b.setAttribute('aria-pressed', String(isActive));
-            });
-        });
-
-        const gridOption = optionsEl.querySelector('[data-value="grid"]');
-        if (gridOption) {
-            gridOption.classList.add('active');
-            gridOption.setAttribute('aria-pressed', 'true');
-        }
-
-        renderBoardList();
-        updateCreateButtonState();
-
-        createBtn.addEventListener('click', ()=>{
-            const name = boardNameInput.value.trim();
-            if (!name) return;
-
-            const boards = JSON.parse(localStorage.getItem('savedBoards') || '[]');
-            const isJoinMode = document.querySelector('.modal-tab.active')?.dataset.mode === 'join';
-
-            if (isJoinMode) {
-                const boardId = name.replace(/[^a-z0-9]/gi, '').toUpperCase();
-                if (!boardId) return;
-                const existing = boards.find(board => String(board.id || '').toUpperCase() === boardId);
-                const joinedBoard = existing || {
-                    id: boardId,
-                    name: boardId,
-                    template: selectedOption,
-                    canvasStyle: selectedOption === 'blank' ? 'blank' : selectedOption,
-                    created: Date.now()
-                };
-
-                if (!existing) {
-                    boards.unshift(joinedBoard);
-                    localStorage.setItem('savedBoards', JSON.stringify(boards));
+                    sessionStorage.setItem('currentBoardId', boardId);
+                    sessionStorage.setItem('currentCanvasStyle', selectedOption);
+                    sessionStorage.setItem('currentBoardName', joinedBoard.name || boardId);
+                    closeModal();
+                    renderBoardList();
+                    return;
                 }
 
-                sessionStorage.setItem('currentBoardId', boardId);
+                const id = createBoardId(boards);
+                const board = {
+                    id,
+                    name,
+                    template: selectedOption,
+                    canvasStyle: selectedOption === 'blank' ? 'blank' : selectedOption,
+                    colorIndex: boards.length % boardColorPairs.length,
+                    created: Date.now()
+                };
+                boards.unshift(board);
+                localStorage.setItem('savedBoards', JSON.stringify(boards));
+
+                sessionStorage.setItem('currentBoardId', id);
                 sessionStorage.setItem('currentCanvasStyle', selectedOption);
-                sessionStorage.setItem('currentBoardName', joinedBoard.name || boardId);
+                sessionStorage.setItem('currentBoardName', name);
                 closeModal();
                 renderBoardList();
-                return;
-            }
 
-            const id = createBoardId(boards);
-            const board = {
-                id,
-                name,
-                template: selectedOption,
-                canvasStyle: selectedOption === 'blank' ? 'blank' : selectedOption,
-                created: Date.now()
-            };
-            boards.unshift(board);
-            localStorage.setItem('savedBoards', JSON.stringify(boards));
-
-            sessionStorage.setItem('currentBoardId', id);
-            sessionStorage.setItem('currentCanvasStyle', selectedOption);
-            sessionStorage.setItem('currentBoardName', name);
-            closeModal();
-            renderBoardList();
-
-            const newBoardCard = boardList.querySelector(`[data-board-id="${id}"]`);
-            newBoardCard?.focus();
-        });
-    </script>
+                const newBoardCard = boardList.querySelector(`[data-board-id="${id}"]`);
+                newBoardCard?.focus();
+            });
+        </script>
+        <script src="cursor.js"></script>
 
 </body>
 
