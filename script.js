@@ -377,7 +377,9 @@ if (shareBtn) {
             `${window.location.origin}${window.location.pathname}?board=${encodeURIComponent(boardId)}`;
 
         const shareMessage =
-            `You have been invited to collaborate\nBoard code: ${boardId}\n${shareUrl}`;
+            `You have been invited to collaborate\n` +
+            `Board code: ${boardId}\n` +
+            `${shareUrl}`;
 
         try {
 
@@ -385,8 +387,7 @@ if (shareBtn) {
 
                 await navigator.share({
                     title: "LiveCanvas Board",
-                    text: shareMessage,
-                    url: shareUrl
+                    text: shareMessage
                 });
 
             } else {
@@ -394,6 +395,8 @@ if (shareBtn) {
                 await navigator.clipboard.writeText(
                     shareMessage
                 );
+
+                alert("Invitation copied!");
 
             }
 
