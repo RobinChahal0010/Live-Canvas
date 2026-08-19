@@ -1,6 +1,27 @@
 // ============================================================
-// LIVE CANVAS - COMPLETE SCRIPT
-// BOARD + AUTH + SOCKET + CANVAS + TOOLS + SHAPES + PAGES
+// LIVECANVAS - COMPLETE COLLABORATIVE SCRIPT
+// ============================================================
+// SERVER = SOURCE OF TRUTH
+// localStorage = LOCAL CACHE / FALLBACK
+//
+// Supported:
+// - Authentication UI
+// - Board sharing
+// - Collaborators
+// - Real-time drawing
+// - Real-time cursor
+// - Canvas style sync
+// - Full board state sync
+// - Pages
+// - Extend page
+// - Undo / Redo
+// - Zoom
+// - Text
+// - Shapes
+// - Images
+// - Sticky notes
+// - Tables
+// - Keyboard shortcuts
 // ============================================================
 
 
@@ -30,15 +51,28 @@ console.log("================================");
 let loggedInUser = null;
 
 try {
-    const storedUser = localStorage.getItem("loggedInUser");
+
+    const storedUser =
+        localStorage.getItem("loggedInUser");
 
     if (storedUser) {
         loggedInUser = JSON.parse(storedUser);
     }
+
 } catch (error) {
-    console.error("Could not read loggedInUser:", error);
+
+    console.error(
+        "Could not read loggedInUser:",
+        error
+    );
+
     loggedInUser = null;
 }
+
+
+// ============================================================
+// AUTH ELEMENTS
+// ============================================================
 
 const welcomeUser =
     document.getElementById("welcomeUser");
@@ -62,20 +96,27 @@ function updateAuthUI() {
     if (loggedInUser) {
 
         if (welcomeUser) {
+
             welcomeUser.textContent =
                 `Hi, ${loggedInUser.name || "User"} 👋`;
+
+            welcomeUser.style.display =
+                "block";
         }
 
         if (loginHeaderBtn) {
-            loginHeaderBtn.style.display = "none";
+            loginHeaderBtn.style.display =
+                "none";
         }
 
         if (signupHeaderBtn) {
-            signupHeaderBtn.style.display = "none";
+            signupHeaderBtn.style.display =
+                "none";
         }
 
         if (logoutBtn) {
-            logoutBtn.style.display = "block";
+            logoutBtn.style.display =
+                "block";
         }
 
     } else {
@@ -85,15 +126,18 @@ function updateAuthUI() {
         }
 
         if (loginHeaderBtn) {
-            loginHeaderBtn.style.display = "block";
+            loginHeaderBtn.style.display =
+                "block";
         }
 
         if (signupHeaderBtn) {
-            signupHeaderBtn.style.display = "block";
+            signupHeaderBtn.style.display =
+                "block";
         }
 
         if (logoutBtn) {
-            logoutBtn.style.display = "none";
+            logoutBtn.style.display =
+                "none";
         }
     }
 }
@@ -109,478 +153,49 @@ let currentUsername =
     loggedInUser?.name || "User";
 
 
-
-
-
 // ============================================================
 // HEADER BUTTONS
 // ============================================================
 
-if (loginHeaderBtn) {
+loginHeaderBtn?.addEventListener(
+    "click",
+    () => {
 
-    loginHeaderBtn.addEventListener("click", () => {
+        window.location.href =
+            "home.html";
 
-        window.location.href = "home.html";
-
-    });
-
-}
-
-
-if (signupHeaderBtn) {
-
-    signupHeaderBtn.addEventListener("click", () => {
-
-        window.location.href = "signup.html";
-
-    });
-
-}
+    }
+);
 
 
-if (logoutBtn) {
+signupHeaderBtn?.addEventListener(
+    "click",
+    () => {
 
-    logoutBtn.addEventListener("click", () => {
+        window.location.href =
+            "signup.html";
 
-        localStorage.removeItem("loggedInUser");
+    }
+);
 
-        
+
+logoutBtn?.addEventListener(
+    "click",
+    () => {
+
+        localStorage.removeItem(
+            "loggedInUser"
+        );
 
         if (socket) {
             socket.disconnect();
         }
 
-        window.location.href = "login.html";
-
-    });
-
-}
-
-
-// ============================================================
-// COLLABORATORS
-// ============================================================
-
-function updateCollaborators(users = []) {
-
-    const collaborators =
-        document.getElementById("collaborators");
-
-    const collaboratorList =
-        document.getElementById("collaboratorList");
-
-    if (!collaborators || !collaboratorList) {
-        return;
-    }
-
-    collaboratorList
-        .querySelectorAll(".avatar")
-        .forEach(avatar => avatar.remove());
-
-    if (!boardId) {
-
-    collaborators.style.display = "none";
-    return;
-
-}
-
-    collaborators.style.display = "flex";
-
-    if (!Array.isArray(users)) {
-        return;
-    }
-
-    const maxVisibleUsers = 4;
-
-    users
-        .slice(0, maxVisibleUsers)
-        .forEach(username => {
-
-            if (
-                !username ||
-                typeof username !== "string"
-            ) {
-                return;
-            }
-
-            const cleanName = username.trim();
-
-            if (!cleanName) {
-                return;
-            }
-
-            const avatar =
-                document.createElement("span");
-
-            avatar.className = "avatar";
-
-            avatar.textContent =
-                cleanName.charAt(0).toUpperCase();
-
-            avatar.title = cleanName;
-
-            collaboratorList.appendChild(avatar);
-
-        });
-
-
-    if (users.length > maxVisibleUsers) {
-
-        const more =
-            document.createElement("span");
-
-        more.className = "avatar more";
-
-        more.textContent =
-            `+${users.length - maxVisibleUsers}`;
-
-        more.title =
-            `${users.length - maxVisibleUsers} more collaborators`;
-
-        collaboratorList.appendChild(more);
-
-    }
-
-}
-
-
-// ============================================================
-// SOCKET.IO
-// ============================================================
-
-if (
-    boardId &&
-    loggedInUser &&
-    typeof io === "function"
-) {
-
-    console.log("Connecting to board:", boardId);
-
-    socket = io("http://127.0.0.1:3000");
-
-
-    socket.on("connect", () => {
-
-        console.log(
-            "Connected to server:",
-            socket.id
-        );
-
-        socket.emit(
-            "join-room",
-            boardId,
-            loggedInUser.name || "User"
-        );
-
-    });
-
-
-    socket.on("room-joined", data => {
-
-    console.log("BOARD JOINED:", data);
-
-    currentUsername =
-        data.username ||
-        loggedInUser.name ||
-        "User";
-
-    updateCollaborators(
-        data.users || []
-    );
-    if (data.boardState) {
-
-        applyServerBoardState(
-            data.boardState
-        );
-
-    }
-
-});
-// ============================================================
-// APPLY SERVER BOARD STATE
-// ============================================================
-
-function applyServerBoardState(boardState) {
-
-    if (!boardState) {
-        return;
-    }
-
-    console.log(
-        "Restoring board from server:",
-        boardState
-    );
-
-    // --------------------------------------------------------
-    // CANVAS STYLE
-    // --------------------------------------------------------
-
-    if (boardState.canvasStyle) {
-
-        applyCanvasStyle(
-            boardState.canvasStyle
-        );
-
-    }
-
-    // --------------------------------------------------------
-    // PAGES
-    // --------------------------------------------------------
-
-    if (
-        Array.isArray(boardState.pages) &&
-        boardState.pages.length > 0
-    ) {
-
-        pages =
-            boardState.pages;
-
-    }
-
-    // --------------------------------------------------------
-    // CURRENT PAGE
-    // --------------------------------------------------------
-
-    if (
-        typeof boardState.currentPage === "number"
-    ) {
-
-        currentPage =
-            Math.min(
-                Math.max(
-                    boardState.currentPage,
-                    0
-                ),
-                pages.length - 1
-            );
-
-    }
-
-    // --------------------------------------------------------
-    // ZOOM
-    // --------------------------------------------------------
-
-    if (
-        typeof boardState.zoom === "number"
-    ) {
-
-        zoom =
-            Math.min(
-                200,
-                Math.max(
-                    50,
-                    boardState.zoom
-                )
-            );
-
-    }
-
-    // --------------------------------------------------------
-    // TITLE
-    // --------------------------------------------------------
-
-    const titleInput =
-        document.getElementById(
-            "documentTitle"
-        );
-
-    if (
-        titleInput &&
-        boardState.title
-    ) {
-
-        titleInput.value =
-            boardState.title;
-
-    }
-
-    // --------------------------------------------------------
-    // LOAD CURRENT PAGE
-    // --------------------------------------------------------
-
-    const page =
-        pages[currentPage];
-
-    if (!page) {
-        return;
-    }
-
-    notebookPage.style.height =
-        `${page.height || 700}px`;
-
-    canvas.width =
-        notebookPage.clientWidth || 1000;
-
-    canvas.height =
-        page.height || 700;
-
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-
-    setupCanvas();
-
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-    if (page.canvasData) {
-
-        const image =
-            new Image();
-
-        image.onload = () => {
-
-            ctx.drawImage(
-                image,
-                0,
-                0
-            );
-
-            setupCanvas();
-
-        };
-
-        image.src =
-            page.canvasData;
-
-    }
-
-    updatePageNumber();
-    updateZoom();
-
-}
-
-
-    socket.on("user-joined", data => {
-
-        console.log(
-            `${data.username} joined`
-        );
-
-        updateCollaborators(
-            data.users || []
-        );
-
-    });
-
-
-    socket.on("user-left", data => {
-
-        console.log(
-            `${data.username} left`
-        );
-
-        updateCollaborators(
-            data.users || []
-        );
-
-    });
-    socket.on(
-    "board-state-update",
-    boardState => {
-
-        applyServerBoardState(
-            boardState
-        );
+        window.location.href =
+            "login.html";
 
     }
 );
-
-    socket.on("connect_error", error => {
-
-        console.error(
-            "Socket connection failed:",
-            error
-        );
-
-    });
-
-}
-
-
-// ============================================================
-// SHARE ROOM
-// ============================================================
-
-const shareBtn =
-    document.getElementById("shareBtn");
-
-const boardCodeBtn =
-    document.getElementById("boardCodeBtn");
-
-const boardCodeElement =
-    document.getElementById("boardCode");
-
-if (boardCodeElement) {
-    boardCodeElement.textContent = boardId || "Unavailable";
-}
-
-if (boardCodeBtn) {
-    boardCodeBtn.addEventListener("click", async () => {
-        if (!boardId) {
-            return;
-        }
-
-        try {
-            await navigator.clipboard.writeText(boardId);
-            boardCodeBtn.textContent = "Copied";
-            setTimeout(() => {
-                boardCodeBtn.innerHTML = `Code: <span id="boardCode">${boardId}</span>`;
-            }, 1200);
-        } catch (error) {
-            console.error("Could not copy board code:", error);
-        }
-    });
-}
-
-if (shareBtn) {
-
-    shareBtn.addEventListener("click", async () => {
-
-        if (!boardId) {
-            alert("Board not found.");
-            return;
-        }
-
-        const shareUrl =
-            `${window.location.origin}${window.location.pathname}?board=${encodeURIComponent(boardId)}`;
-
-        const shareMessage =
-            `You have been invited to collaborate\n` +
-            `Board code: ${boardId}\n` +
-            `${shareUrl}`;
-
-        try {
-
-            if (navigator.share) {
-
-                await navigator.share({
-                    title: "LiveCanvas Board",
-                    text: shareMessage
-                });
-
-            } else {
-
-                await navigator.clipboard.writeText(
-                    shareMessage
-                );
-
-                alert("Invitation copied!");
-
-            }
-
-        } catch (error) {
-
-            console.log("Share cancelled.");
-
-        }
-
-    });
-
-}
 
 
 // ============================================================
@@ -610,6 +225,11 @@ const canvasPointers =
 const localCanvasPointer =
     document.getElementById("localCanvasPointer");
 
+
+// ============================================================
+// POINTER COLORS
+// ============================================================
+
 const pointerColors = [
     "#ef4444",
     "#f97316",
@@ -621,79 +241,776 @@ const pointerColors = [
     "#ec4899"
 ];
 
-const remotePointers = new Map();
+const remotePointers =
+    new Map();
+
 const localPointerColor =
-    pointerColors[Math.floor(Math.random() * pointerColors.length)];
+    pointerColors[
+        Math.floor(
+            Math.random() *
+            pointerColors.length
+        )
+    ];
+
+
+// ============================================================
+// POINTER HELPERS
+// ============================================================
 
 function getPointerColor(socketId) {
+
     if (!remotePointers.has(socketId)) {
-        const color = pointerColors[
-            remotePointers.size % pointerColors.length
-        ];
-        remotePointers.set(socketId, { color });
+
+        const color =
+            pointerColors[
+                remotePointers.size %
+                pointerColors.length
+            ];
+
+        remotePointers.set(
+            socketId,
+            { color }
+        );
     }
-    return remotePointers.get(socketId).color;
+
+    return remotePointers.get(
+        socketId
+    ).color;
 }
 
-function updatePointer(pointer, data, color) {
-    pointer.style.left = `${data.x}px`;
-    pointer.style.top = `${data.y}px`;
-    pointer.style.setProperty("--pointer-color", color);
-    pointer.dataset.username = data.username || "User";
-    pointer.style.display = data.visible ? "block" : "none";
+
+function updatePointer(
+    pointer,
+    data,
+    color
+) {
+
+    if (!pointer || !data) {
+        return;
+    }
+
+    pointer.style.left =
+        `${data.x}px`;
+
+    pointer.style.top =
+        `${data.y}px`;
+
+    pointer.style.setProperty(
+        "--pointer-color",
+        color
+    );
+
+    pointer.dataset.username =
+        data.username ||
+        "User";
+
+    pointer.style.display =
+        data.visible
+            ? "block"
+            : "none";
 }
 
-if (notebookPage && localCanvasPointer) {
-    notebookPage.addEventListener("mousemove", event => {
-        const bounds = notebookPage.getBoundingClientRect();
-        const x = event.clientX - bounds.left;
-        const y = event.clientY - bounds.top;
-        const data = { x, y, visible: true };
 
-        updatePointer(
-            localCanvasPointer,
-            { ...data, username: currentUsername },
-            localPointerColor
+// ============================================================
+// COLLABORATORS
+// ============================================================
+
+function updateCollaborators(
+    users = []
+) {
+
+    const collaborators =
+        document.getElementById(
+            "collaborators"
         );
 
-        if (socket?.connected) {
-            socket.emit("cursor-move", data);
-        }
-    });
+    const collaboratorList =
+        document.getElementById(
+            "collaboratorList"
+        );
 
-    notebookPage.addEventListener("mouseleave", () => {
-        localCanvasPointer.style.display = "none";
-        if (socket?.connected) {
-            socket.emit("cursor-move", { x: 0, y: 0, visible: false });
-        }
-    });
+    if (
+        !collaborators ||
+        !collaboratorList
+    ) {
+        return;
+    }
+
+    collaboratorList
+        .querySelectorAll(".avatar")
+        .forEach(
+            avatar => avatar.remove()
+        );
+
+    if (!boardId) {
+
+        collaborators.style.display =
+            "none";
+
+        return;
+    }
+
+    collaborators.style.display =
+        "flex";
+
+    if (!Array.isArray(users)) {
+        return;
+    }
+
+    const maxVisibleUsers = 4;
+
+    users
+        .slice(
+            0,
+            maxVisibleUsers
+        )
+        .forEach(
+            username => {
+
+                if (
+                    !username ||
+                    typeof username !==
+                    "string"
+                ) {
+                    return;
+                }
+
+                const cleanName =
+                    username.trim();
+
+                if (!cleanName) {
+                    return;
+                }
+
+                const avatar =
+                    document.createElement(
+                        "span"
+                    );
+
+                avatar.className =
+                    "avatar";
+
+                avatar.textContent =
+                    cleanName
+                        .charAt(0)
+                        .toUpperCase();
+
+                avatar.title =
+                    cleanName;
+
+                collaboratorList.appendChild(
+                    avatar
+                );
+
+            }
+        );
+
+    if (
+        users.length >
+        maxVisibleUsers
+    ) {
+
+        const more =
+            document.createElement(
+                "span"
+            );
+
+        more.className =
+            "avatar more";
+
+        more.textContent =
+            `+${users.length - maxVisibleUsers}`;
+
+        more.title =
+            `${users.length - maxVisibleUsers} more collaborators`;
+
+        collaboratorList.appendChild(
+            more
+        );
+    }
 }
 
-if (socket && canvasPointers) {
-    socket.on("cursor-move", data => {
-        if (!data?.socketId) return;
 
-        let pointer = document.getElementById(`pointer-${data.socketId}`);
-        if (!pointer) {
-            pointer = document.createElement("div");
-            pointer.id = `pointer-${data.socketId}`;
-            pointer.className = "canvas-pointer remote-canvas-pointer";
-            canvasPointers.appendChild(pointer);
+// ============================================================
+// SOCKET CONNECTION
+// ============================================================
+
+if (
+    boardId &&
+    typeof io === "function"
+) {
+
+    console.log(
+        "Connecting to board:",
+        boardId
+    );
+
+    socket =
+        io(
+            window.location.origin,
+            {
+                transports: [
+                    "websocket",
+                    "polling"
+                ]
+            }
+        );
+
+
+    // ========================================================
+    // CONNECT
+    // ========================================================
+
+    socket.on(
+        "connect",
+        () => {
+
+            console.log(
+                "Connected:",
+                socket.id
+            );
+
+            socket.emit(
+                "join-room",
+                boardId,
+                currentUsername
+            );
+
+        }
+    );
+
+
+    // ========================================================
+    // ROOM JOINED
+    // ========================================================
+
+    socket.on(
+        "room-joined",
+        data => {
+
+            console.log(
+                "ROOM JOINED:",
+                data
+            );
+
+            currentUsername =
+                data.username ||
+                currentUsername;
+
+            updateCollaborators(
+                data.users || []
+            );
+
+            // Server may send the existing board
+            // immediately when joining.
+            if (data.state) {
+
+                applyServerBoardState(
+                    data.state
+                );
+
+            }
+
+            if (data.canvasData) {
+
+                applyServerCanvasData(
+                    data.canvasData
+                );
+
+            }
+
+             if (data.canvasStyle) {
+
+        console.log(
+            "Received board canvas style:",
+            data.canvasStyle
+        );
+
+        if (typeof applyCanvasStyle === "function") {
+
+            applyCanvasStyle(
+                data.canvasStyle
+            );
+
+        }
+    }
+
+            if (data.pages) {
+
+                applyServerPages(
+                    data.pages,
+                    data.currentPage,
+                    data.zoom,
+                    data.canvasStyle
+                );
+
+            }
+
+        }
+    );
+
+
+    // ========================================================
+    // FULL BOARD STATE
+    // ========================================================
+
+    socket.on(
+        "board-state",
+        data => {
+
+            console.log(
+                "Received board state"
+            );
+
+            if (!data) {
+                return;
+            }
+
+            applyServerBoardState(
+                data
+            );
+
+        }
+    );
+
+
+    // ========================================================
+    // USER JOINED
+    // ========================================================
+
+    socket.on(
+        "user-joined",
+        data => {
+
+            console.log(
+                `${data?.username || "User"} joined`
+            );
+
+            updateCollaborators(
+                data?.users || []
+            );
+
+        }
+    );
+
+
+    // ========================================================
+    // USER LEFT
+    // ========================================================
+
+    socket.on(
+        "user-left",
+        data => {
+
+            console.log(
+                `${data?.username || "User"} left`
+            );
+
+            updateCollaborators(
+                data?.users || []
+            );
+
+        }
+    );
+
+    // ============================================================
+// RECEIVE CANVAS STYLE FROM OTHER USERS
+// ============================================================
+
+socket.on(
+    "canvas-style-change",
+    data => {
+
+        if (!data || !data.style) {
+            return;
         }
 
-        updatePointer(pointer, data, getPointerColor(data.socketId));
-    });
+        console.log(
+            "Remote canvas style:",
+            data.style
+        );
+
+        if (
+            typeof applyCanvasStyle === "function"
+        ) {
+
+            applyCanvasStyle(
+                data.style
+            );
+
+        }
+
+    }
+);
+
+    // ========================================================
+    // REAL-TIME DRAW
+    // ========================================================
+
+    socket.on(
+        "canvas-draw",
+        data => {
+
+            drawRemoteStroke(
+                data
+            );
+
+        }
+    );
+
+
+    // ========================================================
+    // REMOTE CANVAS SNAPSHOT
+    // ========================================================
+
+    socket.on(
+        "canvas-state",
+        data => {
+
+            if (!data) {
+                return;
+            }
+
+            if (data.canvasData) {
+
+                applyServerCanvasData(
+                    data.canvasData
+                );
+
+            }
+
+        }
+    );
+
+
+    // ========================================================
+    // REMOTE STYLE
+    // ========================================================
+
+    socket.on(
+        "canvas-style",
+        data => {
+
+            const style =
+                typeof data === "string"
+                    ? data
+                    : data?.style;
+
+            if (style) {
+
+                applyCanvasStyle(
+                    style
+                );
+
+                saveLocalCache();
+
+            }
+
+        }
+    );
+
+
+    // ========================================================
+    // REMOTE PAGES
+    // ========================================================
+
+    socket.on(
+        "pages-update",
+        data => {
+
+            if (!data) {
+                return;
+            }
+
+            applyServerPages(
+                data.pages,
+                data.currentPage,
+                data.zoom,
+                data.canvasStyle
+            );
+
+        }
+    );
+
+
+    // ========================================================
+    // REMOTE OBJECT
+    // ========================================================
+
+    socket.on(
+        "object-add",
+        data => {
+
+            if (!data) {
+                return;
+            }
+
+            createObjectFromData(
+                data,
+                false
+            );
+
+        }
+    );
+
+
+    socket.on(
+        "object-update",
+        data => {
+
+            updateObjectFromData(
+                data
+            );
+
+        }
+    );
+
+
+    socket.on(
+        "object-delete",
+        data => {
+
+            if (!data?.id) {
+                return;
+            }
+
+            const element =
+                document.querySelector(
+                    `[data-object-id="${data.id}"]`
+                );
+
+            element?.remove();
+
+        }
+    );
+
+
+    // ========================================================
+    // REMOTE CURSOR
+    // ========================================================
+
+    socket.on(
+        "cursor-move",
+        data => {
+
+            if (!data?.socketId) {
+                return;
+            }
+
+            let pointer =
+                document.getElementById(
+                    `pointer-${data.socketId}`
+                );
+
+            if (!pointer) {
+
+                pointer =
+                    document.createElement(
+                        "div"
+                    );
+
+                pointer.id =
+                    `pointer-${data.socketId}`;
+
+                pointer.className =
+                    "canvas-pointer remote-canvas-pointer";
+
+                canvasPointers?.appendChild(
+                    pointer
+                );
+
+            }
+
+            updatePointer(
+                pointer,
+                data,
+                getPointerColor(
+                    data.socketId
+                )
+            );
+
+        }
+    );
+
+
+    // ========================================================
+    // CONNECTION ERROR
+    // ========================================================
+
+    socket.on(
+        "connect_error",
+        error => {
+
+            console.error(
+                "Socket connection failed:",
+                error
+            );
+
+        }
+    );
+
+
+    // ========================================================
+    // DISCONNECT
+    // ========================================================
+
+    socket.on(
+        "disconnect",
+        reason => {
+
+            console.log(
+                "Disconnected:",
+                reason
+            );
+
+        }
+    );
+
 }
+
+
+// ============================================================
+// SHARE ROOM
+// ============================================================
+
+const shareBtn =
+    document.getElementById(
+        "shareBtn"
+    );
+
+const boardCodeBtn =
+    document.getElementById(
+        "boardCodeBtn"
+    );
+
+const boardCodeElement =
+    document.getElementById(
+        "boardCode"
+    );
+
+
+if (boardCodeElement) {
+
+    boardCodeElement.textContent =
+        boardId || "Unavailable";
+
+}
+
+
+boardCodeBtn?.addEventListener(
+    "click",
+    async () => {
+
+        if (!boardId) {
+            return;
+        }
+
+        try {
+
+            await navigator.clipboard.writeText(
+                boardId
+            );
+
+            boardCodeBtn.textContent =
+                "Copied";
+
+            setTimeout(
+                () => {
+
+                    boardCodeBtn.innerHTML =
+                        `Code: <span id="boardCode">${boardId}</span>`;
+
+                },
+                1200
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Could not copy board code:",
+                error
+            );
+
+        }
+
+    }
+);
+
+
+shareBtn?.addEventListener(
+    "click",
+    async () => {
+
+        if (!boardId) {
+
+            alert(
+                "Board not found."
+            );
+
+            return;
+        }
+
+        const shareUrl =
+            `${window.location.origin}${window.location.pathname}?board=${encodeURIComponent(boardId)}`;
+
+        const shareMessage =
+            `You have been invited to collaborate\nBoard code: ${boardId}\n${shareUrl}`;
+
+        try {
+
+            if (
+                navigator.share
+            ) {
+
+                await navigator.share(
+                    {
+                        title:
+                            "LiveCanvas Board",
+
+                        text:
+                            shareMessage,
+
+                        url:
+                            shareUrl
+                    }
+                );
+
+            } else {
+
+                await navigator.clipboard.writeText(
+                    shareMessage
+                );
+
+                alert(
+                    "Share link copied!"
+                );
+
+            }
+
+        } catch (error) {
+
+            console.log(
+                "Share cancelled."
+            );
+
+        }
+
+    }
+);
 
 
 // ============================================================
 // CANVAS SAFETY
 // ============================================================
 
-if (!canvas || !ctx || !notebookPage) {
+if (
+    !canvas ||
+    !ctx ||
+    !notebookPage
+) {
 
     console.warn(
-        "Canvas elements not found. Auth/header mode only."
+        "Canvas elements not found."
     );
 
 } else {
@@ -704,34 +1021,54 @@ if (!canvas || !ctx || !notebookPage) {
 // ============================================================
 
 const drawBtn =
-    document.getElementById("drawBtn");
+    document.getElementById(
+        "drawBtn"
+    );
 
 const eraserBtn =
-    document.getElementById("eraserBtn");
+    document.getElementById(
+        "eraserBtn"
+    );
 
 const highlighterBtn =
-    document.getElementById("highlighterBtn");
+    document.getElementById(
+        "highlighterBtn"
+    );
 
 const lightPenBtn =
-    document.getElementById("lightPenBtn");
+    document.getElementById(
+        "lightPenBtn"
+    );
 
 const selectTool =
-    document.getElementById("selectTool");
+    document.getElementById(
+        "selectTool"
+    );
 
 const shapeBtn =
-    document.getElementById("shapeBtn");
+    document.getElementById(
+        "shapeBtn"
+    );
 
 const textBtn =
-    document.getElementById("textBtn");
+    document.getElementById(
+        "textBtn"
+    );
 
 const imageBtn =
-    document.getElementById("imageBtn");
+    document.getElementById(
+        "imageBtn"
+    );
 
 const stickyBtn =
-    document.getElementById("stickyBtn");
+    document.getElementById(
+        "stickyBtn"
+    );
 
 const tableBtn =
-    document.getElementById("tableBtn");
+    document.getElementById(
+        "tableBtn"
+    );
 
 
 // ============================================================
@@ -739,19 +1076,29 @@ const tableBtn =
 // ============================================================
 
 const colorPicker =
-    document.getElementById("colorPicker");
+    document.getElementById(
+        "colorPicker"
+    );
 
 const brushSize =
-    document.getElementById("brushSize");
+    document.getElementById(
+        "brushSize"
+    );
 
 const undoBtn =
-    document.getElementById("undoBtn");
+    document.getElementById(
+        "undoBtn"
+    );
 
 const redoBtn =
-    document.getElementById("redoBtn");
+    document.getElementById(
+        "redoBtn"
+    );
 
 const clearBtn =
-    document.getElementById("clearBtn");
+    document.getElementById(
+        "clearBtn"
+    );
 
 
 // ============================================================
@@ -759,19 +1106,29 @@ const clearBtn =
 // ============================================================
 
 const addPageBtn =
-    document.getElementById("addPageBtn");
+    document.getElementById(
+        "addPageBtn"
+    );
 
 const previousPage =
-    document.getElementById("previousPage");
+    document.getElementById(
+        "previousPage"
+    );
 
 const nextPage =
-    document.getElementById("nextPage");
+    document.getElementById(
+        "nextPage"
+    );
 
 const extendPageBtn =
-    document.getElementById("extendPageBtn");
+    document.getElementById(
+        "extendPageBtn"
+    );
 
 const pageNumber =
-    document.getElementById("pageNumber");
+    document.getElementById(
+        "pageNumber"
+    );
 
 
 // ============================================================
@@ -779,34 +1136,57 @@ const pageNumber =
 // ============================================================
 
 const zoomIn =
-    document.getElementById("zoomIn");
+    document.getElementById(
+        "zoomIn"
+    );
 
 const zoomOut =
-    document.getElementById("zoomOut");
+    document.getElementById(
+        "zoomOut"
+    );
 
 const zoomValue =
-    document.getElementById("zoomValue");
+    document.getElementById(
+        "zoomValue"
+    );
 
 
 // ============================================================
 // STATE
 // ============================================================
 
-let currentTool = "pen";
+let currentTool =
+    "pen";
 
-let isDrawing = false;
+let isDrawing =
+    false;
 
-let lastX = 0;
-let lastY = 0;
+let lastX =
+    0;
 
-let currentStroke = [];
+let lastY =
+    0;
 
-let undoStack = [];
-let redoStack = [];
+let currentStroke =
+    [];
 
-const MAX_HISTORY = 50;
+let undoStack =
+    [];
 
-let zoom = 100;
+let redoStack =
+    [];
+
+const MAX_HISTORY =
+    50;
+
+let zoom =
+    100;
+
+let isApplyingRemoteState =
+    false;
+
+let serverReady =
+    false;
 
 
 // ============================================================
@@ -814,15 +1194,14 @@ let zoom = 100;
 // ============================================================
 
 let pages = [
-
     {
         canvasData: null,
         height: 700
     }
-
 ];
 
-let currentPage = 0;
+let currentPage =
+    0;
 
 
 // ============================================================
@@ -836,27 +1215,44 @@ const VALID_CANVAS_STYLES = [
     "lines"
 ];
 
-let currentCanvasStyle = "lines";
+let currentCanvasStyle =
+    "blank";
 
 
-function normalizeCanvasStyle(style) {
+// ============================================================
+// NORMALIZE STYLE
+// ============================================================
+
+function normalizeCanvasStyle(
+    style
+) {
 
     const safeStyle =
         typeof style === "string"
-            ? style.trim().toLowerCase()
-            : "lines";
+            ? style
+                .trim()
+                .toLowerCase()
+            : "blank";
 
-    if (safeStyle === "plain") {
+    if (
+        safeStyle === "plain"
+    ) {
         return "blank";
     }
 
-    return VALID_CANVAS_STYLES.includes(safeStyle)
+    return VALID_CANVAS_STYLES.includes(
+        safeStyle
+    )
         ? safeStyle
-        : "lines";
+        : "blank";
 }
 
 
-function applyCanvasStyle(style) {
+// ============================================================
+// APPLY CANVAS STYLE
+// ============================================================
+
+function applyCanvasStyle(style, sync = true) {
 
     currentCanvasStyle =
         normalizeCanvasStyle(style);
@@ -866,76 +1262,74 @@ function applyCanvasStyle(style) {
         currentCanvasStyle
     );
 
-    if (!paperBackground) {
-        return;
+    if (paperBackground) {
+
+        const styles = {
+
+            blank: {
+                backgroundColor: "#fff",
+                backgroundImage: "none",
+                backgroundSize: "auto"
+            },
+
+            grid: {
+                backgroundColor: "#fffdf5",
+                backgroundImage:
+                    "linear-gradient(rgba(120,155,190,0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(120,155,190,0.16) 1px, transparent 1px)",
+                backgroundSize: "24px 24px"
+            },
+
+            dots: {
+                backgroundColor: "#fffdf5",
+                backgroundImage:
+                    "radial-gradient(circle, rgba(120,155,190,0.35) 1.25px, transparent 1.35px)",
+                backgroundSize: "22px 22px"
+            },
+
+            lines: {
+                backgroundColor: "#fffdf5",
+                backgroundImage:
+                    "repeating-linear-gradient(to bottom, rgba(120,155,190,0.18) 0, rgba(120,155,190,0.18) 1px, transparent 1px, transparent 28px)",
+                backgroundSize: "100% 28px"
+            }
+
+        };
+
+        const selected =
+            styles[currentCanvasStyle] ||
+            styles.lines;
+
+        paperBackground.style.backgroundColor =
+            selected.backgroundColor;
+
+        paperBackground.style.backgroundImage =
+            selected.backgroundImage;
+
+        paperBackground.style.backgroundSize =
+            selected.backgroundSize;
+
+        paperBackground.style.backgroundPosition =
+            "0 0";
     }
 
-    const styles = {
 
-        blank: {
+    // Only the USER who changes the style sends it.
+    if (
+        sync &&
+        socket &&
+        socket.connected &&
+        socket.boardId
+    ) {
 
-            backgroundColor: "#fff",
+        socket.emit(
+            "canvas-style-change",
+            {
+                style: currentCanvasStyle
+            }
+        );
 
-            backgroundImage: "none",
-
-            backgroundSize: "auto"
-
-        },
-
-        grid: {
-
-            backgroundColor: "#fffdf5",
-
-            backgroundImage:
-                "linear-gradient(rgba(120,155,190,0.16) 1px, transparent 1px), linear-gradient(90deg, rgba(120,155,190,0.16) 1px, transparent 1px)",
-
-            backgroundSize: "24px 24px"
-
-        },
-
-        dots: {
-
-            backgroundColor: "#fffdf5",
-
-            backgroundImage:
-                "radial-gradient(circle, rgba(120,155,190,0.35) 1.25px, transparent 1.35px)",
-
-            backgroundSize: "22px 22px"
-
-        },
-
-        lines: {
-
-            backgroundColor: "#fffdf5",
-
-            backgroundImage:
-                "repeating-linear-gradient(to bottom, rgba(120,155,190,0.18) 0, rgba(120,155,190,0.18) 1px, transparent 1px, transparent 28px)",
-
-            backgroundSize: "100% 28px"
-
-        }
-
-    };
-
-    const selected =
-        styles[currentCanvasStyle] ||
-        styles.lines;
-
-    paperBackground.style.backgroundColor =
-        selected.backgroundColor;
-
-    paperBackground.style.backgroundImage =
-        selected.backgroundImage;
-
-    paperBackground.style.backgroundSize =
-        selected.backgroundSize;
-
-    paperBackground.style.backgroundPosition =
-        "0 0";
-
-    
+    }
 }
-
 
 // ============================================================
 // DOCUMENT KEY
@@ -943,146 +1337,19 @@ function applyCanvasStyle(style) {
 
 function getDocumentKey() {
 
-    const currentBoardId =
-        sessionStorage.getItem("currentBoardId") ||
+    const id =
+        sessionStorage.getItem(
+            "currentBoardId"
+        ) ||
         boardId;
 
-    if (!currentBoardId) {
+    if (!id) {
         return null;
     }
 
-    return `liveCanvasDocument_${currentBoardId}`;
-}
-
-
-// ============================================================
-// RESTORE STYLE
-// ============================================================
-
-function restoreCanvasStyleFromBoard() {
-
-    const pendingCanvasStyle =
-        sessionStorage.getItem("currentCanvasStyle");
-
-    if (pendingCanvasStyle) {
-
-        applyCanvasStyle(
-            pendingCanvasStyle
-        );
-
-        sessionStorage.removeItem(
-            "currentCanvasStyle"
-        );
-
-    }
-
-    const storedBoardId =
-        sessionStorage.getItem("currentBoardId");
-
-    if (storedBoardId) {
-
-        try {
-
-            const savedBoards =
-                JSON.parse(
-                    localStorage.getItem(
-                        "savedBoards"
-                    ) || "[]"
-                );
-
-            const matchingBoard =
-                savedBoards.find(
-                    board =>
-                        board.id === storedBoardId
-                );
-
-            if (matchingBoard) {
-
-                applyCanvasStyle(
-                    matchingBoard.canvasStyle ||
-                    matchingBoard.template ||
-                    "blank"
-                );
-
-                const titleInput =
-                    document.getElementById(
-                        "documentTitle"
-                    );
-
-                if (
-                    titleInput &&
-                    matchingBoard.name
-                ) {
-
-                    titleInput.value =
-                        matchingBoard.name;
-
-                }
-
-                return;
-            }
-
-        } catch (error) {
-
-            console.warn(
-                "Could not restore board:",
-                error
-            );
-
-        }
-
-    }
-
-
-    const documentKey =
-        getDocumentKey();
-
-    try {
-
-        const savedDocument =
-            JSON.parse(
-                localStorage.getItem(
-                    documentKey
-                ) || "null"
-            );
-
-        if (
-            savedDocument &&
-            savedDocument.canvasStyle
-        ) {
-
-            applyCanvasStyle(
-                savedDocument.canvasStyle
-            );
-
-            const titleInput =
-                document.getElementById(
-                    "documentTitle"
-                );
-
-            if (
-                titleInput &&
-                savedDocument.title
-            ) {
-
-                titleInput.value =
-                    savedDocument.title;
-
-            }
-
-            return;
-        }
-
-    } catch (error) {
-
-        console.warn(
-            "Could not restore document:",
-            error
-        );
-
-    }
-
-    applyCanvasStyle("blank");
+    return (
+        `liveCanvasDocument_${id}`
+    );
 }
 
 
@@ -1092,15 +1359,20 @@ function restoreCanvasStyleFromBoard() {
 
 function setupCanvas() {
 
-    ctx.lineCap = "round";
+    ctx.lineCap =
+        "round";
 
-    ctx.lineJoin = "round";
+    ctx.lineJoin =
+        "round";
 
-    ctx.lineWidth = 4;
+    ctx.lineWidth =
+        4;
 
-    ctx.strokeStyle = "#172033";
+    ctx.strokeStyle =
+        "#172033";
 
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha =
+        1;
 
     ctx.globalCompositeOperation =
         "source-over";
@@ -1114,25 +1386,26 @@ function setupCanvas() {
 function initializeCanvas() {
 
     const height =
-        notebookPage.offsetHeight || 700;
+        notebookPage.offsetHeight ||
+        700;
 
     canvas.width =
-        notebookPage.clientWidth || 1000;
+        notebookPage.clientWidth ||
+        1000;
 
     canvas.height =
         height;
 
-    canvas.style.width = "100%";
+    canvas.style.width =
+        "100%";
 
-    canvas.style.height = "100%";
+    canvas.style.height =
+        "100%";
 
     setupCanvas();
 }
 
-
 initializeCanvas();
-
-restoreCanvasStyleFromBoard();
 
 
 // ============================================================
@@ -1140,6 +1413,10 @@ restoreCanvasStyleFromBoard();
 // ============================================================
 
 function saveState() {
+
+    if (isApplyingRemoteState) {
+        return;
+    }
 
     undoStack.push(
         canvas.toDataURL()
@@ -1155,7 +1432,6 @@ function saveState() {
     }
 
     redoStack = [];
-
 }
 
 
@@ -1163,7 +1439,9 @@ function saveState() {
 // RESTORE CANVAS
 // ============================================================
 
-function restoreCanvas(data) {
+function restoreCanvas(
+    data
+) {
 
     if (!data) {
 
@@ -1174,31 +1452,36 @@ function restoreCanvas(data) {
             canvas.height
         );
 
+        setupCanvas();
+
         return;
     }
 
-    const image = new Image();
+    const image =
+        new Image();
 
-    image.onload = () => {
+    image.onload =
+        () => {
 
-        ctx.clearRect(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
+            ctx.clearRect(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
 
-        ctx.drawImage(
-            image,
-            0,
-            0
-        );
+            ctx.drawImage(
+                image,
+                0,
+                0
+            );
 
-        setupCanvas();
+            setupCanvas();
 
-    };
+        };
 
-    image.src = data;
+    image.src =
+        data;
 }
 
 
@@ -1215,14 +1498,19 @@ function getMousePosition(e) {
 
         x:
             (e.clientX - rect.left) *
-            (canvas.width / rect.width),
+            (
+                canvas.width /
+                rect.width
+            ),
 
         y:
             (e.clientY - rect.top) *
-            (canvas.height / rect.height)
+            (
+                canvas.height /
+                rect.height
+            )
 
     };
-
 }
 
 
@@ -1230,19 +1518,23 @@ function getMousePosition(e) {
 // ACTIVE TOOL
 // ============================================================
 
-function setActiveTool(button) {
+function setActiveTool(
+    button
+) {
 
     document
         .querySelectorAll(
             ".canvas-toolbar .tool"
         )
-        .forEach(btn => {
+        .forEach(
+            btn => {
 
-            btn.classList.remove(
-                "active-tool"
-            );
+                btn.classList.remove(
+                    "active-tool"
+                );
 
-        });
+            }
+        );
 
     if (button) {
 
@@ -1251,7 +1543,6 @@ function setActiveTool(button) {
         );
 
     }
-
 }
 
 
@@ -1261,12 +1552,15 @@ function activateTool(
     cursor = "crosshair"
 ) {
 
-    currentTool = tool;
+    currentTool =
+        tool;
 
-    setActiveTool(button);
+    setActiveTool(
+        button
+    );
 
-    canvas.style.cursor = cursor;
-
+    canvas.style.cursor =
+        cursor;
 }
 
 
@@ -1276,61 +1570,62 @@ function activateTool(
 
 drawBtn?.addEventListener(
     "click",
-    () => activateTool(
-        "pen",
-        drawBtn,
-        "crosshair"
-    )
+    () =>
+        activateTool(
+            "pen",
+            drawBtn,
+            "crosshair"
+        )
 );
-
 
 eraserBtn?.addEventListener(
     "click",
-    () => activateTool(
-        "eraser",
-        eraserBtn,
-        "crosshair"
-    )
+    () =>
+        activateTool(
+            "eraser",
+            eraserBtn,
+            "crosshair"
+        )
 );
-
 
 highlighterBtn?.addEventListener(
     "click",
-    () => activateTool(
-        "highlighter",
-        highlighterBtn,
-        "crosshair"
-    )
+    () =>
+        activateTool(
+            "highlighter",
+            highlighterBtn,
+            "crosshair"
+        )
 );
-
 
 lightPenBtn?.addEventListener(
     "click",
-    () => activateTool(
-        "lightPen",
-        lightPenBtn,
-        "crosshair"
-    )
+    () =>
+        activateTool(
+            "lightPen",
+            lightPenBtn,
+            "crosshair"
+        )
 );
-
 
 selectTool?.addEventListener(
     "click",
-    () => activateTool(
-        "select",
-        selectTool,
-        "default"
-    )
+    () =>
+        activateTool(
+            "select",
+            selectTool,
+            "default"
+        )
 );
-
 
 textBtn?.addEventListener(
     "click",
-    () => activateTool(
-        "text",
-        textBtn,
-        "text"
-    )
+    () =>
+        activateTool(
+            "text",
+            textBtn,
+            "text"
+        )
 );
 
 
@@ -1348,13 +1643,17 @@ function startDrawing(e) {
         return;
     }
 
-    isDrawing = true;
+    isDrawing =
+        true;
 
     const position =
         getMousePosition(e);
 
-    lastX = position.x;
-    lastY = position.y;
+    lastX =
+        position.x;
+
+    lastY =
+        position.y;
 
     currentStroke = [
         {
@@ -1371,54 +1670,9 @@ function startDrawing(e) {
         lastX,
         lastY
     );
-
 }
 
 
-// ============================================================
-// SYNC BOARD STATE WITH SERVER
-// ============================================================
-
-function syncBoardState() {
-
-    if (
-        !socket ||
-        !socket.connected ||
-        !boardId
-    ) {
-        return;
-    }
-
-    saveCurrentPage();
-
-    const titleInput =
-        document.getElementById(
-            "documentTitle"
-        );
-
-    const boardState = {
-
-        pages,
-
-        currentPage,
-
-        zoom,
-
-        title:
-            titleInput?.value ||
-            "Study Notes",
-
-        canvasStyle:
-            currentCanvasStyle
-
-    };
-
-    socket.emit(
-        "board-state-update",
-        boardState
-    );
-
-}
 // ============================================================
 // DRAW
 // ============================================================
@@ -1439,91 +1693,85 @@ function draw(e) {
         position.y;
 
     currentStroke.push({
-
         x: currentX,
-
         y: currentY
-
     });
 
 
-    if (currentTool === "pen") {
+    let color =
+        colorPicker?.value ||
+        "#172033";
 
-        ctx.globalCompositeOperation =
-            "source-over";
+    let lineWidth =
+        Number(
+            brushSize?.value ||
+            4
+        );
 
-        ctx.globalAlpha = 1;
+    let alpha =
+        1;
 
-        ctx.strokeStyle =
-            colorPicker?.value ||
-            "#172033";
+    let composite =
+        "source-over";
 
-        ctx.lineWidth =
-            Number(
-                brushSize?.value || 4
-            );
+
+    if (
+        currentTool ===
+        "highlighter"
+    ) {
+
+        alpha =
+            0.28;
+
+        lineWidth *= 3;
 
     }
 
 
-    else if (
-        currentTool === "highlighter"
+    if (
+        currentTool ===
+        "lightPen"
     ) {
 
-        ctx.globalCompositeOperation =
-            "source-over";
+        alpha =
+            0.18;
 
-        ctx.globalAlpha = 0.28;
+        lineWidth *= 1.5;
 
-        ctx.strokeStyle =
-            colorPicker?.value ||
-            "#ffff00";
-
-        ctx.lineWidth =
-            Number(
-                brushSize?.value || 4
-            ) * 3;
-
-    }
-
-
-    else if (
-        currentTool === "lightPen"
-    ) {
-
-        ctx.globalCompositeOperation =
-            "source-over";
-
-        ctx.globalAlpha = 0.18;
-
-        ctx.strokeStyle =
+        color =
             colorPicker?.value ||
             "#ffffff";
 
-        ctx.lineWidth =
-            Number(
-                brushSize?.value || 4
-            ) * 1.5;
-
     }
 
 
-    else if (
-        currentTool === "eraser"
+    if (
+        currentTool ===
+        "eraser"
     ) {
 
-        ctx.globalCompositeOperation =
+        composite =
             "destination-out";
 
-        ctx.globalAlpha = 1;
+        alpha =
+            1;
 
-        ctx.lineWidth =
-            Number(
-                brushSize?.value || 4
-            ) * 2;
+        lineWidth *= 2;
 
     }
 
+
+    ctx.globalCompositeOperation =
+        composite;
+
+    ctx.globalAlpha =
+        alpha;
+
+    ctx.strokeStyle =
+        color;
+
+    ctx.lineWidth =
+        lineWidth;
 
     ctx.beginPath();
 
@@ -1540,10 +1788,12 @@ function draw(e) {
     ctx.stroke();
 
 
-    // SOCKET DRAW
+    // ========================================================
+    // REAL-TIME SOCKET SYNC
+    // ========================================================
+
     if (
-        socket &&
-        socket.connected
+        socket?.connected
     ) {
 
         socket.emit(
@@ -1551,23 +1801,23 @@ function draw(e) {
             {
 
                 x1: lastX,
-
                 y1: lastY,
 
                 x2: currentX,
-
                 y2: currentY,
 
-                color:
-                    colorPicker?.value ||
-                    "#172033",
+                color: color,
 
-                lineWidth:
-                    Number(
-                        brushSize?.value || 4
-                    ),
+                lineWidth: Number(
+                    brushSize?.value ||
+                    4
+                ),
 
-                tool: currentTool
+                tool:
+                    currentTool,
+
+                alpha:
+                    alpha
 
             }
         );
@@ -1575,109 +1825,132 @@ function draw(e) {
     }
 
 
-    lastX = currentX;
-    lastY = currentY;
+    lastX =
+        currentX;
 
+    lastY =
+        currentY;
 }
 
 
 // ============================================================
-// RECEIVE DRAW
+// REMOTE DRAW
 // ============================================================
 
-if (socket) {
+function drawRemoteStroke(
+    data
+) {
 
-    socket.on(
-        "canvas-draw",
-        data => {
+    if (
+        !data ||
+        !ctx
+    ) {
+        return;
+    }
 
-            if (!data) {
-                return;
-            }
+    ctx.save();
 
-            ctx.save();
+    ctx.beginPath();
 
-            ctx.beginPath();
-
-            ctx.moveTo(
-                data.x1,
-                data.y1
-            );
-
-            ctx.lineTo(
-                data.x2,
-                data.y2
-            );
-
-
-            if (data.tool === "eraser") {
-
-                ctx.globalCompositeOperation =
-                    "destination-out";
-
-                ctx.globalAlpha = 1;
-
-                ctx.lineWidth =
-                    (data.lineWidth || 4) * 2;
-
-            }
-
-            else if (
-                data.tool === "highlighter"
-            ) {
-
-                ctx.globalCompositeOperation =
-                    "source-over";
-
-                ctx.globalAlpha = 0.28;
-
-                ctx.lineWidth =
-                    (data.lineWidth || 4) * 3;
-
-            }
-
-            else if (
-                data.tool === "lightPen"
-            ) {
-
-                ctx.globalCompositeOperation =
-                    "source-over";
-
-                ctx.globalAlpha = 0.18;
-
-                ctx.lineWidth =
-                    (data.lineWidth || 4) * 1.5;
-
-            }
-
-            else {
-
-                ctx.globalCompositeOperation =
-                    "source-over";
-
-                ctx.globalAlpha = 1;
-
-                ctx.lineWidth =
-                    data.lineWidth || 4;
-
-            }
-
-
-            ctx.strokeStyle =
-                data.color ||
-                "#172033";
-
-            ctx.lineCap = "round";
-
-            ctx.lineJoin = "round";
-
-            ctx.stroke();
-
-            ctx.restore();
-
-        }
+    ctx.moveTo(
+        data.x1,
+        data.y1
     );
 
+    ctx.lineTo(
+        data.x2,
+        data.y2
+    );
+
+
+    if (
+        data.tool ===
+        "eraser"
+    ) {
+
+        ctx.globalCompositeOperation =
+            "destination-out";
+
+        ctx.globalAlpha =
+            1;
+
+        ctx.lineWidth =
+            (
+                data.lineWidth ||
+                4
+            ) * 2;
+
+    }
+
+    else if (
+        data.tool ===
+        "highlighter"
+    ) {
+
+        ctx.globalCompositeOperation =
+            "source-over";
+
+        ctx.globalAlpha =
+            data.alpha ??
+            0.28;
+
+        ctx.lineWidth =
+            (
+                data.lineWidth ||
+                4
+            ) * 3;
+
+    }
+
+    else if (
+        data.tool ===
+        "lightPen"
+    ) {
+
+        ctx.globalCompositeOperation =
+            "source-over";
+
+        ctx.globalAlpha =
+            data.alpha ??
+            0.18;
+
+        ctx.lineWidth =
+            (
+                data.lineWidth ||
+                4
+            ) * 1.5;
+
+    }
+
+    else {
+
+        ctx.globalCompositeOperation =
+            "source-over";
+
+        ctx.globalAlpha =
+            data.alpha ??
+            1;
+
+        ctx.lineWidth =
+            data.lineWidth ||
+            4;
+
+    }
+
+
+    ctx.strokeStyle =
+        data.color ||
+        "#172033";
+
+    ctx.lineCap =
+        "round";
+
+    ctx.lineJoin =
+        "round";
+
+    ctx.stroke();
+
+    ctx.restore();
 }
 
 
@@ -1691,12 +1964,14 @@ function stopDrawing() {
         return;
     }
 
-    isDrawing = false;
+    isDrawing =
+        false;
 
     ctx.closePath();
 
     if (
-        currentTool === "lightPen"
+        currentTool ===
+        "lightPen"
     ) {
 
         createLightPenStroke(
@@ -1705,7 +1980,8 @@ function stopDrawing() {
 
     }
 
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha =
+        1;
 
     ctx.globalCompositeOperation =
         "source-over";
@@ -1714,8 +1990,7 @@ function stopDrawing() {
 
     saveCurrentPage();
 
-    syncBoardState();
-
+    scheduleServerStateSync();
 }
 
 
@@ -1723,7 +1998,9 @@ function stopDrawing() {
 // LIGHT PEN
 // ============================================================
 
-function createLightPenStroke(points) {
+function createLightPenStroke(
+    points
+) {
 
     if (
         !points ||
@@ -1733,30 +2010,47 @@ function createLightPenStroke(points) {
     }
 
     const tempCanvas =
-        document.createElement("canvas");
+        document.createElement(
+            "canvas"
+        );
 
-    tempCanvas.width = canvas.width;
-    tempCanvas.height = canvas.height;
+    tempCanvas.width =
+        canvas.width;
+
+    tempCanvas.height =
+        canvas.height;
 
     tempCanvas.style.position =
         "absolute";
 
-    tempCanvas.style.left = "0";
-    tempCanvas.style.top = "0";
+    tempCanvas.style.left =
+        "0";
 
-    tempCanvas.style.width = "100%";
-    tempCanvas.style.height = "100%";
+    tempCanvas.style.top =
+        "0";
+
+    tempCanvas.style.width =
+        "100%";
+
+    tempCanvas.style.height =
+        "100%";
 
     tempCanvas.style.pointerEvents =
         "none";
 
-    tempCanvas.style.zIndex = "20";
+    tempCanvas.style.zIndex =
+        "20";
 
     const tempCtx =
-        tempCanvas.getContext("2d");
+        tempCanvas.getContext(
+            "2d"
+        );
 
-    tempCtx.lineCap = "round";
-    tempCtx.lineJoin = "round";
+    tempCtx.lineCap =
+        "round";
+
+    tempCtx.lineJoin =
+        "round";
 
     tempCtx.strokeStyle =
         colorPicker?.value ||
@@ -1764,10 +2058,12 @@ function createLightPenStroke(points) {
 
     tempCtx.lineWidth =
         Number(
-            brushSize?.value || 4
+            brushSize?.value ||
+            4
         ) * 2;
 
-    tempCtx.globalAlpha = 0.48;
+    tempCtx.globalAlpha =
+        0.48;
 
     tempCtx.beginPath();
 
@@ -1799,20 +2095,24 @@ function createLightPenStroke(points) {
         tempCanvas
     );
 
-    setTimeout(() => {
+    setTimeout(
+        () => {
 
-        tempCanvas.style.transition =
-            "opacity 0.9s ease";
+            tempCanvas.style.transition =
+                "opacity 0.9s ease";
 
-        tempCanvas.style.opacity = "0";
+            tempCanvas.style.opacity =
+                "0";
 
-        setTimeout(
-            () => tempCanvas.remove(),
-            900
-        );
+            setTimeout(
+                () =>
+                    tempCanvas.remove(),
+                900
+            );
 
-    }, 2000);
-
+        },
+        2000
+    );
 }
 
 
@@ -1852,9 +2152,11 @@ canvas.addEventListener(
         e.preventDefault();
 
         if (e.touches[0]) {
+
             startDrawing(
                 e.touches[0]
             );
+
         }
 
     },
@@ -1871,9 +2173,11 @@ canvas.addEventListener(
         e.preventDefault();
 
         if (e.touches[0]) {
+
             draw(
                 e.touches[0]
             );
+
         }
 
     },
@@ -1899,6 +2203,87 @@ canvas.addEventListener(
 
 
 // ============================================================
+// CURSOR SYNC
+// ============================================================
+
+if (
+    notebookPage &&
+    localCanvasPointer
+) {
+
+    notebookPage.addEventListener(
+        "mousemove",
+        event => {
+
+            const bounds =
+                notebookPage.getBoundingClientRect();
+
+            const x =
+                event.clientX -
+                bounds.left;
+
+            const y =
+                event.clientY -
+                bounds.top;
+
+            updatePointer(
+                localCanvasPointer,
+                {
+                    x,
+                    y,
+                    visible: true,
+                    username:
+                        currentUsername
+                },
+                localPointerColor
+            );
+
+            if (
+                socket?.connected
+            ) {
+
+                socket.emit(
+                    "cursor-move",
+                    {
+                        x,
+                        y,
+                        visible: true,
+                        username:
+                            currentUsername
+                    }
+                );
+
+            }
+
+        }
+    );
+
+
+    notebookPage.addEventListener(
+        "mouseleave",
+        () => {
+
+            localCanvasPointer.style.display =
+                "none";
+
+            socket?.emit(
+                "cursor-move",
+                {
+                    x: 0,
+                    y: 0,
+                    visible: false,
+                    username:
+                        currentUsername
+                }
+            );
+
+        }
+    );
+
+}
+
+
+// ============================================================
 // COLOR
 // ============================================================
 
@@ -1907,12 +2292,14 @@ colorPicker?.addEventListener(
     () => {
 
         if (
-            currentTool === "eraser"
+            currentTool ===
+            "eraser"
         ) {
 
             activateTool(
                 "pen",
-                drawBtn
+                drawBtn,
+                "crosshair"
             );
 
         }
@@ -1929,7 +2316,9 @@ undoBtn?.addEventListener(
     "click",
     () => {
 
-        if (!undoStack.length) {
+        if (
+            !undoStack.length
+        ) {
             return;
         }
 
@@ -1940,9 +2329,13 @@ undoBtn?.addEventListener(
         const previous =
             undoStack.pop();
 
-        restoreCanvas(previous);
+        restoreCanvas(
+            previous
+        );
 
         saveCurrentPage();
+
+        scheduleServerStateSync();
 
     }
 );
@@ -1956,7 +2349,9 @@ redoBtn?.addEventListener(
     "click",
     () => {
 
-        if (!redoStack.length) {
+        if (
+            !redoStack.length
+        ) {
             return;
         }
 
@@ -1967,9 +2362,13 @@ redoBtn?.addEventListener(
         const next =
             redoStack.pop();
 
-        restoreCanvas(next);
+        restoreCanvas(
+            next
+        );
 
         saveCurrentPage();
+
+        scheduleServerStateSync();
 
     }
 );
@@ -1992,8 +2391,11 @@ clearBtn?.addEventListener(
             canvas.height
         );
 
+        setupCanvas();
+
         saveCurrentPage();
-        syncBoardState();
+
+        scheduleServerStateSync();
 
     }
 );
@@ -2005,7 +2407,9 @@ clearBtn?.addEventListener(
 
 function saveCurrentPage() {
 
-    if (!pages[currentPage]) {
+    if (
+        !pages[currentPage]
+    ) {
         return;
     }
 
@@ -2022,7 +2426,10 @@ function saveCurrentPage() {
 // LOAD PAGE
 // ============================================================
 
-function loadPage(index) {
+function loadPage(
+    index,
+    notifyServer = true
+) {
 
     if (
         index < 0 ||
@@ -2033,7 +2440,8 @@ function loadPage(index) {
 
     saveCurrentPage();
 
-    currentPage = index;
+    currentPage =
+        index;
 
     const page =
         pages[currentPage];
@@ -2042,13 +2450,18 @@ function loadPage(index) {
         `${page.height || 700}px`;
 
     canvas.width =
-        notebookPage.clientWidth || 1000;
+        notebookPage.clientWidth ||
+        1000;
 
     canvas.height =
-        page.height || 700;
+        page.height ||
+        700;
 
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
+    canvas.style.width =
+        "100%";
+
+    canvas.style.height =
+        "100%";
 
     setupCanvas();
 
@@ -2059,29 +2472,26 @@ function loadPage(index) {
         canvas.height
     );
 
-    if (page.canvasData) {
+    if (
+        page.canvasData
+    ) {
 
-        const image = new Image();
-
-        image.onload = () => {
-
-            ctx.drawImage(
-                image,
-                0,
-                0
-            );
-
-            setupCanvas();
-
-        };
-
-        image.src =
-            page.canvasData;
+        restoreCanvas(
+            page.canvasData
+        );
 
     }
 
     updatePageNumber();
-    syncBoardState();
+
+    if (
+        notifyServer &&
+        !isApplyingRemoteState
+    ) {
+
+        scheduleServerStateSync();
+
+    }
 
 }
 
@@ -2095,7 +2505,7 @@ function updatePageNumber() {
     if (pageNumber) {
 
         pageNumber.textContent =
-            `${currentPage + 1} / ∞`;
+            `${currentPage + 1} / ${pages.length}`;
 
     }
 
@@ -2112,13 +2522,12 @@ addPageBtn?.addEventListener(
 
         saveCurrentPage();
 
-        pages.push({
-
-            canvasData: null,
-
-            height: 700
-
-        });
+        pages.push(
+            {
+                canvasData: null,
+                height: 700
+            }
+        );
 
         currentPage =
             pages.length - 1;
@@ -2127,9 +2536,11 @@ addPageBtn?.addEventListener(
             "700px";
 
         canvas.width =
-            notebookPage.clientWidth || 1000;
+            notebookPage.clientWidth ||
+            1000;
 
-        canvas.height = 700;
+        canvas.height =
+            700;
 
         ctx.clearRect(
             0,
@@ -2141,7 +2552,8 @@ addPageBtn?.addEventListener(
         setupCanvas();
 
         updatePageNumber();
-        syncBoardState();
+
+        scheduleServerStateSync();
 
     }
 );
@@ -2155,7 +2567,9 @@ previousPage?.addEventListener(
     "click",
     () => {
 
-        if (currentPage > 0) {
+        if (
+            currentPage > 0
+        ) {
 
             loadPage(
                 currentPage - 1
@@ -2211,7 +2625,9 @@ extendPageBtn?.addEventListener(
             oldHeight + 500;
 
         const oldCanvas =
-            document.createElement("canvas");
+            document.createElement(
+                "canvas"
+            );
 
         oldCanvas.width =
             canvas.width;
@@ -2220,7 +2636,9 @@ extendPageBtn?.addEventListener(
             canvas.height;
 
         const oldCtx =
-            oldCanvas.getContext("2d");
+            oldCanvas.getContext(
+                "2d"
+            );
 
         oldCtx.drawImage(
             canvas,
@@ -2232,13 +2650,17 @@ extendPageBtn?.addEventListener(
             `${newHeight}px`;
 
         canvas.width =
-            notebookPage.clientWidth || 1000;
+            notebookPage.clientWidth ||
+            1000;
 
         canvas.height =
             newHeight;
 
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
+        canvas.style.width =
+            "100%";
+
+        canvas.style.height =
+            "100%";
 
         setupCanvas();
 
@@ -2254,7 +2676,7 @@ extendPageBtn?.addEventListener(
         pages[currentPage].canvasData =
             canvas.toDataURL();
 
-        syncBoardState();
+        scheduleServerStateSync();
 
     }
 );
@@ -2294,6 +2716,8 @@ zoomIn?.addEventListener(
 
         updateZoom();
 
+        scheduleServerStateSync();
+
     }
 );
 
@@ -2310,6 +2734,8 @@ zoomOut?.addEventListener(
 
         updateZoom();
 
+        scheduleServerStateSync();
+
     }
 );
 
@@ -2323,7 +2749,8 @@ canvas.addEventListener(
     e => {
 
         if (
-            currentTool !== "text"
+            currentTool !==
+            "text"
         ) {
             return;
         }
@@ -2346,7 +2773,8 @@ canvas.addEventListener(
         createTextObject(
             text.trim(),
             position.x,
-            position.y
+            position.y,
+            true
         );
 
         activateTool(
@@ -2360,23 +2788,45 @@ canvas.addEventListener(
 
 
 // ============================================================
+// OBJECT ID
+// ============================================================
+
+function generateObjectId() {
+
+    return (
+        `${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(2, 10)}`
+    );
+
+}
+
+
+// ============================================================
 // TEXT OBJECT
 // ============================================================
 
 function createTextObject(
     text,
     x,
-    y
+    y,
+    sync = true
 ) {
 
     if (!objectLayer) {
-        return;
+        return null;
     }
 
-    const element =
-        document.createElement("div");
+    const id =
+        generateObjectId();
 
-    element.textContent = text;
+    const element =
+        document.createElement(
+            "div"
+        );
+
+    element.textContent =
+        text;
 
     element.style.position =
         "absolute";
@@ -2406,13 +2856,102 @@ function createTextObject(
     element.style.pointerEvents =
         "auto";
 
-    element.dataset.type = "text";
+    element.dataset.type =
+        "text";
+
+    element.dataset.objectId =
+        id;
 
     objectLayer.appendChild(
         element
     );
 
-    makeDraggable(element);
+    makeDraggable(
+        element
+    );
+
+    if (
+        sync &&
+        socket?.connected
+    ) {
+
+        socket.emit(
+            "object-add",
+            {
+                id,
+                type: "text",
+                text,
+                x,
+                y,
+                fontSize:
+                    "22px",
+                fontFamily:
+                    "Poppins, sans-serif",
+                color:
+                    element.style.color
+            }
+        );
+
+    }
+
+    return element;
+}
+
+
+// ============================================================
+// OBJECT DATA
+// ============================================================
+
+function getObjectData(
+    element
+) {
+
+    if (!element) {
+        return null;
+    }
+
+    const rect =
+        objectLayer.getBoundingClientRect();
+
+    const elementRect =
+        element.getBoundingClientRect();
+
+    const x =
+        elementRect.left -
+        rect.left;
+
+    const y =
+        elementRect.top -
+        rect.top;
+
+    return {
+
+        id:
+            element.dataset.objectId,
+
+        type:
+            element.dataset.type ||
+            "object",
+
+        x,
+        y,
+
+        width:
+            element.offsetWidth,
+
+        height:
+            element.offsetHeight,
+
+        text:
+            element.textContent,
+
+        color:
+            element.style.color,
+
+        fontSize:
+            element.style.fontSize
+
+    };
 
 }
 
@@ -2421,12 +2960,18 @@ function createTextObject(
 // DRAG OBJECT
 // ============================================================
 
-function makeDraggable(element) {
+function makeDraggable(
+    element
+) {
 
-    let dragging = false;
+    let dragging =
+        false;
 
-    let offsetX = 0;
-    let offsetY = 0;
+    let offsetX =
+        0;
+
+    let offsetY =
+        0;
 
 
     element.addEventListener(
@@ -2434,12 +2979,14 @@ function makeDraggable(element) {
         e => {
 
             if (
-                currentTool !== "select"
+                currentTool !==
+                "select"
             ) {
                 return;
             }
 
-            dragging = true;
+            dragging =
+                true;
 
             const rect =
                 element.getBoundingClientRect();
@@ -2472,14 +3019,18 @@ function makeDraggable(element) {
                 objectLayer.getBoundingClientRect();
 
             element.style.left =
-                `${e.clientX -
+                `${
+                    e.clientX -
                     parentRect.left -
-                    offsetX}px`;
+                    offsetX
+                }px`;
 
             element.style.top =
-                `${e.clientY -
+                `${
+                    e.clientY -
                     parentRect.top -
-                    offsetY}px`;
+                    offsetY
+                }px`;
 
         }
     );
@@ -2489,7 +3040,31 @@ function makeDraggable(element) {
         "mouseup",
         () => {
 
-            dragging = false;
+            if (
+                !dragging
+            ) {
+                return;
+            }
+
+            dragging =
+                false;
+
+            const data =
+                getObjectData(
+                    element
+                );
+
+            if (
+                data &&
+                socket?.connected
+            ) {
+
+                socket.emit(
+                    "object-update",
+                    data
+                );
+
+            }
 
         }
     );
@@ -2498,21 +3073,183 @@ function makeDraggable(element) {
 
 
 // ============================================================
+// APPLY REMOTE OBJECT
+// ============================================================
+
+function createObjectFromData(
+    data,
+    sync = false
+) {
+
+    if (!data?.id) {
+        return;
+    }
+
+    const existing =
+        document.querySelector(
+            `[data-object-id="${data.id}"]`
+        );
+
+    if (existing) {
+        return;
+    }
+
+
+    if (
+        data.type ===
+        "text"
+    ) {
+
+        const element =
+            createTextObject(
+                data.text || "",
+                Number(data.x) || 0,
+                Number(data.y) || 0,
+                sync
+            );
+
+        if (element) {
+
+            element.dataset.objectId =
+                data.id;
+
+            if (data.color) {
+                element.style.color =
+                    data.color;
+            }
+
+            if (data.fontSize) {
+                element.style.fontSize =
+                    data.fontSize;
+            }
+
+        }
+
+        return;
+    }
+
+
+    const element =
+        document.createElement(
+            "div"
+        );
+
+    element.dataset.objectId =
+        data.id;
+
+    element.dataset.type =
+        data.type ||
+        "object";
+
+    element.style.position =
+        "absolute";
+
+    element.style.left =
+        `${Number(data.x) || 0}px`;
+
+    element.style.top =
+        `${Number(data.y) || 0}px`;
+
+    element.style.width =
+        `${Number(data.width) || 150}px`;
+
+    element.style.height =
+        `${Number(data.height) || 100}px`;
+
+    element.style.cursor =
+        "move";
+
+    element.style.pointerEvents =
+        "auto";
+
+    objectLayer.appendChild(
+        element
+    );
+
+    makeDraggable(
+        element
+    );
+
+}
+
+
+// ============================================================
+// UPDATE REMOTE OBJECT
+// ============================================================
+
+function updateObjectFromData(
+    data
+) {
+
+    if (!data?.id) {
+        return;
+    }
+
+    const element =
+        document.querySelector(
+            `[data-object-id="${data.id}"]`
+        );
+
+    if (!element) {
+        return;
+    }
+
+    if (
+        data.x !== undefined
+    ) {
+
+        element.style.left =
+            `${Number(data.x)}px`;
+
+    }
+
+    if (
+        data.y !== undefined
+    ) {
+
+        element.style.top =
+            `${Number(data.y)}px`;
+
+    }
+
+    if (
+        data.width !== undefined
+    ) {
+
+        element.style.width =
+            `${Number(data.width)}px`;
+
+    }
+
+    if (
+        data.height !== undefined
+    ) {
+
+        element.style.height =
+            `${Number(data.height)}px`;
+
+    }
+
+}
+
+
+// ============================================================
 // SHAPE SYSTEM
 // ============================================================
 
-let selectedShape = null;
+let selectedShape =
+    null;
 
 const shapePicker =
-    document.getElementById("shapePicker");
+    document.getElementById(
+        "shapePicker"
+    );
 
 const closeShapePicker =
-    document.getElementById("closeShapePicker");
+    document.getElementById(
+        "closeShapePicker"
+    );
 
-
-// ============================================================
-// OPEN SHAPE PICKER
-// ============================================================
 
 shapeBtn?.addEventListener(
     "click",
@@ -2520,21 +3257,13 @@ shapeBtn?.addEventListener(
 
         e.stopPropagation();
 
-        if (shapePicker) {
-
-            shapePicker.classList.toggle(
-                "show"
-            );
-
-        }
+        shapePicker?.classList.toggle(
+            "show"
+        );
 
     }
 );
 
-
-// ============================================================
-// CLOSE SHAPE PICKER
-// ============================================================
 
 closeShapePicker?.addEventListener(
     "click",
@@ -2548,47 +3277,43 @@ closeShapePicker?.addEventListener(
 );
 
 
-// ============================================================
-// SHAPE OPTIONS
-// ============================================================
-
 document
-    .querySelectorAll(".shape-option")
-    .forEach(button => {
+    .querySelectorAll(
+        ".shape-option"
+    )
+    .forEach(
+        button => {
 
-        button.addEventListener(
-            "click",
-            () => {
+            button.addEventListener(
+                "click",
+                () => {
 
-                selectedShape =
-                    button.dataset.shape;
+                    selectedShape =
+                        button.dataset.shape;
 
-                shapePicker?.classList.remove(
-                    "show"
-                );
+                    shapePicker?.classList.remove(
+                        "show"
+                    );
 
-                activateTool(
-                    "shape",
-                    shapeBtn,
-                    "crosshair"
-                );
+                    activateTool(
+                        "shape",
+                        shapeBtn,
+                        "crosshair"
+                    );
 
-                console.log(
-                    "Selected shape:",
-                    selectedShape
-                );
+                }
+            );
 
-            }
-        );
-
-    });
+        }
+    );
 
 
 // ============================================================
 // SHAPE START
 // ============================================================
 
-let shapeStart = null;
+let shapeStart =
+    null;
 
 
 canvas.addEventListener(
@@ -2596,7 +3321,8 @@ canvas.addEventListener(
     e => {
 
         if (
-            currentTool !== "shape" ||
+            currentTool !==
+            "shape" ||
             !selectedShape
         ) {
             return;
@@ -2618,14 +3344,16 @@ canvas.addEventListener(
     e => {
 
         if (
-            currentTool !== "shape" ||
+            currentTool !==
+            "shape" ||
             !shapeStart ||
             !selectedShape
         ) {
 
-            shapeStart = null;
-            return;
+            shapeStart =
+                null;
 
+            return;
         }
 
         const end =
@@ -2665,12 +3393,14 @@ canvas.addEventListener(
                 x,
                 y,
                 width,
-                height
+                height,
+                true
             );
 
         }
 
-        shapeStart = null;
+        shapeStart =
+            null;
 
         activateTool(
             "select",
@@ -2691,15 +3421,21 @@ function createShape(
     x,
     y,
     width,
-    height
+    height,
+    sync = true
 ) {
 
     if (!objectLayer) {
         return;
     }
 
+    const id =
+        generateObjectId();
+
     const shape =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
     shape.style.position =
         "absolute";
@@ -2719,11 +3455,12 @@ function createShape(
     shape.style.boxSizing =
         "border-box";
 
+    const color =
+        colorPicker?.value ||
+        "#172033";
+
     shape.style.border =
-        `2px solid ${
-            colorPicker?.value ||
-            "#172033"
-        }`;
+        `2px solid ${color}`;
 
     shape.style.cursor =
         "move";
@@ -2737,28 +3474,37 @@ function createShape(
     shape.dataset.shape =
         shapeType;
 
+    shape.dataset.objectId =
+        id;
 
-    // ========================================================
-    // SHAPE STYLING
-    // ========================================================
 
-    if (shapeType === "circle") {
+    if (
+        shapeType ===
+        "circle"
+    ) {
 
         shape.style.borderRadius =
             "50%";
 
     }
 
-    else if (shapeType === "diamond") {
+    else if (
+        shapeType ===
+        "diamond"
+    ) {
 
         shape.style.transform =
             "rotate(45deg)";
 
     }
 
-    else if (shapeType === "triangle") {
+    else if (
+        shapeType ===
+        "triangle"
+    ) {
 
-        shape.style.border = "none";
+        shape.style.border =
+            "none";
 
         shape.style.width =
             "0px";
@@ -2773,21 +3519,24 @@ function createShape(
             `${width / 2}px solid transparent`;
 
         shape.style.borderBottom =
-            `${height}px solid ${
-                colorPicker?.value ||
-                "#172033"
-            }`;
+            `${height}px solid ${color}`;
 
     }
 
-    else if (shapeType === "parallelogram") {
+    else if (
+        shapeType ===
+        "parallelogram"
+    ) {
 
         shape.style.transform =
             "skewX(-20deg)";
 
     }
 
-    else if (shapeType === "heart") {
+    else if (
+        shapeType ===
+        "heart"
+    ) {
 
         shape.style.borderRadius =
             "50% 50% 0 0";
@@ -2802,7 +3551,36 @@ function createShape(
         shape
     );
 
-    makeDraggable(shape);
+    makeDraggable(
+        shape
+    );
+
+
+    if (
+        sync &&
+        socket?.connected
+    ) {
+
+        socket.emit(
+            "object-add",
+            {
+                id,
+                type:
+                    shapeType,
+
+                shape:
+                    shapeType,
+
+                x,
+                y,
+                width,
+                height,
+
+                color
+            }
+        );
+
+    }
 
 }
 
@@ -2816,11 +3594,15 @@ imageBtn?.addEventListener(
     () => {
 
         const input =
-            document.createElement("input");
+            document.createElement(
+                "input"
+            );
 
-        input.type = "file";
+        input.type =
+            "file";
 
-        input.accept = "image/*";
+        input.accept =
+            "image/*";
 
         input.addEventListener(
             "change",
@@ -2840,12 +3622,15 @@ imageBtn?.addEventListener(
                     event => {
 
                         createImageObject(
-                            event.target.result
+                            event.target.result,
+                            true
                         );
 
                     };
 
-                reader.readAsDataURL(file);
+                reader.readAsDataURL(
+                    file
+                );
 
             }
         );
@@ -2860,16 +3645,25 @@ imageBtn?.addEventListener(
 // CREATE IMAGE
 // ============================================================
 
-function createImageObject(src) {
+function createImageObject(
+    src,
+    sync = true
+) {
 
     if (!objectLayer) {
         return;
     }
 
-    const image =
-        document.createElement("img");
+    const id =
+        generateObjectId();
 
-    image.src = src;
+    const image =
+        document.createElement(
+            "img"
+        );
+
+    image.src =
+        src;
 
     image.style.position =
         "absolute";
@@ -2898,11 +3692,39 @@ function createImageObject(src) {
     image.style.pointerEvents =
         "auto";
 
+    image.dataset.type =
+        "image";
+
+    image.dataset.objectId =
+        id;
+
     objectLayer.appendChild(
         image
     );
 
-    makeDraggable(image);
+    makeDraggable(
+        image
+    );
+
+
+    if (
+        sync &&
+        socket?.connected
+    ) {
+
+        socket.emit(
+            "object-add",
+            {
+                id,
+                type: "image",
+                src,
+                x: 150,
+                y: 200,
+                width: 250
+            }
+        );
+
+    }
 
 }
 
@@ -2942,7 +3764,8 @@ tableBtn?.addEventListener(
 
         createTable(
             rows,
-            columns
+            columns,
+            true
         );
 
     }
@@ -2955,15 +3778,21 @@ tableBtn?.addEventListener(
 
 function createTable(
     rows,
-    columns
+    columns,
+    sync = true
 ) {
 
     if (!objectLayer) {
         return;
     }
 
+    const id =
+        generateObjectId();
+
     const table =
-        document.createElement("table");
+        document.createElement(
+            "table"
+        );
 
     table.style.position =
         "absolute";
@@ -2985,6 +3814,12 @@ function createTable(
 
     table.style.cursor =
         "move";
+
+    table.dataset.type =
+        "table";
+
+    table.dataset.objectId =
+        id;
 
 
     for (
@@ -3029,7 +3864,29 @@ function createTable(
         table
     );
 
-    makeDraggable(table);
+    makeDraggable(
+        table
+    );
+
+
+    if (
+        sync &&
+        socket?.connected
+    ) {
+
+        socket.emit(
+            "object-add",
+            {
+                id,
+                type: "table",
+                rows,
+                columns,
+                x: 200,
+                y: 300
+            }
+        );
+
+    }
 
 }
 
@@ -3059,8 +3916,13 @@ stickyBtn?.addEventListener(
             return;
         }
 
+        const id =
+            generateObjectId();
+
         const note =
-            document.createElement("div");
+            document.createElement(
+                "div"
+            );
 
         note.textContent =
             text.trim();
@@ -3101,14 +3963,528 @@ stickyBtn?.addEventListener(
         note.dataset.type =
             "sticky";
 
+        note.dataset.objectId =
+            id;
+
         objectLayer.appendChild(
             note
         );
 
-        makeDraggable(note);
+        makeDraggable(
+            note
+        );
+
+
+        if (
+            socket?.connected
+        ) {
+
+            socket.emit(
+                "object-add",
+                {
+                    id,
+                    type: "sticky",
+                    text:
+                        text.trim(),
+                    x: 250,
+                    y: 150
+                }
+            );
+
+        }
 
     }
 );
+
+
+// ============================================================
+// SAVE LOCAL CACHE
+// ============================================================
+
+function saveLocalCache() {
+
+    const key =
+        getDocumentKey();
+
+    if (!key) {
+        return;
+    }
+
+    try {
+
+        saveCurrentPage();
+
+        const data = {
+
+            pages,
+
+            currentPage,
+
+            zoom,
+
+            title:
+                document.getElementById(
+                    "documentTitle"
+                )?.value ||
+                "Study Notes",
+
+            canvasStyle:
+                currentCanvasStyle
+
+        };
+
+        localStorage.setItem(
+            key,
+            JSON.stringify(data)
+        );
+
+    } catch (error) {
+
+        console.warn(
+            "Local cache failed:",
+            error
+        );
+
+    }
+
+}
+
+
+// ============================================================
+// LOAD LOCAL CACHE
+// ============================================================
+
+function loadLocalCache() {
+
+    const key =
+        getDocumentKey();
+
+    if (!key) {
+        return false;
+    }
+
+    try {
+
+        const saved =
+            localStorage.getItem(
+                key
+            );
+
+        if (!saved) {
+            return false;
+        }
+
+        const data =
+            JSON.parse(saved);
+
+        if (
+            Array.isArray(
+                data.pages
+            ) &&
+            data.pages.length
+        ) {
+
+            pages =
+                data.pages;
+
+        }
+
+        if (
+            typeof data.currentPage ===
+            "number"
+        ) {
+
+            currentPage =
+                Math.min(
+                    Math.max(
+                        data.currentPage,
+                        0
+                    ),
+                    pages.length - 1
+                );
+
+        }
+
+        if (
+            typeof data.zoom ===
+            "number"
+        ) {
+
+            zoom =
+                Math.min(
+                    200,
+                    Math.max(
+                        50,
+                        data.zoom
+                    )
+                );
+
+        }
+
+        if (
+            data.canvasStyle
+        ) {
+
+            applyCanvasStyle(
+                data.canvasStyle
+            );
+
+        }
+
+        const titleInput =
+            document.getElementById(
+                "documentTitle"
+            );
+
+        if (
+            titleInput &&
+            data.title
+        ) {
+
+            titleInput.value =
+                data.title;
+
+        }
+
+        loadPage(
+            currentPage,
+            false
+        );
+
+        updateZoom();
+
+        return true;
+
+    } catch (error) {
+
+        console.warn(
+            "Could not load local cache:",
+            error
+        );
+
+        return false;
+
+    }
+
+}
+
+
+// ============================================================
+// SERVER STATE
+// ============================================================
+
+function getBoardState() {
+
+    saveCurrentPage();
+
+    return {
+
+        pages,
+
+        currentPage,
+
+        zoom,
+
+        canvasStyle:
+            currentCanvasStyle,
+
+        title:
+            document.getElementById(
+                "documentTitle"
+            )?.value ||
+            "Study Notes"
+
+    };
+
+}
+
+
+// ============================================================
+// SERVER STATE SYNC
+// ============================================================
+
+let syncTimer =
+    null;
+
+
+function scheduleServerStateSync() {
+
+    saveLocalCache();
+
+    if (
+        !socket?.connected ||
+        !serverReady ||
+        isApplyingRemoteState
+    ) {
+        return;
+    }
+
+    clearTimeout(
+        syncTimer
+    );
+
+    syncTimer =
+        setTimeout(
+            () => {
+
+                const state =
+                    getBoardState();
+
+                socket.emit(
+                    "save-board-state",
+                    state
+                );
+
+            },
+            250
+        );
+
+}
+
+
+// ============================================================
+// APPLY SERVER STATE
+// ============================================================
+
+function applyServerBoardState(
+    state
+) {
+
+    if (!state) {
+        return;
+    }
+
+    isApplyingRemoteState =
+        true;
+
+    try {
+
+        if (
+            Array.isArray(
+                state.pages
+            ) &&
+            state.pages.length
+        ) {
+
+            pages =
+                state.pages;
+
+        }
+
+        if (
+            typeof state.currentPage ===
+            "number"
+        ) {
+
+            currentPage =
+                Math.min(
+                    Math.max(
+                        state.currentPage,
+                        0
+                    ),
+                    pages.length - 1
+                );
+
+        }
+
+        if (
+            typeof state.zoom ===
+            "number"
+        ) {
+
+            zoom =
+                Math.min(
+                    200,
+                    Math.max(
+                        50,
+                        state.zoom
+                    )
+                );
+
+        }
+
+        if (
+            state.canvasStyle
+        ) {
+
+            applyCanvasStyle(
+                state.canvasStyle
+            );
+
+        }
+
+        const titleInput =
+            document.getElementById(
+                "documentTitle"
+            );
+
+        if (
+            titleInput &&
+            state.title
+        ) {
+
+            titleInput.value =
+                state.title;
+
+        }
+
+        loadPage(
+            currentPage,
+            false
+        );
+
+        updateZoom();
+
+        saveLocalCache();
+
+    } finally {
+
+        isApplyingRemoteState =
+            false;
+
+    }
+
+}
+
+
+// ============================================================
+// APPLY SERVER CANVAS
+// ============================================================
+
+function applyServerCanvasData(
+    canvasData
+) {
+
+    if (!canvasData) {
+        return;
+    }
+
+    if (
+        !pages[currentPage]
+    ) {
+        return;
+    }
+
+    isApplyingRemoteState =
+        true;
+
+    pages[currentPage].canvasData =
+        canvasData;
+
+    restoreCanvas(
+        canvasData
+    );
+
+    isApplyingRemoteState =
+        false;
+
+    saveLocalCache();
+
+}
+
+
+// ============================================================
+// APPLY SERVER PAGES
+// ============================================================
+
+function applyServerPages(
+    serverPages,
+    serverCurrentPage,
+    serverZoom,
+    serverStyle
+) {
+
+    if (
+        !Array.isArray(
+            serverPages
+        ) ||
+        !serverPages.length
+    ) {
+        return;
+    }
+
+    isApplyingRemoteState =
+        true;
+
+    pages =
+        serverPages;
+
+    if (
+        typeof serverCurrentPage ===
+        "number"
+    ) {
+
+        currentPage =
+            Math.min(
+                Math.max(
+                    serverCurrentPage,
+                    0
+                ),
+                pages.length - 1
+            );
+
+    }
+
+    if (
+        typeof serverZoom ===
+        "number"
+    ) {
+
+        zoom =
+            Math.min(
+                200,
+                Math.max(
+                    50,
+                    serverZoom
+                )
+            );
+
+    }
+
+    if (serverStyle) {
+
+        applyCanvasStyle(
+            serverStyle
+        );
+
+    }
+
+    loadPage(
+        currentPage,
+        false
+    );
+
+    updateZoom();
+
+    isApplyingRemoteState =
+        false;
+
+    saveLocalCache();
+
+}
+
+
+// ============================================================
+// SERVER READY
+// ============================================================
+
+if (socket) {
+
+    socket.on(
+        "board-ready",
+        () => {
+
+            serverReady =
+                true;
+
+            console.log(
+                "Server board is ready."
+            );
+
+        }
+    );
+
+}
 
 
 // ============================================================
@@ -3133,7 +4509,9 @@ document.addEventListener(
             undoBtn?.click();
 
             return;
+
         }
+
 
         if (
             e.ctrlKey &&
@@ -3145,7 +4523,9 @@ document.addEventListener(
             redoBtn?.click();
 
             return;
+
         }
+
 
         if (
             e.ctrlKey &&
@@ -3158,6 +4538,7 @@ document.addEventListener(
             redoBtn?.click();
 
             return;
+
         }
 
 
@@ -3167,13 +4548,16 @@ document.addEventListener(
         if (
             target &&
             (
-                target.tagName === "INPUT" ||
-                target.tagName === "TEXTAREA" ||
+                target.tagName ===
+                    "INPUT" ||
+                target.tagName ===
+                    "TEXTAREA" ||
                 target.isContentEditable
             )
         ) {
 
             return;
+
         }
 
 
@@ -3209,238 +4593,98 @@ if (drawBtn) {
 
 
 // ============================================================
-// SAVE DOCUMENT
+// DOCUMENT TITLE SYNC
 // ============================================================
 
-function saveDocument() {
+const documentTitle =
+    document.getElementById(
+        "documentTitle"
+    );
 
-    saveCurrentPage();
+documentTitle?.addEventListener(
+    "input",
+    () => {
 
-    const titleInput =
-        document.getElementById(
-            "documentTitle"
-        );
-
-    const documentData = {
-
-        pages,
-
-        currentPage,
-
-        zoom,
-
-        title:
-            titleInput?.value ||
-            "Study Notes",
-
-        canvasStyle:
-            currentCanvasStyle
-
-    };
-
-    const documentKey =
-        getDocumentKey();
-
-    try {
-
-        localStorage.setItem(
-            documentKey,
-            JSON.stringify(documentData)
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Could not save document:",
-            error
-        );
-        if (!documentKey) {
-    console.warn("No board ID. Document not saved.");
-    return;
-}
+        scheduleServerStateSync();
 
     }
-
-}
+);
 
 
 // ============================================================
-// LOAD DOCUMENT
+// OPTIONAL STYLE SELECTORS
 // ============================================================
+//
+// If your HTML contains:
+// .canvas-style-option
+//
+// with:
+// data-style="lines"
+// data-style="grid"
+// data-style="dots"
+// data-style="blank"
+//
+// they will automatically work.
+//
 
-function loadDocument() {
+document
+    .querySelectorAll(
+        "[data-canvas-style]"
+    )
+    .forEach(
+        button => {
 
-    const documentKey =
-        getDocumentKey();
-
-    const saved =
-        localStorage.getItem(
-            documentKey
-        );
-
-    if (!saved) {
-        updatePageNumber();
-        updateZoom();
-        return;
-    }
-        if (!documentKey) {
-    updatePageNumber();
-    updateZoom();
-    return;
-}
-
-    try {
-
-        const data =
-            JSON.parse(saved);
-
-
-        if (
-            Array.isArray(data.pages) &&
-            data.pages.length
-        ) {
-
-            pages =
-                data.pages;
-
-        }
-
-
-        if (
-            typeof data.currentPage ===
-            "number"
-        ) {
-
-            currentPage =
-                Math.min(
-                    Math.max(
-                        data.currentPage,
-                        0
-                    ),
-                    pages.length - 1
-                );
-
-        }
-
-
-        if (
-            typeof data.zoom ===
-            "number"
-        ) {
-
-            zoom =
-                Math.min(
-                    200,
-                    Math.max(
-                        50,
-                        data.zoom
-                    )
-                );
-
-        }
-
-
-        if (data.canvasStyle) {
-
-            applyCanvasStyle(
-                data.canvasStyle
-            );
-
-        }
-
-
-        const titleInput =
-            document.getElementById(
-                "documentTitle"
-            );
-
-        if (
-            titleInput &&
-            data.title
-        ) {
-
-            titleInput.value =
-                data.title;
-
-        }
-
-
-        const page =
-            pages[currentPage];
-
-        notebookPage.style.height =
-            `${page.height || 700}px`;
-
-        canvas.width =
-            notebookPage.clientWidth || 1000;
-
-        canvas.height =
-            page.height || 700;
-
-        canvas.style.width =
-            "100%";
-
-        canvas.style.height =
-            "100%";
-
-        setupCanvas();
-
-        ctx.clearRect(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-
-
-        if (page.canvasData) {
-
-            const image =
-                new Image();
-
-            image.onload =
+            button.addEventListener(
+                "click",
                 () => {
 
-                    ctx.drawImage(
-                        image,
-                        0,
-                        0
+                    const style =
+                        button.dataset.canvasStyle;
+
+                    applyCanvasStyle(
+                        style
                     );
 
-                    setupCanvas();
+                    if (
+                        socket?.connected
+                    ) {
 
-                };
+                        socket.emit(
+                            "canvas-style",
+                            {
+                                style:
+                                    currentCanvasStyle
+                            }
+                        );
 
-            image.src =
-                page.canvasData;
+                    }
+
+                    scheduleServerStateSync();
+
+                }
+            );
 
         }
-
-
-        updatePageNumber();
-
-        updateZoom();
-
-    } catch (error) {
-
-        console.error(
-            "Could not load LiveCanvas:",
-            error
-        );
-
-    }
-
-}
+    );
 
 
 // ============================================================
-// AUTO SAVE
+// AUTO SAVE LOCAL + SERVER
 // ============================================================
 
 setInterval(
     () => {
 
-        saveDocument();
+        saveLocalCache();
+
+        if (
+            socket?.connected &&
+            serverReady
+        ) {
+
+            scheduleServerStateSync();
+
+        }
 
     },
     10000
@@ -3455,17 +4699,50 @@ window.addEventListener(
     "beforeunload",
     () => {
 
-        saveDocument();
+        saveLocalCache();
+
+        if (
+            socket?.connected &&
+            serverReady
+        ) {
+
+            try {
+
+                socket.emit(
+                    "save-board-state",
+                    getBoardState()
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    "Could not send final state:",
+                    error
+                );
+
+            }
+
+        }
 
     }
 );
 
 
 // ============================================================
-// LOAD
+// INITIAL LOCAL LOAD
 // ============================================================
+//
+// Important:
+// This is ONLY a fallback.
+// Once server sends board-state,
+// server data overwrites this.
+//
 
-loadDocument();
+loadLocalCache();
+
+updatePageNumber();
+
+updateZoom();
 
 
 // ============================================================
@@ -3476,4 +4753,4 @@ console.log(
     "LiveCanvas initialized successfully 🚀"
 );
 
-} // END CANVAS SAFETY CHECK
+} // END CANVAS SAFETY

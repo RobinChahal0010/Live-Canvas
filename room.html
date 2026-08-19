@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>LiveCanvas</title>
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <div class="room-page">
+      <div class="room-card">
+        <h1>LiveCanvas</h1>
+
+        <p>Your collaborative workspace</p>
+
+        
+
+        <button id="createRoomBtn">👥 Create Room</button>
+
+        <button id="joinRoomBtn">🔗 Join Room</button>
+
+        <!-- JOIN ROOM -->
+
+        <div id="joinSection" class="join-section">
+          <input type="text" id="roomCode" placeholder="Enter Room Code" />
+
+          <button id="joinBtn">Join</button>
+        </div>
+
+        <!-- CREATED ROOM -->
+
+        <div id="createdRoom" class="created-room">
+          <p>Your room is ready 🎉</p>
+
+          <input type="text" id="roomLink" readonly />
+
+          <button id="copyRoomBtn">Copy Link</button>
+
+          <button id="enterRoomBtn">Enter Room</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="room.js"></script>
+  </body>
+</html>
+>
