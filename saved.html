@@ -1393,6 +1393,7 @@
                     sessionStorage.setItem('currentBoardName', joinedBoard.name || boardId);
                     closeModal();
                     renderBoardList();
+                    window.location.href = `index.html?board=${encodeURIComponent(boardId)}`;
                     return;
                 }
 
@@ -1414,8 +1415,7 @@
                 closeModal();
                 renderBoardList();
 
-                const newBoardCard = boardList.querySelector(`[data-board-id="${id}"]`);
-                newBoardCard?.focus();
+                window.location.href = `index.html?board=${encodeURIComponent(id)}`;
             });
         </script>
         <script src="cursor.js"></script>
