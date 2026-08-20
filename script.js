@@ -357,9 +357,11 @@ function updateCollaborators(
         return;
     }
 
+    const uniqueUsers = [...new Set(users.filter(u => typeof u === "string" && u.trim().length > 0))];
+
     const maxVisibleUsers = 4;
 
-    users
+    uniqueUsers
         .slice(
             0,
             maxVisibleUsers
@@ -367,20 +369,8 @@ function updateCollaborators(
         .forEach(
             username => {
 
-                if (
-                    !username ||
-                    typeof username !==
-                    "string"
-                ) {
-                    return;
-                }
-
                 const cleanName =
                     username.trim();
-
-                if (!cleanName) {
-                    return;
-                }
 
                 const avatar =
                     document.createElement(
@@ -406,7 +396,7 @@ function updateCollaborators(
         );
 
     if (
-        users.length >
+        uniqueUsers.length >
         maxVisibleUsers
     ) {
 
@@ -419,10 +409,10 @@ function updateCollaborators(
             "avatar more";
 
         more.textContent =
-            `+${users.length - maxVisibleUsers}`;
+            `+${uniqueUsers.length - maxVisibleUsers}`;
 
         more.title =
-            `${users.length - maxVisibleUsers} more collaborators`;
+            `${uniqueUsers.length - maxVisibleUsers} more collaborators`;
 
         collaboratorList.appendChild(
             more
@@ -503,10 +493,10 @@ if (
 
             // Server may send the existing board
             // immediately when joining.
-            if (data.state) {
+            if (data.boardState || data.state) {
 
                 applyServerBoardState(
-                    data.state
+                    data.boardState || data.state
                 );
 
             }
@@ -647,6 +637,7 @@ socket.on(
     // REAL-TIME DRAW
     // ========================================================
 
+    let remoteDrawSaveTimer = null;
     socket.on(
         "canvas-draw",
         data => {
@@ -654,6 +645,12 @@ socket.on(
             drawRemoteStroke(
                 data
             );
+
+            clearTimeout(remoteDrawSaveTimer);
+            remoteDrawSaveTimer = setTimeout(() => {
+                saveCurrentPage();
+                saveLocalCache();
+            }, 300);
 
         }
     );
@@ -1338,10 +1335,10 @@ function applyCanvasStyle(style, sync = true) {
 function getDocumentKey() {
 
     const id =
+        boardId ||
         sessionStorage.getItem(
             "currentBoardId"
-        ) ||
-        boardId;
+        );
 
     if (!id) {
         return null;
@@ -1990,6 +1987,8 @@ function stopDrawing() {
 
     saveCurrentPage();
 
+    saveLocalCache();
+
     scheduleServerStateSync();
 }
 
@@ -2438,7 +2437,9 @@ function loadPage(
         return;
     }
 
-    saveCurrentPage();
+    if (index !== currentPage) {
+        saveCurrentPage();
+    }
 
     currentPage =
         index;
@@ -3998,6 +3999,26 @@ stickyBtn?.addEventListener(
 
 
 // ============================================================
+// BOARD NAME HELPER
+// ============================================================
+
+function getInitialBoardName() {
+    let name = sessionStorage.getItem("currentBoardName");
+    if (name && name.trim()) return name.trim();
+
+    try {
+        const saved = JSON.parse(localStorage.getItem("savedBoards") || "[]");
+        const found = saved.find(b => String(b.id || "").toUpperCase() === String(boardId || "").toUpperCase());
+        if (found && found.name && found.name.trim()) {
+            return found.name.trim();
+        }
+    } catch (e) {}
+
+    return boardId ? `Board ${boardId}` : "Untitled Board";
+}
+
+
+// ============================================================
 // SAVE LOCAL CACHE
 // ============================================================
 
@@ -4014,6 +4035,10 @@ function saveLocalCache() {
 
         saveCurrentPage();
 
+        const currentTitle =
+            document.getElementById("documentTitle")?.value ||
+            getInitialBoardName();
+
         const data = {
 
             pages,
@@ -4022,11 +4047,7 @@ function saveLocalCache() {
 
             zoom,
 
-            title:
-                document.getElementById(
-                    "documentTitle"
-                )?.value ||
-                "Study Notes",
+            title: currentTitle,
 
             canvasStyle:
                 currentCanvasStyle
@@ -4055,6 +4076,15 @@ function saveLocalCache() {
 // ============================================================
 
 function loadLocalCache() {
+
+    const titleInput =
+        document.getElementById(
+            "documentTitle"
+        );
+
+    if (titleInput && !titleInput.value) {
+        titleInput.value = getInitialBoardName();
+    }
 
     const key =
         getDocumentKey();
@@ -4131,14 +4161,10 @@ function loadLocalCache() {
 
         }
 
-        const titleInput =
-            document.getElementById(
-                "documentTitle"
-            );
-
         if (
             titleInput &&
-            data.title
+            data.title &&
+            data.title !== "Study Notes"
         ) {
 
             titleInput.value =
@@ -4179,6 +4205,8 @@ function getBoardState() {
 
     return {
 
+        boardId,
+
         pages,
 
         currentPage,
@@ -4192,7 +4220,7 @@ function getBoardState() {
             document.getElementById(
                 "documentTitle"
             )?.value ||
-            "Study Notes"
+            getInitialBoardName()
 
     };
 
@@ -4213,7 +4241,6 @@ function scheduleServerStateSync() {
 
     if (
         !socket?.connected ||
-        !serverReady ||
         isApplyingRemoteState
     ) {
         return;
@@ -4232,6 +4259,11 @@ function scheduleServerStateSync() {
 
                 socket.emit(
                     "save-board-state",
+                    state
+                );
+
+                socket.emit(
+                    "document-state",
                     state
                 );
 
@@ -4266,8 +4298,12 @@ function applyServerBoardState(
             state.pages.length
         ) {
 
-            pages =
-                state.pages;
+            const serverHasContent = state.pages.some(p => Boolean(p && (p.canvasData || (p.drawings && p.drawings.length) || (p.objects && p.objects.length))));
+            const localHasContent = pages.some(p => Boolean(p && p.canvasData));
+
+            if (serverHasContent || !localHasContent) {
+                pages = state.pages;
+            }
 
         }
 
@@ -4320,7 +4356,9 @@ function applyServerBoardState(
 
         if (
             titleInput &&
-            state.title
+            state.title &&
+            state.title.trim() &&
+            state.title !== "Study Notes"
         ) {
 
             titleInput.value =
@@ -4336,6 +4374,10 @@ function applyServerBoardState(
         updateZoom();
 
         saveLocalCache();
+
+        if (localHasContent && !serverHasContent) {
+            scheduleServerStateSync();
+        }
 
     } finally {
 

@@ -236,20 +236,22 @@ main {
 
     font-family: 'Poppins', sans-serif;
 
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
 
     background: transparent;
     color: #202333;
 
-    width: 180px;
+    min-width: 140px;
+    max-width: 320px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: background 0.2s ease;
 }
 
-.document-info small {
-    display: block;
-
-    color: #999;
-    font-size: 10px;
+.document-info input:hover,
+.document-info input:focus {
+    background: rgba(0, 0, 0, 0.04);
 }
 
 /* =========================================================

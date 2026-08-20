@@ -1203,7 +1203,7 @@
                     }
 
                     emptyGraphic.style.display = 'none';
-                    emptyOverlay.style.display = 'none';
+                    if (emptyOverlay) emptyOverlay.style.display = 'none';
                     return;
                 }
 
@@ -1211,7 +1211,7 @@
                 boardList.innerHTML = '';
                 document.querySelector('.board-shell').classList.remove('has-boards');
                 emptyGraphic.style.display = 'block';
-                emptyOverlay.style.display = 'block';
+                if (emptyOverlay) emptyOverlay.style.display = 'block';
             }
 
             if (newBoardBtn) {

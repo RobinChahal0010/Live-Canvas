@@ -130,7 +130,7 @@ function createDefaultBoard(boardId) {
 
         boardId,
 
-        title: "Study Notes",
+        title: "",
 
         canvasStyle: "blank",
 
@@ -142,6 +142,7 @@ function createDefaultBoard(boardId) {
             {
                 id: "page-1",
                 height: 700,
+                canvasData: null,
 
                 // Drawing operations for this page
                 drawings: [],
@@ -276,7 +277,7 @@ function getBoardUsers(boardId) {
 
     }
 
-    return users;
+    return [...new Set(users)];
 
 }
 
@@ -500,7 +501,7 @@ io.on("connection", (socket) => {
     users: users,
 
     // IMPORTANT
-    canvasStyle: boardState.canvasStyle,
+    canvasStyle: board.canvasStyle,
 
                     // Current board state
                     boardState: board
@@ -807,6 +808,50 @@ socket.on("canvas-style-change", (data) => {
                 `Canvas style changed: ${socket.boardId} -> ${style}`
             );
 
+        }
+    );
+
+
+    // ========================================================
+    // SAVE BOARD STATE (FROM FRONTEND SCHEDULE / AUTO-SAVE)
+    // ========================================================
+
+    socket.on(
+        "save-board-state",
+        (incomingState) => {
+
+            if (!socket.boardId || !incomingState || typeof incomingState !== "object") {
+                return;
+            }
+
+            const board = getBoard(socket.boardId);
+
+            if (typeof incomingState.title === "string" && incomingState.title.trim()) {
+                board.title = incomingState.title.trim();
+            }
+
+            if (typeof incomingState.canvasStyle === "string") {
+                const allowedStyles = ["blank", "grid", "dots", "lines"];
+                if (allowedStyles.includes(incomingState.canvasStyle)) {
+                    board.canvasStyle = incomingState.canvasStyle;
+                }
+            }
+
+            if (typeof incomingState.zoom === "number") {
+                board.zoom = Math.max(50, Math.min(200, incomingState.zoom));
+            }
+
+            if (Number.isInteger(incomingState.currentPage)) {
+                board.currentPage = Math.max(0, incomingState.currentPage);
+            }
+
+            if (Array.isArray(incomingState.pages)) {
+                board.pages = sanitizePages(incomingState.pages);
+            }
+
+            board.updatedAt = Date.now();
+
+            socket.to(socket.boardId).emit("board-state", board);
         }
     );
 
@@ -1816,6 +1861,11 @@ function sanitizePages(pages) {
                             )
                         )
                         : 700,
+
+                canvasData:
+                    typeof safePage.canvasData === "string"
+                        ? safePage.canvasData
+                        : null,
 
                 drawings:
                     Array.isArray(
