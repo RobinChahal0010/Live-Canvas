@@ -256,6 +256,7 @@ function getBoardUsers(boardId) {
     }
 
     const users = [];
+    const seen = new Set();
 
     for (const socketId of room) {
 
@@ -266,18 +267,21 @@ function getBoardUsers(boardId) {
 
         if (
             userSocket &&
-            userSocket.username
+            userSocket.username &&
+            !seen.has(userSocket.username)
         ) {
+            seen.add(userSocket.username);
 
-            users.push(
-                userSocket.username
-            );
+            users.push({
+                username: userSocket.username,
+                profileIdx: userSocket.profileIdx || "1"
+            });
 
         }
 
     }
 
-    return [...new Set(users)];
+    return users;
 
 }
 
@@ -380,7 +384,7 @@ io.on("connection", (socket) => {
 
     socket.on(
         "join-room",
-        (boardId, username) => {
+        (boardId, username, profileIdx) => {
 
             boardId =
                 cleanBoardId(boardId);
@@ -454,6 +458,9 @@ io.on("connection", (socket) => {
 
             socket.username =
                 username;
+
+            socket.profileIdx =
+                String(profileIdx || "1");
 
 
             // ------------------------------------------------
@@ -1788,6 +1795,56 @@ socket.on("canvas-style-change", (data) => {
 
 
     // ========================================================
+    // CURSOR MOVE & LEAVE SYNC
+    // ========================================================
+
+    socket.on(
+        "cursor-move",
+        (data) => {
+            if (!socket.boardId || !data) return;
+
+            socket.to(
+                socket.boardId
+            ).emit(
+                "cursor-move",
+                {
+                    socketId: socket.id,
+                    username: socket.username || data.username || "Collaborator",
+                    x: Number(data.x) || 0,
+                    y: Number(data.y) || 0,
+                    color: data.color || null
+                }
+            );
+        }
+    );
+
+    socket.on(
+        "cursor-leave",
+        () => {
+            if (!socket.boardId) return;
+
+            socket.to(
+                socket.boardId
+            ).emit(
+                "cursor-leave",
+                {
+                    socketId: socket.id,
+                    username: socket.username
+                }
+            );
+        }
+    );
+
+    socket.on(
+        "user-profile-sync",
+        (data) => {
+            if (!socket.boardId || !data) return;
+            socket.profileIdx = String(data.profileIdx || "1");
+            socket.to(socket.boardId).emit("user-profile-sync", data);
+        }
+    );
+
+    // ========================================================
     // DISCONNECT
     // ========================================================
 
@@ -1803,6 +1860,32 @@ socket.on("canvas-style-change", (data) => {
                 "Reason:",
                 reason
             );
+
+            if (socket.boardId) {
+                const users = getBoardUsers(socket.boardId);
+
+                socket.to(
+                    socket.boardId
+                ).emit(
+                    "user-left",
+                    {
+                        username: socket.username,
+                        socketId: socket.id,
+                        userCount: users.length,
+                        users: users
+                    }
+                );
+
+                socket.to(
+                    socket.boardId
+                ).emit(
+                    "cursor-leave",
+                    {
+                        socketId: socket.id,
+                        username: socket.username
+                    }
+                );
+            }
 
         }
     );

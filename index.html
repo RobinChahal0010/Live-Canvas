@@ -78,32 +78,43 @@
 
         <div class="auth-section">
 
-            <span id="welcomeUser"></span>
+            <!-- User Avatar & Dropdown -->
+            <div class="user-avatar-wrap" id="userAvatarBtn" title="Account" style="display: none;">
+                <div class="user-avatar-ring"></div>
+                <div class="user-avatar">
+                    <img id="userProfileImg" src="assets/profile/1.png" alt="Profile">
+                </div>
+                <div class="user-menu-dropdown" id="userMenuDropdown">
+                    <div class="user-menu-header">
+                        <p class="user-menu-name" id="userMenuName">User</p>
+                        <p class="user-menu-email" id="userMenuEmail"></p>
+                    </div>
+                    <div class="user-menu-divider"></div>
+                    <a href="saved.html" class="user-menu-item">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <span>Saved Canvases</span>
+                    </a>
+                    <div class="user-menu-divider"></div>
+                    <button class="user-menu-item user-menu-logout" id="dropdownLogoutBtn" type="button">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                        <span>Log out</span>
+                    </button>
+                </div>
+            </div>
 
-            <button id="loginHeaderBtn">
-
+            <button id="loginHeaderBtn" type="button">
                 <i class="fa-solid fa-right-to-bracket"></i>
-
                 Login
-
             </button>
 
-
-            <button id="signupHeaderBtn">
-
+            <button id="signupHeaderBtn" type="button">
                 <i class="fa-solid fa-user-plus"></i>
-
                 Signup
-
             </button>
 
-
-            <button id="logoutBtn">
-
+            <button id="logoutBtn" type="button" style="display: none;">
                 <i class="fa-solid fa-right-from-bracket"></i>
-
                 Logout
-
             </button>
 
         </div>

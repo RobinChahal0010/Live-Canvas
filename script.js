@@ -77,6 +77,24 @@ try {
 const welcomeUser =
     document.getElementById("welcomeUser");
 
+const userAvatarBtn =
+    document.getElementById("userAvatarBtn");
+
+const userProfileImg =
+    document.getElementById("userProfileImg");
+
+const userMenuDropdown =
+    document.getElementById("userMenuDropdown");
+
+const userMenuName =
+    document.getElementById("userMenuName");
+
+const userMenuEmail =
+    document.getElementById("userMenuEmail");
+
+const dropdownLogoutBtn =
+    document.getElementById("dropdownLogoutBtn");
+
 const loginHeaderBtn =
     document.getElementById("loginHeaderBtn");
 
@@ -96,11 +114,42 @@ function updateAuthUI() {
     if (loggedInUser) {
 
         if (welcomeUser) {
-
             welcomeUser.textContent =
                 `Hi, ${loggedInUser.name || "User"} 👋`;
-
             welcomeUser.style.display =
+                "none";
+        }
+
+        let profileIdx =
+            localStorage.getItem("userProfilePicIdx");
+
+        if (!profileIdx) {
+            profileIdx =
+                String(Math.floor(Math.random() * 5) + 1);
+
+            localStorage.setItem(
+                "userProfilePicIdx",
+                profileIdx
+            );
+        }
+
+        if (userProfileImg) {
+            userProfileImg.src =
+                `assets/profile/${profileIdx}.png`;
+        }
+
+        if (userMenuName) {
+            userMenuName.textContent =
+                loggedInUser.name || loggedInUser.email || "User";
+        }
+
+        if (userMenuEmail) {
+            userMenuEmail.textContent =
+                loggedInUser.email || "";
+        }
+
+        if (userAvatarBtn) {
+            userAvatarBtn.style.display =
                 "block";
         }
 
@@ -116,13 +165,19 @@ function updateAuthUI() {
 
         if (logoutBtn) {
             logoutBtn.style.display =
-                "block";
+                "none";
         }
 
     } else {
 
+        if (userAvatarBtn) {
+            userAvatarBtn.style.display =
+                "none";
+        }
+
         if (welcomeUser) {
             welcomeUser.textContent = "";
+            welcomeUser.style.display = "none";
         }
 
         if (loginHeaderBtn) {
@@ -154,47 +209,63 @@ let currentUsername =
 
 
 // ============================================================
-// HEADER BUTTONS
+// HEADER BUTTONS & DROPDOWN
 // ============================================================
+
+userAvatarBtn?.addEventListener(
+    "click",
+    (e) => {
+        e.stopPropagation();
+        userMenuDropdown?.classList.toggle("show");
+    }
+);
+
+document.addEventListener(
+    "click",
+    (e) => {
+        if (userMenuDropdown && !userAvatarBtn?.contains(e.target)) {
+            userMenuDropdown.classList.remove("show");
+        }
+    }
+);
 
 loginHeaderBtn?.addEventListener(
     "click",
     () => {
-
         window.location.href =
-            "home.html";
-
+            "login.html";
     }
 );
-
 
 signupHeaderBtn?.addEventListener(
     "click",
     () => {
-
         window.location.href =
             "signup.html";
-
     }
 );
 
+function handleCanvasLogout() {
+    localStorage.removeItem(
+        "loggedInUser"
+    );
+
+    if (socket) {
+        socket.disconnect();
+    }
+
+    window.location.href =
+        "login.html";
+}
+
+dropdownLogoutBtn?.addEventListener(
+    "click",
+    handleCanvasLogout
+);
 
 logoutBtn?.addEventListener(
     "click",
-    () => {
-
-        localStorage.removeItem(
-            "loggedInUser"
-        );
-
-        if (socket) {
-            socket.disconnect();
-        }
-
-        window.location.href =
-            "login.html";
-
-    }
+    handleCanvasLogout
 );
 
 
@@ -227,88 +298,112 @@ const localCanvasPointer =
 
 
 // ============================================================
-// POINTER COLORS
+// COLLABORATIVE CURSOR COLORS & PALETTE
 // ============================================================
 
-const pointerColors = [
-    "#ef4444",
-    "#f97316",
-    "#eab308",
-    "#22c55e",
-    "#06b6d4",
-    "#3b82f6",
-    "#8b5cf6",
-    "#ec4899"
+const COLLAB_COLORS = [
+    "#9900ff", // Boop Purple
+    "#ff0080", // Bubble Pink
+    "#0070f3", // Vibrant Blue
+    "#10b981", // Emerald Green
+    "#ff6600", // Orange
+    "#8b5cf6", // Violet
+    "#06b6d4", // Cyan
+    "#ec4899", // Rose
+    "#f59e0b"  // Amber
 ];
 
-const remotePointers =
-    new Map();
-
-const localPointerColor =
-    pointerColors[
-        Math.floor(
-            Math.random() *
-            pointerColors.length
-        )
-    ];
-
-
-// ============================================================
-// POINTER HELPERS
-// ============================================================
-
-function getPointerColor(socketId) {
-
-    if (!remotePointers.has(socketId)) {
-
-        const color =
-            pointerColors[
-                remotePointers.size %
-                pointerColors.length
-            ];
-
-        remotePointers.set(
-            socketId,
-            { color }
-        );
+function getCollabColor(str) {
+    if (!str) return COLLAB_COLORS[0];
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
     }
-
-    return remotePointers.get(
-        socketId
-    ).color;
+    return COLLAB_COLORS[hash % COLLAB_COLORS.length];
 }
 
+const userAvatarMap = new Map();
+let lastKnownUsersList = [];
 
-function updatePointer(
-    pointer,
-    data,
-    color
-) {
+function getUserAvatarIdx(name, fallbackIdx = 0) {
+    if (!name) return 1;
+    const clean = name.trim().toLowerCase();
 
-    if (!pointer || !data) {
-        return;
+    if (userAvatarMap.has(clean)) {
+        return userAvatarMap.get(clean);
     }
 
-    pointer.style.left =
-        `${data.x}px`;
+    if (
+        (loggedInUser && (clean === (loggedInUser.name || "").toLowerCase() || clean === (loggedInUser.email || "").toLowerCase())) ||
+        clean === currentUsername.toLowerCase()
+    ) {
+        let stored = localStorage.getItem("userProfilePicIdx");
+        if (!stored) {
+            stored = String(Math.floor(Math.random() * 5) + 1);
+            localStorage.setItem("userProfilePicIdx", stored);
+        }
+        userAvatarMap.set(clean, stored);
+        return stored;
+    }
 
-    pointer.style.top =
-        `${data.y}px`;
+    let hash = 0;
+    for (let i = 0; i < clean.length; i++) {
+        hash = (hash * 37 + clean.charCodeAt(i) * 19) >>> 0;
+    }
+    let assigned = ((hash + Number(fallbackIdx || 0)) % 5) + 1;
 
-    pointer.style.setProperty(
-        "--pointer-color",
-        color
-    );
+    const myIdx = Number(localStorage.getItem("userProfilePicIdx") || 1);
+    if (assigned === myIdx) {
+        assigned = (myIdx % 5) + 1;
+    }
 
-    pointer.dataset.username =
-        data.username ||
-        "User";
-
-    pointer.style.display =
-        data.visible
-            ? "block"
-            : "none";
+    const assignedStr = String(assigned);
+    userAvatarMap.set(clean, assignedStr);
+    return assignedStr;
 }
+
+function syncLocalCursor() {
+    if (typeof window.updateLocalCursor === "function") {
+        const myCol = getCollabColor(currentUsername);
+        window.updateLocalCursor(currentUsername, myCol);
+    }
+}
+
+syncLocalCursor();
+
+// Broadcast local cursor movement
+let lastCursorEmit = 0;
+const CURSOR_EMIT_INTERVAL = 25; // 25ms throttle
+
+function broadcastCursorMove(e) {
+    if (!notebookPage || !socket || !boardId) return;
+
+    const rect = notebookPage.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const now = performance.now();
+    if (now - lastCursorEmit > CURSOR_EMIT_INTERVAL || (typeof isDrawing !== "undefined" && isDrawing)) {
+        lastCursorEmit = now;
+        if (socket.connected) {
+            socket.emit("cursor-move", {
+                x: Math.round(x),
+                y: Math.round(y),
+                username: currentUsername,
+                color: getCollabColor(currentUsername)
+            });
+        }
+    }
+}
+
+window.addEventListener("mousemove", broadcastCursorMove, { passive: true });
+window.addEventListener("pointermove", broadcastCursorMove, { passive: true });
+
+document.addEventListener("mouseleave", () => {
+    if (socket && socket.connected && boardId) {
+        socket.emit("cursor-leave");
+    }
+});
 
 
 // ============================================================
@@ -318,6 +413,8 @@ function updatePointer(
 function updateCollaborators(
     users = []
 ) {
+
+    lastKnownUsersList = users;
 
     const collaborators =
         document.getElementById(
@@ -336,11 +433,7 @@ function updateCollaborators(
         return;
     }
 
-    collaboratorList
-        .querySelectorAll(".avatar")
-        .forEach(
-            avatar => avatar.remove()
-        );
+    collaboratorList.innerHTML = "";
 
     if (!boardId) {
 
@@ -357,36 +450,93 @@ function updateCollaborators(
         return;
     }
 
-    const uniqueUsers = [...new Set(users.filter(u => typeof u === "string" && u.trim().length > 0))];
+    const userMap = new Map();
+    const myName = (currentUsername || "").trim().toLowerCase();
+    const loggedName = loggedInUser?.name ? loggedInUser.name.trim().toLowerCase() : "";
+    const loggedEmail = loggedInUser?.email ? loggedInUser.email.trim().toLowerCase() : "";
 
-    const maxVisibleUsers = 4;
+    users.forEach((u, idx) => {
+        if (!u) return;
+        const name = typeof u === "string" ? u.trim() : (u.username || "").trim();
+        if (!name) return;
+        const cleanLower = name.toLowerCase();
 
-    uniqueUsers
+        // Do not show local user's own profile picture in collaborator list
+        if (cleanLower === myName || (loggedName && cleanLower === loggedName) || (loggedEmail && cleanLower === loggedEmail)) {
+            return;
+        }
+
+        let pic = (typeof u === "object" && u.profileIdx) ? String(u.profileIdx) : null;
+        if (pic) {
+            userAvatarMap.set(cleanLower, pic);
+        } else {
+            pic = getUserAvatarIdx(name, idx);
+        }
+        if (!userMap.has(name)) {
+            userMap.set(name, pic);
+        }
+    });
+
+    const uniqueUsersList = Array.from(userMap.entries());
+    const maxVisibleUsers = 5;
+
+    uniqueUsersList
         .slice(
             0,
             maxVisibleUsers
         )
         .forEach(
-            username => {
-
-                const cleanName =
-                    username.trim();
+            ([cleanName, picIdx]) => {
 
                 const avatar =
                     document.createElement(
-                        "span"
+                        "div"
                     );
 
                 avatar.className =
                     "avatar";
 
-                avatar.textContent =
-                    cleanName
-                        .charAt(0)
-                        .toUpperCase();
+                const img =
+                    document.createElement(
+                        "img"
+                    );
 
-                avatar.title =
+                img.src =
+                    `assets/profile/${picIdx}.png`;
+
+                img.alt =
                     cleanName;
+
+                img.draggable =
+                    false;
+
+                img.className =
+                    "avatar-img";
+
+                img.onerror = function () {
+                    this.style.display = "none";
+                    avatar.textContent =
+                        cleanName.charAt(0).toUpperCase();
+                };
+
+                const tooltip =
+                    document.createElement(
+                        "span"
+                    );
+
+                tooltip.className =
+                    "avatar-tooltip";
+
+                tooltip.textContent =
+                    cleanName;
+
+                avatar.appendChild(
+                    img
+                );
+
+                avatar.appendChild(
+                    tooltip
+                );
 
                 collaboratorList.appendChild(
                     avatar
@@ -396,7 +546,7 @@ function updateCollaborators(
         );
 
     if (
-        uniqueUsers.length >
+        uniqueUsersList.length >
         maxVisibleUsers
     ) {
 
@@ -409,10 +559,10 @@ function updateCollaborators(
             "avatar more";
 
         more.textContent =
-            `+${uniqueUsers.length - maxVisibleUsers}`;
+            `+${uniqueUsersList.length - maxVisibleUsers}`;
 
         more.title =
-            `${uniqueUsers.length - maxVisibleUsers} more collaborators`;
+            `${uniqueUsersList.length - maxVisibleUsers} more collaborators`;
 
         collaboratorList.appendChild(
             more
@@ -460,10 +610,22 @@ if (
                 socket.id
             );
 
+            const myProfileIdx =
+                localStorage.getItem("userProfilePicIdx") || "1";
+
             socket.emit(
                 "join-room",
                 boardId,
-                currentUsername
+                currentUsername,
+                myProfileIdx
+            );
+
+            socket.emit(
+                "user-profile-sync",
+                {
+                    username: currentUsername,
+                    profileIdx: myProfileIdx
+                }
             );
 
         }
@@ -486,6 +648,19 @@ if (
             currentUsername =
                 data.username ||
                 currentUsername;
+
+            const myProfileIdx =
+                localStorage.getItem("userProfilePicIdx") || "1";
+
+            socket.emit(
+                "user-profile-sync",
+                {
+                    username: currentUsername,
+                    profileIdx: myProfileIdx
+                }
+            );
+
+            syncLocalCursor();
 
             updateCollaborators(
                 data.users || []
@@ -747,6 +922,8 @@ socket.on(
                 false
             );
 
+            saveLocalCache();
+
         }
     );
 
@@ -758,6 +935,8 @@ socket.on(
             updateObjectFromData(
                 data
             );
+
+            saveLocalCache();
 
         }
     );
@@ -778,28 +957,43 @@ socket.on(
 
             element?.remove();
 
+            saveLocalCache();
+
+        }
+    );
+
+
+    socket.on(
+        "user-profile-sync",
+        data => {
+            if (data?.username && data?.profileIdx) {
+                userAvatarMap.set(data.username.trim().toLowerCase(), String(data.profileIdx));
+                if (Array.isArray(lastKnownUsersList) && lastKnownUsersList.length) {
+                    updateCollaborators(lastKnownUsersList);
+                }
+            }
         }
     );
 
 
     // ========================================================
-    // REMOTE CURSOR
+    // REMOTE CURSORS
     // ========================================================
+
+    const remoteCursorMap = new Map();
 
     socket.on(
         "cursor-move",
         data => {
 
-            if (!data?.socketId) {
+            if (!data?.socketId || !canvasPointers) {
                 return;
             }
 
             let pointer =
-                document.getElementById(
-                    `pointer-${data.socketId}`
-                );
+                remoteCursorMap.get(data.socketId);
 
-            if (!pointer) {
+            if (!pointer || !pointer.parentElement) {
 
                 pointer =
                     document.createElement(
@@ -810,22 +1004,100 @@ socket.on(
                     `pointer-${data.socketId}`;
 
                 pointer.className =
-                    "canvas-pointer remote-canvas-pointer";
+                    "remote-canvas-cursor";
 
-                canvasPointers?.appendChild(
+                const userCol =
+                    data.color ||
+                    getCollabColor(data.username);
+
+                pointer.style.color =
+                    userCol;
+
+                pointer.innerHTML = `
+                    <svg class="cursor-pointer" viewBox="0 0 24 24" fill="none">
+                        <path d="M4.15 2.5 L20.35 11.2 L12.8 12.8 L11.2 20.35 Z" fill="currentColor" stroke="white"
+                            stroke-width="1.5" stroke-linejoin="round" />
+                    </svg>
+                    <div class="cursor-label" style="background-color: ${userCol};">${data.username || "Collaborator"}</div>
+                `;
+
+                canvasPointers.appendChild(
+                    pointer
+                );
+
+                remoteCursorMap.set(
+                    data.socketId,
                     pointer
                 );
 
             }
 
-            updatePointer(
-                pointer,
-                data,
-                getPointerColor(
-                    data.socketId
-                )
-            );
+            const userCol =
+                data.color ||
+                getCollabColor(data.username);
 
+            pointer.style.color =
+                userCol;
+
+            const label =
+                pointer.querySelector(
+                    ".cursor-label"
+                );
+
+            if (label) {
+                label.style.backgroundColor =
+                    userCol;
+                label.textContent =
+                    data.username ||
+                    "Collaborator";
+            }
+
+            pointer.style.left =
+                `${data.x}px`;
+
+            pointer.style.top =
+                `${data.y}px`;
+
+            pointer.style.display =
+                "flex";
+
+            pointer.style.opacity =
+                "1";
+
+            if (pointer.fadeTimer) {
+                clearTimeout(pointer.fadeTimer);
+            }
+
+            pointer.fadeTimer =
+                setTimeout(() => {
+                    pointer.style.opacity = "0";
+                }, 4000);
+
+        }
+    );
+
+    socket.on(
+        "cursor-leave",
+        data => {
+            if (!data?.socketId) return;
+            const pointer = remoteCursorMap.get(data.socketId);
+            if (pointer) {
+                pointer.style.display = "none";
+            }
+        }
+    );
+
+    socket.on(
+        "user-left",
+        data => {
+            if (data?.socketId) {
+                const pointer = remoteCursorMap.get(data.socketId);
+                if (pointer) {
+                    pointer.remove();
+                    remoteCursorMap.delete(data.socketId);
+                }
+            }
+            updateCollaborators(data?.users || []);
         }
     );
 
@@ -1667,6 +1939,8 @@ function startDrawing(e) {
         lastX,
         lastY
     );
+
+    broadcastCursorMove(e);
 }
 
 
@@ -1679,6 +1953,8 @@ function draw(e) {
     if (!isDrawing) {
         return;
     }
+
+    broadcastCursorMove(e);
 
     const position =
         getMousePosition(e);
@@ -2201,85 +2477,7 @@ canvas.addEventListener(
 );
 
 
-// ============================================================
-// CURSOR SYNC
-// ============================================================
 
-if (
-    notebookPage &&
-    localCanvasPointer
-) {
-
-    notebookPage.addEventListener(
-        "mousemove",
-        event => {
-
-            const bounds =
-                notebookPage.getBoundingClientRect();
-
-            const x =
-                event.clientX -
-                bounds.left;
-
-            const y =
-                event.clientY -
-                bounds.top;
-
-            updatePointer(
-                localCanvasPointer,
-                {
-                    x,
-                    y,
-                    visible: true,
-                    username:
-                        currentUsername
-                },
-                localPointerColor
-            );
-
-            if (
-                socket?.connected
-            ) {
-
-                socket.emit(
-                    "cursor-move",
-                    {
-                        x,
-                        y,
-                        visible: true,
-                        username:
-                            currentUsername
-                    }
-                );
-
-            }
-
-        }
-    );
-
-
-    notebookPage.addEventListener(
-        "mouseleave",
-        () => {
-
-            localCanvasPointer.style.display =
-                "none";
-
-            socket?.emit(
-                "cursor-move",
-                {
-                    x: 0,
-                    y: 0,
-                    visible: false,
-                    username:
-                        currentUsername
-                }
-            );
-
-        }
-    );
-
-}
 
 
 // ============================================================
@@ -4041,6 +4239,8 @@ function saveLocalCache() {
 
         const data = {
 
+            boardId,
+
             pages,
 
             currentPage,
@@ -4050,7 +4250,9 @@ function saveLocalCache() {
             title: currentTitle,
 
             canvasStyle:
-                currentCanvasStyle
+                currentCanvasStyle,
+
+            savedAt: Date.now()
 
         };
 
@@ -4058,6 +4260,26 @@ function saveLocalCache() {
             key,
             JSON.stringify(data)
         );
+
+        if (boardId) {
+            try {
+                const boards = JSON.parse(localStorage.getItem('savedBoards') || '[]');
+                const idx = boards.findIndex(b => b.id === boardId);
+                if (idx !== -1) {
+                    boards[idx].name = currentTitle;
+                    boards[idx].updated = Date.now();
+                    localStorage.setItem('savedBoards', JSON.stringify(boards));
+                } else {
+                    boards.unshift({
+                        id: boardId,
+                        name: currentTitle,
+                        created: Date.now(),
+                        updated: Date.now()
+                    });
+                    localStorage.setItem('savedBoards', JSON.stringify(boards));
+                }
+            } catch (e) {}
+        }
 
     } catch (error) {
 
