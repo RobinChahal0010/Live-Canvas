@@ -52,8 +52,9 @@
                 display: flex;
                 align-items: flex-start;
                 color: #111;
-                left: -100px;
-                top: -100px;
+                left: 0;
+                top: 0;
+                will-change: transform;
                 transition: color 0.2s ease;
             }
 
@@ -107,6 +108,7 @@
                 <div class="cursor-label" id="cursorLabel"></div>
             `;
             document.body.appendChild(cursorEl);
+            cursorEl.style.display = 'none';
         }
 
         labelEl = document.getElementById('cursorLabel') || cursorEl.querySelector('.cursor-label');
@@ -128,10 +130,12 @@
             if (labelEl) labelEl.textContent = '';
         }
 
-        document.addEventListener('mousemove', (e) => {
+        // Pointer events continue while drawing with a pen or touch input.
+        // Mouse-only tracking left the local “Me” cursor behind the stroke.
+        document.addEventListener('pointermove', (e) => {
             if (cursorEl) {
-                cursorEl.style.left = `${e.clientX}px`;
-                cursorEl.style.top = `${e.clientY}px`;
+                cursorEl.style.transform =
+                    `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
                 cursorEl.style.display = 'flex';
             }
         });

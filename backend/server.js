@@ -124,7 +124,7 @@ const boards = new Map();
 // CREATE DEFAULT BOARD STATE
 // ============================================================
 
-function createDefaultBoard(boardId) {
+function createDefaultBoard(boardId, canvasStyle = "blank") {
 
     return {
 
@@ -132,7 +132,7 @@ function createDefaultBoard(boardId) {
 
         title: "",
 
-        canvasStyle: "blank",
+        canvasStyle,
 
         currentPage: 0,
 
@@ -163,13 +163,18 @@ function createDefaultBoard(boardId) {
 // GET OR CREATE BOARD
 // ============================================================
 
-function getBoard(boardId) {
+function getBoard(boardId, initialCanvasStyle = "blank") {
 
     if (!boards.has(boardId)) {
 
+        const validStyles = ["blank", "grid", "dots", "lines"];
+        const canvasStyle = validStyles.includes(initialCanvasStyle)
+            ? initialCanvasStyle
+            : "blank";
+
         boards.set(
             boardId,
-            createDefaultBoard(boardId)
+            createDefaultBoard(boardId, canvasStyle)
         );
 
         console.log(
@@ -384,7 +389,7 @@ io.on("connection", (socket) => {
 
     socket.on(
         "join-room",
-        (boardId, username, profileIdx) => {
+        (boardId, username, profileIdx, initialCanvasStyle) => {
 
             boardId =
                 cleanBoardId(boardId);
@@ -468,7 +473,7 @@ io.on("connection", (socket) => {
             // ------------------------------------------------
 
             const board =
-                getBoard(boardId);
+                getBoard(boardId, initialCanvasStyle);
 
 
             // ------------------------------------------------
@@ -607,7 +612,9 @@ socket.on("canvas-style-change", (data) => {
         return;
     }
 
-    const boardState = getBoardState(socket.boardId);
+    // Keep the style on the board that is sent to clients on join. The old
+    // transient boardStates map was never included in a board-state response.
+    const boardState = getBoard(socket.boardId);
 
     boardState.canvasStyle = style;
 
@@ -1143,7 +1150,7 @@ socket.on("canvas-style-change", (data) => {
 
             const object =
                 sanitizeObject(
-                    data.object
+                    data.object || data
                 );
 
 
@@ -1215,7 +1222,7 @@ socket.on("canvas-style-change", (data) => {
 
 
             const objectId =
-                data.objectId;
+                data.objectId || data.id;
 
 
             if (
@@ -1248,7 +1255,7 @@ socket.on("canvas-style-change", (data) => {
 
             const updatedObject =
                 sanitizeObject(
-                    data.object
+                    data.object || data
                 );
 
 

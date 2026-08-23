@@ -35,6 +35,36 @@ const boardId =
     urlParams.get("board") ||
     sessionStorage.getItem("currentBoardId");
 
+function getSavedBoardCanvasStyle() {
+
+    if (!boardId) {
+        return "blank";
+    }
+
+    try {
+
+        const savedBoards = JSON.parse(
+            localStorage.getItem("savedBoards") || "[]"
+        );
+
+        const board = savedBoards.find(
+            item => String(item?.id || "").toUpperCase() === String(boardId).toUpperCase()
+        );
+
+        return typeof board?.canvasStyle === "string"
+            ? board.canvasStyle
+            : "blank";
+
+    } catch (error) {
+
+        return "blank";
+
+    }
+
+}
+
+const savedBoardCanvasStyle = getSavedBoardCanvasStyle();
+
 let socket = null;
 
 console.log("================================");
@@ -287,6 +317,17 @@ const notebookPage =
 const paperBackground =
     document.querySelector(".paper-background");
 
+// The canvas bitmap is only the visible viewport.  Content lives in an
+// unbounded world coordinate system and is redrawn through this camera.
+const WORLD_GRID_SIZE = 28;
+let camera = { x: 0, y: 0 };
+// Cursor sync is initialized before the canvas tool block, so its shared
+// camera scale must live here as well.
+let zoom = 100;
+let isPanningCanvas = false;
+let panStart = null;
+const canvasViewport = notebookPage?.parentElement;
+
 const objectLayer =
     document.getElementById("objectLayer");
 
@@ -378,9 +419,8 @@ const CURSOR_EMIT_INTERVAL = 25; // 25ms throttle
 function broadcastCursorMove(e) {
     if (!notebookPage || !socket || !boardId) return;
 
-    const rect = notebookPage.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - canvas.getBoundingClientRect().left - camera.x) / (zoom / 100);
+    const y = (e.clientY - canvas.getBoundingClientRect().top - camera.y) / (zoom / 100);
 
     const now = performance.now();
     if (now - lastCursorEmit > CURSOR_EMIT_INTERVAL || (typeof isDrawing !== "undefined" && isDrawing)) {
@@ -519,24 +559,32 @@ function updateCollaborators(
                         cleanName.charAt(0).toUpperCase();
                 };
 
-                const tooltip =
-                    document.createElement(
-                        "span"
-                    );
-
-                tooltip.className =
-                    "avatar-tooltip";
-
-                tooltip.textContent =
-                    cleanName;
-
                 avatar.appendChild(
                     img
                 );
 
-                avatar.appendChild(
-                    tooltip
-                );
+                avatar.addEventListener("mouseenter", () => {
+                    let tip = document.getElementById("avatarGlobalTooltip");
+                    if (!tip) {
+                        tip = document.createElement("div");
+                        tip.id = "avatarGlobalTooltip";
+                        document.body.appendChild(tip);
+                    }
+                    const color = getCollabColor(cleanName);
+                    tip.textContent = cleanName;
+                    tip.style.background = color;
+                    tip.style.boxShadow = `0 6px 20px ${color}66`;
+                    const r = avatar.getBoundingClientRect();
+                    tip.style.left = (r.left + r.width / 2) + "px";
+                    tip.style.top = (r.top - 8) + "px";
+                    tip.style.transform = "translateX(-50%) translateY(-100%)";
+                    tip.classList.add("visible");
+                });
+
+                avatar.addEventListener("mouseleave", () => {
+                    const tip = document.getElementById("avatarGlobalTooltip");
+                    if (tip) tip.classList.remove("visible");
+                });
 
                 collaboratorList.appendChild(
                     avatar
@@ -617,7 +665,8 @@ if (
                 "join-room",
                 boardId,
                 currentUsername,
-                myProfileIdx
+                myProfileIdx,
+                savedBoardCanvasStyle
             );
 
             socket.emit(
@@ -918,7 +967,7 @@ socket.on(
             }
 
             createObjectFromData(
-                data,
+                data.object || data,
                 false
             );
 
@@ -933,7 +982,7 @@ socket.on(
         data => {
 
             updateObjectFromData(
-                data
+                data.object || data
             );
 
             saveLocalCache();
@@ -1052,11 +1101,12 @@ socket.on(
                     "Collaborator";
             }
 
-            pointer.style.left =
-                `${data.x}px`;
+            pointer.dataset.worldX = data.x;
+            pointer.dataset.worldY = data.y;
 
-            pointer.style.top =
-                `${data.y}px`;
+            const scale = zoom / 100;
+            pointer.style.left = `${camera.x + data.x * scale}px`;
+            pointer.style.top = `${camera.y + data.y * scale}px`;
 
             pointer.style.display =
                 "flex";
@@ -1354,6 +1404,24 @@ const brushSize =
         "brushSize"
     );
 
+const toolSettingsPopover =
+    document.getElementById("toolSettingsPopover");
+
+const toolSettingsTitle =
+    document.getElementById("toolSettingsTitle");
+
+const toolColorOptions =
+    document.getElementById("toolColorOptions");
+
+const toolColorInput =
+    document.getElementById("toolColorInput");
+
+const toolWidthInput =
+    document.getElementById("toolWidthInput");
+
+const toolWidthValue =
+    document.getElementById("toolWidthValue");
+
 const undoBtn =
     document.getElementById(
         "undoBtn"
@@ -1439,6 +1507,11 @@ let lastY =
 let currentStroke =
     [];
 
+// Pointer events give the pen, eraser and highlighter one consistent input
+// path for mouse, touch and stylus input.
+let activePointerId =
+    null;
+
 let undoStack =
     [];
 
@@ -1447,9 +1520,6 @@ let redoStack =
 
 const MAX_HISTORY =
     50;
-
-let zoom =
-    100;
 
 let isApplyingRemoteState =
     false;
@@ -1464,8 +1534,8 @@ let serverReady =
 
 let pages = [
     {
-        canvasData: null,
-        height: 700
+        drawings: [],
+        objects: []
     }
 ];
 
@@ -1526,6 +1596,38 @@ function applyCanvasStyle(style, sync = true) {
     currentCanvasStyle =
         normalizeCanvasStyle(style);
 
+    // Keep the folder metadata aligned with later style changes so it remains
+    // the correct fallback when this board is opened again.
+    if (sync && boardId) {
+
+        try {
+
+            const savedBoards = JSON.parse(
+                localStorage.getItem("savedBoards") || "[]"
+            );
+
+            const board = savedBoards.find(
+                item => String(item?.id || "").toUpperCase() === String(boardId).toUpperCase()
+            );
+
+            if (board && board.canvasStyle !== currentCanvasStyle) {
+
+                board.canvasStyle = currentCanvasStyle;
+                localStorage.setItem(
+                    "savedBoards",
+                    JSON.stringify(savedBoards)
+                );
+
+            }
+
+        } catch (error) {
+
+            console.warn("Could not save the board canvas style:", error);
+
+        }
+
+    }
+
     notebookPage.setAttribute(
         "data-canvas-style",
         currentCanvasStyle
@@ -1568,17 +1670,9 @@ function applyCanvasStyle(style, sync = true) {
             styles[currentCanvasStyle] ||
             styles.lines;
 
-        paperBackground.style.backgroundColor =
-            selected.backgroundColor;
-
-        paperBackground.style.backgroundImage =
-            selected.backgroundImage;
-
-        paperBackground.style.backgroundSize =
-            selected.backgroundSize;
-
-        paperBackground.style.backgroundPosition =
-            "0 0";
+        paperBackground.dataset.backgroundColor = selected.backgroundColor;
+        paperBackground.dataset.backgroundImage = selected.backgroundImage;
+        updateInfiniteBackground();
     }
 
 
@@ -1654,27 +1748,49 @@ function setupCanvas() {
 
 function initializeCanvas() {
 
-    const height =
-        notebookPage.offsetHeight ||
-        700;
+    const rect = canvasViewport?.getBoundingClientRect();
+    canvas.width = Math.max(1, Math.round(rect?.width || 1));
+    canvas.height = Math.max(1, Math.round(rect?.height || 1));
 
-    canvas.width =
-        notebookPage.clientWidth ||
-        1000;
+    if (!camera.initialized) {
+        camera.x = canvas.width / 2;
+        camera.y = canvas.height / 2;
+        camera.initialized = true;
+    }
 
-    canvas.height =
-        height;
+    updateInfiniteBackground();
+    renderWorld();
+}
 
-    canvas.style.width =
-        "100%";
 
-    canvas.style.height =
-        "100%";
+function updateInfiniteBackground() {
 
-    setupCanvas();
+    if (!paperBackground) return;
+
+    const scale = zoom / 100;
+    const size = WORLD_GRID_SIZE * scale;
+    const offset = value => ((value % size) + size) % size;
+
+    paperBackground.style.backgroundColor =
+        paperBackground.dataset.backgroundColor || "#ffffff";
+    paperBackground.style.backgroundImage =
+        paperBackground.dataset.backgroundImage || "none";
+
+    if (currentCanvasStyle === "lines") {
+        paperBackground.style.backgroundSize = `100% ${size}px`;
+        paperBackground.style.backgroundPosition = `0 ${offset(camera.y)}px`;
+    } else if (currentCanvasStyle === "grid" || currentCanvasStyle === "dots") {
+        paperBackground.style.backgroundSize = `${size}px ${size}px`;
+        paperBackground.style.backgroundPosition =
+            `${offset(camera.x)}px ${offset(camera.y)}px`;
+    } else {
+        paperBackground.style.backgroundSize = "auto";
+        paperBackground.style.backgroundPosition = "0 0";
+    }
 }
 
 initializeCanvas();
+window.addEventListener("resize", initializeCanvas);
 
 
 // ============================================================
@@ -1688,7 +1804,7 @@ function saveState() {
     }
 
     undoStack.push(
-        canvas.toDataURL()
+        structuredClone(pages[currentPage]?.drawings || [])
     );
 
     if (
@@ -1708,49 +1824,74 @@ function saveState() {
 // RESTORE CANVAS
 // ============================================================
 
-function restoreCanvas(
-    data
-) {
+function renderSegment(segment) {
 
+    if (!segment) return;
+
+    const tool = segment.tool || "pen";
+    let lineWidth = Number(segment.lineWidth || 4);
+    let alpha = 1;
+
+    if (tool === "eraser") {
+        ctx.globalCompositeOperation = "destination-out";
+        lineWidth *= 2;
+    } else if (tool === "highlighter") {
+        alpha = 0.28;
+        lineWidth *= 3;
+    } else if (tool === "lightPen") {
+        alpha = 0.18;
+        lineWidth *= 1.5;
+    }
+
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = segment.color || "#172033";
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.moveTo(segment.x1, segment.y1);
+    ctx.lineTo(segment.x2, segment.y2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+}
+
+
+function renderWorld() {
+
+    if (!ctx || !canvas) return;
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const scale = zoom / 100;
+    ctx.setTransform(scale, 0, 0, scale, camera.x, camera.y);
+
+    const page = pages[currentPage];
+    if (page?.legacyImage) {
+        ctx.drawImage(page.legacyImage, 0, 0);
+    }
+    (page?.drawings || []).forEach(renderSegment);
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    setupCanvas();
+}
+
+
+// Legacy bitmap boards are kept readable at world origin. New content is
+// always stored as world-space drawing operations, never as a canvas bitmap.
+function restoreCanvas(data) {
     if (!data) {
-
-        ctx.clearRect(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-
-        setupCanvas();
-
+        renderWorld();
         return;
     }
 
-    const image =
-        new Image();
-
-    image.onload =
-        () => {
-
-            ctx.clearRect(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-
-            ctx.drawImage(
-                image,
-                0,
-                0
-            );
-
-            setupCanvas();
-
-        };
-
-    image.src =
-        data;
+    const image = new Image();
+    image.onload = () => {
+        if (pages[currentPage]) {
+            pages[currentPage].legacyImage = image;
+        }
+        renderWorld();
+    };
+    image.src = data;
 }
 
 
@@ -1763,21 +1904,12 @@ function getMousePosition(e) {
     const rect =
         canvas.getBoundingClientRect();
 
+    const scale = zoom / 100;
+
     return {
 
-        x:
-            (e.clientX - rect.left) *
-            (
-                canvas.width /
-                rect.width
-            ),
-
-        y:
-            (e.clientY - rect.top) *
-            (
-                canvas.height /
-                rect.height
-            )
+        x: (e.clientX - rect.left - camera.x) / scale,
+        y: (e.clientY - rect.top - camera.y) / scale
 
     };
 }
@@ -1821,6 +1953,12 @@ function activateTool(
     cursor = "crosshair"
 ) {
 
+    // Do not let a stroke started with the previous tool bleed into the newly
+    // selected tool.
+    if (isDrawing) {
+        stopDrawing();
+    }
+
     currentTool =
         tool;
 
@@ -1830,7 +1968,236 @@ function activateTool(
 
     canvas.style.cursor =
         cursor;
+
+    if (notebookPage) {
+        notebookPage.classList.toggle(
+            "canvas-pan-ready",
+            tool === "select"
+        );
+    }
 }
+
+
+function closeToolSettings() {
+    toolSettingsPopover?.classList.remove("show");
+    toolSettingsPopover?.setAttribute("aria-hidden", "true");
+}
+
+
+function openToolSettings(tool, button) {
+    const isEraser = tool === "eraser";
+
+    activateTool(tool, button, "crosshair");
+
+    if (!toolSettingsPopover || !button) {
+        return;
+    }
+
+    if (toolSettingsTitle) {
+        toolSettingsTitle.textContent =
+            `${isEraser ? "Eraser" : tool === "highlighter" ? "Highlighter" : "Pen"} settings`;
+    }
+
+    toolColorOptions?.classList.toggle("is-hidden", isEraser);
+
+    if (toolWidthInput && brushSize) {
+        toolWidthInput.value = brushSize.value;
+    }
+
+    if (toolWidthValue && brushSize) {
+        toolWidthValue.textContent = brushSize.value;
+    }
+
+    if (toolColorInput && colorPicker) {
+        toolColorInput.value = colorPicker.value;
+    }
+
+    const rect = button.getBoundingClientRect();
+    toolSettingsPopover.style.top =
+        `${Math.min(window.innerHeight - 180, Math.max(76, rect.top))}px`;
+    toolSettingsPopover.classList.add("show");
+    toolSettingsPopover.setAttribute("aria-hidden", "false");
+}
+
+
+toolColorOptions?.addEventListener("click", e => {
+    const swatch = e.target.closest("button[data-color]");
+    if (!swatch || !colorPicker) return;
+
+    colorPicker.value = swatch.dataset.color;
+    toolColorInput && (toolColorInput.value = colorPicker.value);
+});
+
+toolColorInput?.addEventListener("input", () => {
+    if (colorPicker) colorPicker.value = toolColorInput.value;
+});
+
+toolWidthInput?.addEventListener("input", () => {
+    if (brushSize) brushSize.value = toolWidthInput.value;
+    if (toolWidthValue) toolWidthValue.textContent = toolWidthInput.value;
+});
+
+document.addEventListener("pointerdown", e => {
+    if (
+        toolSettingsPopover?.classList.contains("show") &&
+        !toolSettingsPopover.contains(e.target) &&
+        !e.target.closest("#drawBtn, #highlighterBtn, #eraserBtn")
+    ) {
+        closeToolSettings();
+    }
+});
+
+
+// ============================================================
+// INFINITE CANVAS VIEWPORT
+// ============================================================
+
+function updateCanvasViewport() {
+
+    const scale = zoom / 100;
+
+    // DOM objects share exactly the same world-to-screen transform as strokes.
+    if (objectLayer) {
+        objectLayer.style.transform =
+            `translate(${camera.x}px, ${camera.y}px) scale(${scale})`;
+    }
+
+    document.querySelectorAll(".remote-canvas-cursor").forEach(pointer => {
+        const x = Number(pointer.dataset.worldX);
+        const y = Number(pointer.dataset.worldY);
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+            pointer.style.left = `${camera.x + x * scale}px`;
+            pointer.style.top = `${camera.y + y * scale}px`;
+        }
+    });
+
+    updateInfiniteBackground();
+    renderWorld();
+}
+
+
+function panCanvasBy(deltaX, deltaY) {
+
+    camera.x += deltaX;
+    camera.y += deltaY;
+
+    updateCanvasViewport();
+}
+
+
+function startCanvasPan(e) {
+
+    if (
+        currentTool !== "select" ||
+        e.button !== 0 ||
+        (
+            e.target !== canvas &&
+            e.target !== canvasViewport
+        )
+    ) {
+        return;
+    }
+
+    isPanningCanvas = true;
+    panStart = {
+        x: e.clientX,
+        y: e.clientY
+    };
+
+    notebookPage?.classList.add("is-panning-canvas");
+    e.preventDefault();
+}
+
+
+function moveCanvasPan(e) {
+
+    if (!isPanningCanvas || !panStart) {
+        return;
+    }
+
+    panCanvasBy(
+        e.clientX - panStart.x,
+        e.clientY - panStart.y
+    );
+
+    panStart = {
+        x: e.clientX,
+        y: e.clientY
+    };
+}
+
+
+function stopCanvasPan() {
+
+    if (!isPanningCanvas) {
+        return;
+    }
+
+    isPanningCanvas = false;
+    panStart = null;
+    notebookPage?.classList.remove("is-panning-canvas");
+}
+
+
+canvasViewport?.addEventListener("mousedown", startCanvasPan);
+window.addEventListener("mousemove", moveCanvasPan);
+window.addEventListener("mouseup", stopCanvasPan);
+
+canvasViewport?.addEventListener(
+    "touchstart",
+    e => {
+
+        if (
+            currentTool !== "select" ||
+            !e.touches[0] ||
+            (e.target !== canvas && e.target !== canvasViewport)
+        ) {
+            return;
+        }
+
+        const touch = e.touches[0];
+        isPanningCanvas = true;
+        panStart = { x: touch.clientX, y: touch.clientY };
+        notebookPage?.classList.add("is-panning-canvas");
+    },
+    { passive: false }
+);
+
+canvasViewport?.addEventListener(
+    "touchmove",
+    e => {
+
+        if (!isPanningCanvas || !e.touches[0]) {
+            return;
+        }
+
+        e.preventDefault();
+        moveCanvasPan(e.touches[0]);
+    },
+    { passive: false }
+);
+
+canvasViewport?.addEventListener("touchend", stopCanvasPan);
+canvasViewport?.addEventListener("touchcancel", stopCanvasPan);
+
+canvasViewport?.addEventListener(
+    "wheel",
+    e => {
+
+        if (currentTool !== "select") {
+            return;
+        }
+
+        e.preventDefault();
+
+        const horizontalDelta = e.shiftKey && !e.deltaX
+            ? e.deltaY
+            : e.deltaX;
+
+        panCanvasBy(-horizontalDelta, -e.deltaY);
+    },
+    { passive: false }
+);
 
 
 // ============================================================
@@ -1839,32 +2206,17 @@ function activateTool(
 
 drawBtn?.addEventListener(
     "click",
-    () =>
-        activateTool(
-            "pen",
-            drawBtn,
-            "crosshair"
-        )
+    () => openToolSettings("pen", drawBtn)
 );
 
 eraserBtn?.addEventListener(
     "click",
-    () =>
-        activateTool(
-            "eraser",
-            eraserBtn,
-            "crosshair"
-        )
+    () => openToolSettings("eraser", eraserBtn)
 );
 
 highlighterBtn?.addEventListener(
     "click",
-    () =>
-        activateTool(
-            "highlighter",
-            highlighterBtn,
-            "crosshair"
-        )
+    () => openToolSettings("highlighter", highlighterBtn)
 );
 
 lightPenBtn?.addEventListener(
@@ -1915,6 +2267,13 @@ function startDrawing(e) {
     isDrawing =
         true;
 
+    activePointerId =
+        e.pointerId ?? null;
+
+    if (e.pointerId != null) {
+        canvas.setPointerCapture?.(e.pointerId);
+    }
+
     const position =
         getMousePosition(e);
 
@@ -1933,13 +2292,6 @@ function startDrawing(e) {
 
     saveState();
 
-    ctx.beginPath();
-
-    ctx.moveTo(
-        lastX,
-        lastY
-    );
-
     broadcastCursorMove(e);
 }
 
@@ -1950,7 +2302,14 @@ function startDrawing(e) {
 
 function draw(e) {
 
-    if (!isDrawing) {
+    if (
+        !isDrawing ||
+        (
+            activePointerId != null &&
+            e.pointerId != null &&
+            e.pointerId !== activePointerId
+        )
+    ) {
         return;
     }
 
@@ -2034,31 +2393,20 @@ function draw(e) {
     }
 
 
-    ctx.globalCompositeOperation =
-        composite;
+    const segment = {
+        x1: lastX,
+        y1: lastY,
+        x2: currentX,
+        y2: currentY,
+        color,
+        lineWidth: Number(brushSize?.value || 4),
+        tool: currentTool,
+        alpha
+    };
 
-    ctx.globalAlpha =
-        alpha;
-
-    ctx.strokeStyle =
-        color;
-
-    ctx.lineWidth =
-        lineWidth;
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        lastX,
-        lastY
-    );
-
-    ctx.lineTo(
-        currentX,
-        currentY
-    );
-
-    ctx.stroke();
+    pages[currentPage].drawings ||= [];
+    pages[currentPage].drawings.push(segment);
+    renderWorld();
 
 
     // ========================================================
@@ -2071,28 +2419,7 @@ function draw(e) {
 
         socket.emit(
             "canvas-draw",
-            {
-
-                x1: lastX,
-                y1: lastY,
-
-                x2: currentX,
-                y2: currentY,
-
-                color: color,
-
-                lineWidth: Number(
-                    brushSize?.value ||
-                    4
-                ),
-
-                tool:
-                    currentTool,
-
-                alpha:
-                    alpha
-
-            }
+            { ...segment, pageIndex: currentPage }
         );
 
     }
@@ -2114,116 +2441,18 @@ function drawRemoteStroke(
     data
 ) {
 
-    if (
-        !data ||
-        !ctx
-    ) {
-        return;
-    }
+    if (!data) return;
 
-    ctx.save();
+    const pageIndex = Number.isInteger(data.pageIndex)
+        ? data.pageIndex
+        : currentPage;
 
-    ctx.beginPath();
+    if (!pages[pageIndex]) return;
 
-    ctx.moveTo(
-        data.x1,
-        data.y1
-    );
+    pages[pageIndex].drawings ||= [];
+    pages[pageIndex].drawings.push(data);
 
-    ctx.lineTo(
-        data.x2,
-        data.y2
-    );
-
-
-    if (
-        data.tool ===
-        "eraser"
-    ) {
-
-        ctx.globalCompositeOperation =
-            "destination-out";
-
-        ctx.globalAlpha =
-            1;
-
-        ctx.lineWidth =
-            (
-                data.lineWidth ||
-                4
-            ) * 2;
-
-    }
-
-    else if (
-        data.tool ===
-        "highlighter"
-    ) {
-
-        ctx.globalCompositeOperation =
-            "source-over";
-
-        ctx.globalAlpha =
-            data.alpha ??
-            0.28;
-
-        ctx.lineWidth =
-            (
-                data.lineWidth ||
-                4
-            ) * 3;
-
-    }
-
-    else if (
-        data.tool ===
-        "lightPen"
-    ) {
-
-        ctx.globalCompositeOperation =
-            "source-over";
-
-        ctx.globalAlpha =
-            data.alpha ??
-            0.18;
-
-        ctx.lineWidth =
-            (
-                data.lineWidth ||
-                4
-            ) * 1.5;
-
-    }
-
-    else {
-
-        ctx.globalCompositeOperation =
-            "source-over";
-
-        ctx.globalAlpha =
-            data.alpha ??
-            1;
-
-        ctx.lineWidth =
-            data.lineWidth ||
-            4;
-
-    }
-
-
-    ctx.strokeStyle =
-        data.color ||
-        "#172033";
-
-    ctx.lineCap =
-        "round";
-
-    ctx.lineJoin =
-        "round";
-
-    ctx.stroke();
-
-    ctx.restore();
+    if (pageIndex === currentPage) renderWorld();
 }
 
 
@@ -2239,6 +2468,16 @@ function stopDrawing() {
 
     isDrawing =
         false;
+
+    if (
+        activePointerId != null &&
+        canvas.hasPointerCapture?.(activePointerId)
+    ) {
+        canvas.releasePointerCapture?.(activePointerId);
+    }
+
+    activePointerId =
+        null;
 
     ctx.closePath();
 
@@ -2276,204 +2515,52 @@ function stopDrawing() {
 function createLightPenStroke(
     points
 ) {
-
-    if (
-        !points ||
-        points.length < 2
-    ) {
-        return;
-    }
-
-    const tempCanvas =
-        document.createElement(
-            "canvas"
-        );
-
-    tempCanvas.width =
-        canvas.width;
-
-    tempCanvas.height =
-        canvas.height;
-
-    tempCanvas.style.position =
-        "absolute";
-
-    tempCanvas.style.left =
-        "0";
-
-    tempCanvas.style.top =
-        "0";
-
-    tempCanvas.style.width =
-        "100%";
-
-    tempCanvas.style.height =
-        "100%";
-
-    tempCanvas.style.pointerEvents =
-        "none";
-
-    tempCanvas.style.zIndex =
-        "20";
-
-    const tempCtx =
-        tempCanvas.getContext(
-            "2d"
-        );
-
-    tempCtx.lineCap =
-        "round";
-
-    tempCtx.lineJoin =
-        "round";
-
-    tempCtx.strokeStyle =
-        colorPicker?.value ||
-        "#ffffff";
-
-    tempCtx.lineWidth =
-        Number(
-            brushSize?.value ||
-            4
-        ) * 2;
-
-    tempCtx.globalAlpha =
-        0.48;
-
-    tempCtx.beginPath();
-
-    points.forEach(
-        (point, index) => {
-
-            if (index === 0) {
-
-                tempCtx.moveTo(
-                    point.x,
-                    point.y
-                );
-
-            } else {
-
-                tempCtx.lineTo(
-                    point.x,
-                    point.y
-                );
-
-            }
-
-        }
-    );
-
-    tempCtx.stroke();
-
-    notebookPage.appendChild(
-        tempCanvas
-    );
-
-    setTimeout(
-        () => {
-
-            tempCanvas.style.transition =
-                "opacity 0.9s ease";
-
-            tempCanvas.style.opacity =
-                "0";
-
-            setTimeout(
-                () =>
-                    tempCanvas.remove(),
-                900
-            );
-
-        },
-        2000
-    );
+    // Light-pen opacity is rendered from its world-space segments. A temporary
+    // screen-space overlay would drift when the camera moves, so none is used.
+    return points;
 }
 
 
 // ============================================================
-// CANVAS EVENTS
+// CANVAS INPUT
 // ============================================================
 
 canvas.addEventListener(
-    "mousedown",
-    startDrawing
+    "pointerdown",
+    e => {
+
+        if (e.button !== undefined && e.button !== 0) {
+            return;
+        }
+
+        e.preventDefault();
+        startDrawing(e);
+    }
 );
 
 canvas.addEventListener(
-    "mousemove",
-    draw
+    "pointermove",
+    e => {
+        if (isDrawing) {
+            e.preventDefault();
+        }
+        draw(e);
+    }
 );
 
 canvas.addEventListener(
-    "mouseup",
+    "pointerup",
     stopDrawing
 );
 
 canvas.addEventListener(
-    "mouseleave",
+    "pointercancel",
     stopDrawing
 );
 
-
-// ============================================================
-// TOUCH
-// ============================================================
-
 canvas.addEventListener(
-    "touchstart",
-    e => {
-
-        e.preventDefault();
-
-        if (e.touches[0]) {
-
-            startDrawing(
-                e.touches[0]
-            );
-
-        }
-
-    },
-    {
-        passive: false
-    }
-);
-
-
-canvas.addEventListener(
-    "touchmove",
-    e => {
-
-        e.preventDefault();
-
-        if (e.touches[0]) {
-
-            draw(
-                e.touches[0]
-            );
-
-        }
-
-    },
-    {
-        passive: false
-    }
-);
-
-
-canvas.addEventListener(
-    "touchend",
-    e => {
-
-        e.preventDefault();
-
-        stopDrawing();
-
-    },
-    {
-        passive: false
-    }
+    "lostpointercapture",
+    stopDrawing
 );
 
 
@@ -2519,16 +2606,13 @@ undoBtn?.addEventListener(
             return;
         }
 
-        redoStack.push(
-            canvas.toDataURL()
-        );
+        redoStack.push(structuredClone(pages[currentPage]?.drawings || []));
 
         const previous =
             undoStack.pop();
 
-        restoreCanvas(
-            previous
-        );
+        pages[currentPage].drawings = previous;
+        renderWorld();
 
         saveCurrentPage();
 
@@ -2552,16 +2636,13 @@ redoBtn?.addEventListener(
             return;
         }
 
-        undoStack.push(
-            canvas.toDataURL()
-        );
+        undoStack.push(structuredClone(pages[currentPage]?.drawings || []));
 
         const next =
             redoStack.pop();
 
-        restoreCanvas(
-            next
-        );
+        pages[currentPage].drawings = next;
+        renderWorld();
 
         saveCurrentPage();
 
@@ -2610,11 +2691,11 @@ function saveCurrentPage() {
         return;
     }
 
-    pages[currentPage].canvasData =
-        canvas.toDataURL();
-
-    pages[currentPage].height =
-        notebookPage.offsetHeight;
+    pages[currentPage].drawings ||= [];
+    pages[currentPage].objects = Array.from(objectLayer?.children || [])
+        .filter(element => element.dataset.objectId)
+        .map(getObjectData)
+        .filter(Boolean);
 
 }
 
@@ -2642,43 +2723,16 @@ function loadPage(
     currentPage =
         index;
 
-    const page =
-        pages[currentPage];
+    const page = pages[currentPage];
+    page.drawings ||= [];
+    page.objects ||= [];
 
-    notebookPage.style.height =
-        `${page.height || 700}px`;
-
-    canvas.width =
-        notebookPage.clientWidth ||
-        1000;
-
-    canvas.height =
-        page.height ||
-        700;
-
-    canvas.style.width =
-        "100%";
-
-    canvas.style.height =
-        "100%";
-
-    setupCanvas();
-
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-    if (
-        page.canvasData
-    ) {
-
-        restoreCanvas(
-            page.canvasData
-        );
-
+    objectLayer.innerHTML = "";
+    page.objects.forEach(object => createObjectFromData(object, false));
+    if (page.canvasData && !page.legacyImage) {
+        restoreCanvas(page.canvasData);
+    } else {
+        renderWorld();
     }
 
     updatePageNumber();
@@ -2721,34 +2775,12 @@ addPageBtn?.addEventListener(
 
         saveCurrentPage();
 
-        pages.push(
-            {
-                canvasData: null,
-                height: 700
-            }
-        );
+        pages.push({ drawings: [], objects: [] });
 
         currentPage =
             pages.length - 1;
 
-        notebookPage.style.height =
-            "700px";
-
-        canvas.width =
-            notebookPage.clientWidth ||
-            1000;
-
-        canvas.height =
-            700;
-
-        ctx.clearRect(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-
-        setupCanvas();
+        loadPage(currentPage, false);
 
         updatePageNumber();
 
@@ -2814,67 +2846,7 @@ nextPage?.addEventListener(
 extendPageBtn?.addEventListener(
     "click",
     () => {
-
-        saveCurrentPage();
-
-        const oldHeight =
-            notebookPage.offsetHeight;
-
-        const newHeight =
-            oldHeight + 500;
-
-        const oldCanvas =
-            document.createElement(
-                "canvas"
-            );
-
-        oldCanvas.width =
-            canvas.width;
-
-        oldCanvas.height =
-            canvas.height;
-
-        const oldCtx =
-            oldCanvas.getContext(
-                "2d"
-            );
-
-        oldCtx.drawImage(
-            canvas,
-            0,
-            0
-        );
-
-        notebookPage.style.height =
-            `${newHeight}px`;
-
-        canvas.width =
-            notebookPage.clientWidth ||
-            1000;
-
-        canvas.height =
-            newHeight;
-
-        canvas.style.width =
-            "100%";
-
-        canvas.style.height =
-            "100%";
-
-        setupCanvas();
-
-        ctx.drawImage(
-            oldCanvas,
-            0,
-            0
-        );
-
-        pages[currentPage].height =
-            newHeight;
-
-        pages[currentPage].canvasData =
-            canvas.toDataURL();
-
+        // Kept for backward-compatible UI: the world has no page boundary.
         scheduleServerStateSync();
 
     }
@@ -2894,11 +2866,7 @@ function updateZoom() {
 
     }
 
-    notebookPage.style.transform =
-        `scale(${zoom / 100})`;
-
-    notebookPage.style.transformOrigin =
-        "top center";
+    updateCanvasViewport();
 
 }
 
@@ -2907,11 +2875,7 @@ zoomIn?.addEventListener(
     "click",
     () => {
 
-        zoom =
-            Math.min(
-                200,
-                zoom + 10
-            );
+        setZoom(Math.min(200, zoom + 10));
 
         updateZoom();
 
@@ -2925,11 +2889,7 @@ zoomOut?.addEventListener(
     "click",
     () => {
 
-        zoom =
-            Math.max(
-                50,
-                zoom - 10
-            );
+        setZoom(Math.max(50, zoom - 10));
 
         updateZoom();
 
@@ -2937,6 +2897,23 @@ zoomOut?.addEventListener(
 
     }
 );
+
+
+function setZoom(nextZoom, anchorX, anchorY) {
+
+    const rect = canvas.getBoundingClientRect();
+    const focusX = anchorX ?? rect.width / 2;
+    const focusY = anchorY ?? rect.height / 2;
+    const oldScale = zoom / 100;
+    const worldX = (focusX - camera.x) / oldScale;
+    const worldY = (focusY - camera.y) / oldScale;
+
+    zoom = nextZoom;
+
+    const newScale = zoom / 100;
+    camera.x = focusX - worldX * newScale;
+    camera.y = focusY - worldY * newScale;
+}
 
 
 // ============================================================
@@ -2957,33 +2934,71 @@ canvas.addEventListener(
         const position =
             getMousePosition(e);
 
-        const text =
-            prompt(
-                "Enter your text:"
-            );
-
-        if (
-            !text ||
-            !text.trim()
-        ) {
-            return;
-        }
-
-        createTextObject(
-            text.trim(),
-            position.x,
-            position.y,
-            true
-        );
-
-        activateTool(
-            "select",
-            selectTool,
-            "default"
-        );
+        createInlineTextEditor(position.x, position.y);
 
     }
 );
+
+
+function createInlineTextEditor(x, y) {
+    const element = createTextObject("", x, y, false);
+    if (!element) return;
+
+    element.contentEditable = "true";
+    element.spellcheck = false;
+    element.dataset.isEditing = "true";
+    element.style.minWidth = "120px";
+    element.style.outline = "2px solid #8b5cf6";
+    element.style.borderRadius = "4px";
+    element.style.cursor = "text";
+    element.focus();
+
+    const finish = () => {
+        if (element.dataset.isEditing !== "true") return;
+
+        element.dataset.isEditing = "false";
+        const text = element.textContent.trim();
+        if (!text) {
+            element.remove();
+            return;
+        }
+
+        element.textContent = text;
+        element.contentEditable = "false";
+        element.style.minWidth = "";
+        element.style.outline = "";
+        element.style.cursor = "move";
+
+        if (socket?.connected) {
+            socket.emit("object-add", {
+                id: element.dataset.objectId,
+                type: "text",
+                text,
+                x,
+                y,
+                fontSize: "22px",
+                fontFamily: "Poppins, sans-serif",
+                color: element.style.color
+            });
+        }
+
+        saveLocalCache();
+        scheduleServerStateSync();
+        activateTool("select", selectTool, "default");
+    };
+
+    element.addEventListener("blur", finish, { once: true });
+    element.addEventListener("keydown", e => {
+        if (e.key === "Escape") {
+            element.textContent = "";
+            element.blur();
+        }
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            element.blur();
+        }
+    });
+}
 
 
 // ============================================================
@@ -3109,19 +3124,13 @@ function getObjectData(
         return null;
     }
 
-    const rect =
-        objectLayer.getBoundingClientRect();
+    const x = Number(
+        element.dataset.worldX ?? parseFloat(element.style.left) ?? 0
+    );
 
-    const elementRect =
-        element.getBoundingClientRect();
-
-    const x =
-        elementRect.left -
-        rect.left;
-
-    const y =
-        elementRect.top -
-        rect.top;
+    const y = Number(
+        element.dataset.worldY ?? parseFloat(element.style.top) ?? 0
+    );
 
     return {
 
@@ -3132,8 +3141,8 @@ function getObjectData(
             element.dataset.type ||
             "object",
 
-        x,
-        y,
+        x: Number.isFinite(x) ? x : 0,
+        y: Number.isFinite(y) ? y : 0,
 
         width:
             element.offsetWidth,
@@ -3214,22 +3223,15 @@ function makeDraggable(
                 return;
             }
 
-            const parentRect =
-                objectLayer.getBoundingClientRect();
+            const pointer = getMousePosition(e);
+            const scale = zoom / 100;
+            const x = pointer.x - (offsetX / scale);
+            const y = pointer.y - (offsetY / scale);
 
-            element.style.left =
-                `${
-                    e.clientX -
-                    parentRect.left -
-                    offsetX
-                }px`;
-
-            element.style.top =
-                `${
-                    e.clientY -
-                    parentRect.top -
-                    offsetY
-                }px`;
+            element.dataset.worldX = x;
+            element.dataset.worldY = y;
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
 
         }
     );
@@ -3397,6 +3399,7 @@ function updateObjectFromData(
         data.x !== undefined
     ) {
 
+        element.dataset.worldX = Number(data.x);
         element.style.left =
             `${Number(data.x)}px`;
 
@@ -3406,6 +3409,7 @@ function updateObjectFromData(
         data.y !== undefined
     ) {
 
+        element.dataset.worldY = Number(data.y);
         element.style.top =
             `${Number(data.y)}px`;
 
@@ -3448,6 +3452,12 @@ const closeShapePicker =
     document.getElementById(
         "closeShapePicker"
     );
+
+// The picker starts in the left tool rail. Move it to the document layer so
+// the rail's scrolling cannot hide it when opened.
+if (shapePicker && shapePicker.parentElement !== document.body) {
+    document.body.appendChild(shapePicker);
+}
 
 
 shapeBtn?.addEventListener(
@@ -3516,7 +3526,7 @@ let shapeStart =
 
 
 canvas.addEventListener(
-    "mousedown",
+    "pointerdown",
     e => {
 
         if (
@@ -3539,7 +3549,7 @@ canvas.addEventListener(
 // ============================================================
 
 canvas.addEventListener(
-    "mouseup",
+    "pointerup",
     e => {
 
         if (
@@ -3582,17 +3592,25 @@ canvas.addEventListener(
                 shapeStart.y
             );
 
+        const shapeWidth = selectedShape === "square"
+            ? Math.max(width, height)
+            : width;
+
+        const shapeHeight = selectedShape === "square"
+            ? shapeWidth
+            : height;
+
         if (
-            width >= 5 &&
-            height >= 5
+            shapeWidth >= 5 &&
+            shapeHeight >= 5
         ) {
 
             createShape(
                 selectedShape,
                 x,
                 y,
-                width,
-                height,
+                shapeWidth,
+                shapeHeight,
                 true
             );
 
@@ -4521,7 +4539,9 @@ function applyServerBoardState(
         ) {
 
             const serverHasContent = state.pages.some(p => Boolean(p && (p.canvasData || (p.drawings && p.drawings.length) || (p.objects && p.objects.length))));
-            const localHasContent = pages.some(p => Boolean(p && p.canvasData));
+            const localHasContent = pages.some(
+                p => Boolean(p && (p.canvasData || (p.drawings && p.drawings.length) || (p.objects && p.objects.length)))
+            );
 
             if (serverHasContent || !localHasContent) {
                 pages = state.pages;
@@ -5001,6 +5021,10 @@ window.addEventListener(
 // Once server sends board-state,
 // server data overwrites this.
 //
+
+// A newly created board has no local cache yet. Apply the style saved with its
+// folder while the server creates the board for the first time.
+applyCanvasStyle(savedBoardCanvasStyle, false);
 
 loadLocalCache();
 

@@ -57,13 +57,17 @@
 
 html {
     scroll-behavior: smooth;
+    height: 100%;
+    overflow: hidden;
 }
 
 body {
     font-family: 'Poppins', sans-serif;
     background: #f7f6f2;
     color: #1e293b;
-    min-height: 100vh;
+    height: 100vh;
+    min-height: 0;
+    overflow: hidden;
 }
 
 /* =========================================================
@@ -93,11 +97,10 @@ header {
 
     background: #ffffff;
 
-    box-shadow: 0 5px 18px rgba(0, 0, 0, 0.08);
-
     position: sticky;
     top: 0;
     z-index: 999;
+    overflow: visible;
 }
 
 .logo {
@@ -287,7 +290,8 @@ header {
 
 main {
     width: 100%;
-    min-height: calc(100vh - 94px);
+    height: calc(100vh - 94px);
+    min-height: 0;
 
     display: block;
 
@@ -301,14 +305,16 @@ main {
 
 .canvas-section {
     width: 100%;
-    min-height: calc(100vh - 94px);
+    height: 100%;
+    min-height: 0;
 
     display: flex;
     flex-direction: column;
 
     background: #f7f6f2;
 
-    overflow: hidden;
+    overflow: visible;
+    position: relative;
 }
 
 /* =========================================================
@@ -322,22 +328,19 @@ main {
 
     background: rgba(255, 255, 255, 0.96);
 
-    border-bottom: 1px solid #e7e7eb;
-
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
 
     padding: 0 22px;
     overflow: visible;
     position: relative;
-    z-index: 50;
+    z-index: 100;
 }
 
 .document-info {
     display: flex;
     align-items: center;
-    gap: 12px;
 }
 
 .document-icon {
@@ -360,15 +363,16 @@ main {
 
     font-family: 'Poppins', sans-serif;
 
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 24px;
+    font-weight: 700;
 
     background: transparent;
     color: #202333;
 
-    min-width: 140px;
-    max-width: 320px;
-    padding: 4px 6px;
+    min-width: 240px;
+    max-width: 520px;
+    padding: 5px 12px;
+    text-align: center;
     border-radius: 6px;
     transition: background 0.2s ease;
 }
@@ -387,6 +391,9 @@ main {
     align-items: center;
     gap: 8px;
     overflow: visible;
+    position: absolute;
+    right: 22px;
+    z-index: 100;
 }
 
 .collaborator-list {
@@ -394,6 +401,8 @@ main {
     align-items: center;
     gap: 8px;
     overflow: visible;
+    position: relative;
+    z-index: 100;
 }
 
 .collaborator-list .avatar,
@@ -418,7 +427,7 @@ main {
 .avatar:hover {
     transform: translateY(-2px) scale(1.12);
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
-    z-index: 999;
+    z-index: 99999;
 }
 
 .avatar img,
@@ -432,42 +441,31 @@ main {
 }
 
 .avatar-tooltip {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%) translateY(-4px);
-    background: #181c2e;
+    display: none;
+}
+
+#avatarGlobalTooltip {
+    position: fixed;
     color: #ffffff;
     font-family: 'Poppins', 'Outfit', sans-serif;
     font-size: 12px;
-    font-weight: 600;
-    padding: 5px 12px;
-    border-radius: 8px;
+    font-weight: 700;
+    line-height: 1.4;
+    padding: 5px 14px;
+    border-radius: 20px;
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.18s ease;
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    z-index: 999999;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    z-index: 2147483647;
+    letter-spacing: 0.01em;
 }
 
-.avatar-tooltip::before {
-    content: '';
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border-width: 5px;
-    border-style: solid;
-    border-color: transparent transparent #181c2e transparent;
-}
-
-.avatar:hover .avatar-tooltip {
-    opacity: 1 !important;
-    visibility: visible !important;
-    transform: translateX(-50%) translateY(0) !important;
+#avatarGlobalTooltip.visible {
+    opacity: 1;
+    visibility: visible;
 }
 
 .avatar.more {
@@ -646,15 +644,15 @@ main {
 .notebook-area {
     flex: 1;
 
-    overflow: auto;
+    /* The Select tool moves the board within this viewport. */
+    overflow: hidden;
 
-    padding: 35px 40px 80px;
+    padding: 0;
 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: block;
 
-    background: #f7f6f2;
+    background: #ffffff;
+    position: relative;
 }
 
 /* =========================================================
@@ -662,24 +660,32 @@ main {
 ========================================================= */
 
 .notebook-page {
-    position: relative;
-
-    width: min(1000px, 95%);
-    min-height: 700px;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
 
     background: #ffffff;
 
-    border-radius: 4px;
+    border-radius: 0;
 
-    box-shadow:
-        0 12px 40px rgba(0, 0, 0, 0.10),
-        0 2px 5px rgba(0, 0, 0, 0.06);
+    box-shadow: none;
 
     overflow: hidden;
 
     cursor:none;
 
     transform-origin: top center;
+    will-change: transform;
+}
+
+.notebook-page.canvas-pan-ready {
+    cursor: grab;
+}
+
+.notebook-page.is-panning-canvas {
+    cursor: grabbing;
 }
 
 /* =========================================================
@@ -744,7 +750,7 @@ main {
 
     pointer-events: none;
 
-    z-index: 1;
+    z-index: 0;
 }
 
 /* =========================================================
@@ -775,12 +781,16 @@ main {
 
 .object-layer {
     position: absolute;
-
-    inset: 0;
+    left: 0;
+    top: 0;
+    width: 1px;
+    height: 1px;
 
     pointer-events: none;
 
     z-index: 3;
+    transform-origin: 0 0;
+    overflow: visible;
 }
 
 /* =========================================================
@@ -889,7 +899,7 @@ main {
 ========================================================= */
 
 footer {
-    background: #ffffff;
+    display: none;
 
     text-align: center;
 
@@ -1045,11 +1055,12 @@ button:active {
     }
 
     .notebook-area {
-        padding: 20px 10px 60px;
+        padding: 0;
     }
 
     .notebook-page {
         width: 100%;
+        min-height: 0;
     }
 }
 
@@ -1085,9 +1096,7 @@ button:active {
         overflow-x: auto;
     }
 
-    .notebook-page {
-        min-height: 600px;
-    }
+    .notebook-page { min-height: 0; }
 }
 /* ============================================================
    SHAPE MODAL
@@ -1244,4 +1253,416 @@ button:active {
 .board-code-btn:hover {
     background: #ffffff;
     transform: translateY(-1px);
+}
+
+/* =========================================================
+   FLOATING CANVAS WORKSPACE
+   Keeps the existing controls, but presents them as a board UI.
+========================================================= */
+
+body {
+    background: #f8fafc;
+}
+
+header {
+    position: fixed;
+    top: 16px;
+    left: 18px;
+    right: 18px;
+    z-index: 300;
+    width: auto;
+    height: 44px;
+    padding: 0;
+    background: transparent;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+}
+
+header .logo {
+    display: flex;
+    height: 44px;
+    padding: 0 13px;
+    gap: 7px;
+    border: 1px solid #e8edf4;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 7px 22px rgba(15, 23, 42, 0.10);
+    pointer-events: auto;
+}
+
+header .logo-img {
+    width: 27px;
+    height: 27px;
+}
+
+header .logo h2 {
+    font-size: 17px;
+    letter-spacing: 0;
+}
+
+header .auth-section {
+    pointer-events: auto;
+}
+
+.auth-section button {
+    padding: 9px 12px;
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.10);
+}
+
+main {
+    height: 100vh;
+}
+
+.canvas-section {
+    background: #f8fafc;
+}
+
+.canvas-topbar {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 0;
+    min-height: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    overflow: visible;
+    z-index: 200;
+}
+
+.document-info {
+    position: fixed;
+    top: 16px;
+    left: 238px;
+    height: 44px;
+    padding: 0 12px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid #e8edf4;
+    border-radius: 12px;
+    box-shadow: 0 7px 22px rgba(15, 23, 42, 0.10);
+}
+
+.document-info::before {
+    content: "◈";
+    color: #6754d9;
+    font-size: 18px;
+    margin-right: 7px;
+}
+
+.document-info input {
+    width: 145px;
+    min-width: 0;
+    max-width: 145px;
+    padding: 4px 2px;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: left;
+}
+
+.collaborators {
+    position: fixed;
+    top: 16px;
+    right: 78px;
+    min-height: 44px;
+    padding: 3px 5px 3px 10px;
+    gap: 7px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid #e8edf4;
+    border-radius: 12px;
+    box-shadow: 0 7px 22px rgba(15, 23, 42, 0.10);
+}
+
+.collaborator-list {
+    gap: 0;
+}
+
+.collaborator-list .avatar,
+.avatar {
+    margin-left: -7px;
+    width: 32px;
+    height: 32px;
+}
+
+.share-btn {
+    margin-left: 3px;
+    padding: 8px 11px;
+    border-radius: 9px;
+    background: #6754d9;
+    box-shadow: none;
+}
+
+.board-code-btn {
+    padding: 8px 10px;
+    background: #f8fafc;
+}
+
+.canvas-toolbar {
+    position: absolute;
+    top: 84px;
+    left: 18px;
+    z-index: 150;
+    width: 52px;
+    height: auto;
+    max-height: calc(100vh - 104px);
+    padding: 7px;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid #e8edf4;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+}
+
+.tool {
+    flex: 0 0 38px;
+}
+
+.toolbar-divider {
+    width: 28px;
+    height: 1px;
+    min-height: 1px;
+    margin: 4px 0;
+}
+
+.toolbar-spacer {
+    display: none;
+}
+
+.color-tool {
+    flex: 0 0 38px;
+}
+
+.brush-slider {
+    width: 18px;
+    height: 72px;
+    margin: 3px 0;
+    writing-mode: vertical-lr;
+    direction: rtl;
+}
+
+/* This dock is outside the scrollable tool rail, so it can never be clipped. */
+.canvas-navigation {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 400;
+    display: flex;
+    align-items: center;
+    min-height: 46px;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid #e8edf4;
+    border-radius: 13px;
+    box-shadow: 0 9px 26px rgba(15, 23, 42, 0.14);
+}
+
+.canvas-navigation .tool {
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 9px;
+}
+
+.canvas-navigation .tool:hover {
+    background: #f1efff;
+}
+
+.navigation-divider {
+    width: 1px;
+    height: 24px;
+    margin: 0 4px;
+    background: #e5e7eb;
+}
+
+.canvas-navigation #zoomValue {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 38px;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.notebook-area {
+    background-color: #fbfcfe;
+    background-image: radial-gradient(circle, rgba(148, 163, 184, 0.28) 1.1px, transparent 1.2px);
+    background-size: 24px 24px;
+}
+
+.notebook-page {
+    background: transparent;
+}
+
+/* Tool settings are lightweight board popovers, not browser dialogs. */
+.tool-settings-popover {
+    position: fixed;
+    left: 82px;
+    z-index: 100000;
+    display: none;
+    width: 282px;
+    padding: 16px;
+    color: #f8fafc;
+    background: #24262f;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 16px;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.28);
+}
+
+.tool-settings-popover.show {
+    display: block;
+}
+
+.tool-settings-heading {
+    margin-bottom: 12px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.tool-colors {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 16px;
+}
+
+.tool-colors.is-hidden {
+    display: none;
+}
+
+.tool-colors button,
+.tool-custom-color {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50%;
+    background: var(--swatch);
+    cursor: pointer;
+}
+
+.tool-colors button:hover {
+    transform: scale(1.12);
+    border-color: #ffffff;
+}
+
+.tool-custom-color {
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: conic-gradient(#ef4444, #f59e0b, #22c55e, #3b82f6, #8b5cf6, #ef4444);
+}
+
+.tool-custom-color input {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.tool-width-control {
+    display: grid;
+    grid-template-columns: 1fr 1fr 38px;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.tool-width-control input {
+    width: 100%;
+    accent-color: #8b5cf6;
+}
+
+.tool-width-control output {
+    display: grid;
+    place-items: center;
+    height: 32px;
+    border: 1px solid #505361;
+    border-radius: 9px;
+    color: #ffffff;
+}
+
+/* The shape picker is moved above the board when its tool is pressed. */
+.shape-modal {
+    width: 320px;
+    padding: 14px;
+    color: #f8fafc;
+    background: #24262f;
+    border-color: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.28);
+}
+
+.shape-modal-header {
+    font-size: 16px;
+}
+
+.shape-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 7px;
+}
+
+.shape-option {
+    height: 64px;
+    border-color: #444856;
+    background: #30333e;
+}
+
+.shape-option span {
+    font-size: 23px;
+    color: #c4b5fd;
+}
+
+.shape-option small {
+    color: #e2e8f0;
+}
+
+#closeShapePicker {
+    color: #f8fafc;
+}
+
+@media (max-width: 760px) {
+    header {
+        left: 10px;
+        right: 10px;
+    }
+
+    header .logo h2 {
+        display: none;
+    }
+
+    .document-info input {
+        min-width: 120px;
+        max-width: 160px;
+    }
+
+    .collaborators {
+        top: 68px;
+        right: 12px;
+    }
+
+    .canvas-toolbar {
+        top: 126px;
+        left: 10px;
+    }
+
+    .board-code-btn {
+        display: none;
+    }
+
+    .document-info {
+        top: 68px;
+        left: 10px;
+    }
 }

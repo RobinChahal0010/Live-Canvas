@@ -1409,13 +1409,8 @@
                 boards.unshift(board);
                 localStorage.setItem('savedBoards', JSON.stringify(boards));
 
-                sessionStorage.setItem('currentBoardId', id);
-                sessionStorage.setItem('currentCanvasStyle', selectedOption);
-                sessionStorage.setItem('currentBoardName', name);
                 closeModal();
                 renderBoardList();
-
-                window.location.href = `index.html?board=${encodeURIComponent(id)}`;
             });
         </script>
         <script src="cursor.js"></script>

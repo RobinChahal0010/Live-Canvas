@@ -148,9 +148,6 @@
 
             <!-- DOCUMENT INFO -->
             <div class="document-info">
-                <span class="document-icon">
-                    <i class="fa-solid fa-book-open"></i>
-                </span>
                 <input
                     type="text"
                     id="documentTitle"
@@ -292,6 +289,11 @@
 
     <div class="shape-grid">
 
+        <button class="shape-option" data-shape="square">
+            <span>□</span>
+            <small>Square</small>
+        </button>
+
         <button class="shape-option" data-shape="rectangle">
             <span>▭</span>
             <small>Rectangle</small>
@@ -369,6 +371,16 @@
 
             </button>
 
+            <button
+                class="tool"
+                id="stickyBtn"
+                title="Sticky note"
+                type="button">
+
+                <i class="fa-solid fa-note-sticky"></i>
+
+            </button>
+
 
 
             <!-- IMAGE -->
@@ -430,66 +442,6 @@
 
             <div class="toolbar-spacer"></div>
 
-
-
-            <!-- UNDO -->
-
-            <button
-                class="tool"
-                id="undoBtn"
-                title="Undo">
-
-                <i class="fa-solid fa-rotate-left"></i>
-
-            </button>
-
-
-
-            <!-- REDO -->
-
-            <button
-                class="tool"
-                id="redoBtn"
-                title="Redo">
-
-                <i class="fa-solid fa-rotate-right"></i>
-
-            </button>
-
-
-
-            <div class="toolbar-divider"></div>
-
-
-
-            <!-- ZOOM OUT -->
-
-            <button
-                class="tool"
-                id="zoomOut"
-                title="Zoom Out">
-
-                <i class="fa-solid fa-minus"></i>
-
-            </button>
-
-
-            <span id="zoomValue">
-                100%
-            </span>
-
-
-            <!-- ZOOM IN -->
-
-            <button
-                class="tool"
-                id="zoomIn"
-                title="Zoom In">
-
-                <i class="fa-solid fa-plus"></i>
-
-            </button>
-
         </div>
 
 
@@ -539,77 +491,43 @@
 
 
 
-            <!-- =================================================
-                 PAGE CONTROLS
-            ================================================== -->
+        </div>
 
-            <div class="page-controls">
-
-
-                <!-- PREVIOUS -->
-
-                <button
-                    class="page-btn"
-                    id="previousPage">
-
-                    <i class="fa-solid fa-chevron-left"></i>
-
-                </button>
-
-
-
-                <!-- PAGE NUMBER -->
-
-                <span id="pageNumber">
-                    1 / ∞
-                </span>
-
-
-
-                <!-- NEXT -->
-
-                <button
-                    class="page-btn"
-                    id="nextPage">
-
-                    <i class="fa-solid fa-chevron-right"></i>
-
-                </button>
-
-            </div>
-
-
-
-            <!-- =================================================
-                 ADD PAGE
-            ================================================== -->
-
-            <button
-                class="add-page-btn"
-                id="addPageBtn">
-
+        <!-- Canvas navigation is deliberately outside the tool rail so it
+             remains visible as a bottom-right control dock. -->
+        <div class="canvas-navigation" aria-label="Canvas navigation controls">
+            <button class="tool" id="undoBtn" title="Undo" type="button">
+                <i class="fa-solid fa-rotate-left"></i>
+            </button>
+            <button class="tool" id="redoBtn" title="Redo" type="button">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+            <span class="navigation-divider" aria-hidden="true"></span>
+            <button class="tool" id="zoomOut" title="Zoom Out" type="button">
+                <i class="fa-solid fa-minus"></i>
+            </button>
+            <span id="zoomValue">100%</span>
+            <button class="tool" id="zoomIn" title="Zoom In" type="button">
                 <i class="fa-solid fa-plus"></i>
-
-                Add Page
-
             </button>
+        </div>
 
-
-
-            <!-- =================================================
-                 EXTEND PAGE
-            ================================================== -->
-
-            <button
-                class="extend-page-btn"
-                id="extendPageBtn">
-
-                <i class="fa-solid fa-arrows-up-down"></i>
-
-                Extend Page
-
-            </button>
-
+        <div id="toolSettingsPopover" class="tool-settings-popover" aria-hidden="true">
+            <div class="tool-settings-heading" id="toolSettingsTitle">Pen settings</div>
+            <div class="tool-colors" id="toolColorOptions" aria-label="Stroke color">
+                <button type="button" data-color="#172033" style="--swatch:#172033" aria-label="Black"></button>
+                <button type="button" data-color="#ef4444" style="--swatch:#ef4444" aria-label="Red"></button>
+                <button type="button" data-color="#f59e0b" style="--swatch:#f59e0b" aria-label="Orange"></button>
+                <button type="button" data-color="#22c55e" style="--swatch:#22c55e" aria-label="Green"></button>
+                <button type="button" data-color="#3b82f6" style="--swatch:#3b82f6" aria-label="Blue"></button>
+                <button type="button" data-color="#8b5cf6" style="--swatch:#8b5cf6" aria-label="Purple"></button>
+                <label class="tool-custom-color" title="Custom color"><input id="toolColorInput" type="color" value="#172033"></label>
+            </div>
+            <label class="tool-width-control">
+                <span>Width</span>
+                <input id="toolWidthInput" type="range" min="1" max="20" value="4">
+                <output id="toolWidthValue">4</output>
+            </label>
         </div>
 
     </section>
