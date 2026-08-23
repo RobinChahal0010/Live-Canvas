@@ -1,5 +1,7 @@
+// Login form: validates credentials stored locally and starts the user session.
 const loginBtn = document.getElementById("loginBtn");
 
+// Displays validation and authentication feedback next to the form.
 function setFormMessage(message, type = "error") {
     const messageBox = document.getElementById("formMessage");
     if (!messageBox) return;
@@ -8,6 +10,7 @@ function setFormMessage(message, type = "error") {
     messageBox.className = `form-message ${type}`;
 }
 
+// Hashes a password before comparison, with a small fallback for older browsers.
 async function hashPassword(password) {
     const text = password.trim();
     if (typeof crypto !== "undefined" && crypto.subtle) {
@@ -26,6 +29,7 @@ async function hashPassword(password) {
     return (hash >>> 0).toString(16);
 }
 
+// Submits the login form only when the page includes its button.
 if (loginBtn) {
 
     loginBtn.addEventListener("click", async function () {

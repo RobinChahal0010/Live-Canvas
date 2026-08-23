@@ -6,9 +6,6 @@
 // ELEMENTS
 // ============================================================
 
-const soloBtn =
-    document.getElementById("soloBtn");
-
 const createRoomBtn =
     document.getElementById("createRoomBtn");
 
@@ -97,37 +94,6 @@ function generateRoomId() {
         .toString(36)
         .substring(2, 8)
         .toUpperCase();
-}
-
-
-// ============================================================
-// SOLO ROOM
-// ============================================================
-
-if (soloBtn) {
-
-    soloBtn.addEventListener(
-        "click",
-        () => {
-
-            if (!requireLogin()) {
-                return;
-            }
-
-            // No room ID = solo mode
-            sessionStorage.removeItem(
-                "roomId"
-            );
-
-            console.log(
-                "Starting Solo Canvas"
-            );
-
-            window.location.href =
-                "index.html";
-
-        }
-    );
 }
 
 

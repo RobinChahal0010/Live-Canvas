@@ -1,5 +1,7 @@
+// Signup form: validates a new account, stores it locally, and starts a session.
 const signupBtn = document.getElementById("signupBtn");
 
+// Displays validation feedback next to the registration form.
 function setFormMessage(message, type = "error") {
     const messageBox = document.getElementById("formMessage");
     if (!messageBox) return;
@@ -8,6 +10,7 @@ function setFormMessage(message, type = "error") {
     messageBox.className = `form-message ${type}`;
 }
 
+// Hashes a password before it is persisted, with a small fallback for older browsers.
 async function hashPassword(password) {
     const text = password.trim();
     if (typeof crypto !== "undefined" && crypto.subtle) {
@@ -26,6 +29,7 @@ async function hashPassword(password) {
     return (hash >>> 0).toString(16);
 }
 
+// Validates and stores the account when the registration form is submitted.
 signupBtn.addEventListener("click", async function () {
     const name =
             document.getElementById("name")

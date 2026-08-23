@@ -5,6 +5,7 @@
    Statistics ❌
 ========================================================= */
 
+/* Global reset and shared custom-cursor baseline for the whiteboard UI. */
 * {
     cursor: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='), none !important;
     margin: 0;
@@ -282,6 +283,20 @@ header {
 .user-menu-logout:hover {
     background: #fef2f2 !important;
     color: #dc2626 !important;
+}
+
+/* The account dropdown is inside .auth-section, whose generic button rule is
+   intentionally blue for Login/Signup. Keep the destructive action neutral. */
+.auth-section .user-menu-logout {
+    background: #ffffff !important;
+    color: #ef4444 !important;
+}
+
+.auth-section .user-menu-logout:hover {
+    background: #fef2f2 !important;
+    color: #dc2626 !important;
+    transform: none;
+    box-shadow: none;
 }
 
 /* =========================================================
@@ -981,11 +996,6 @@ button:active {
     font-size: 15px;
 }
 
-#soloBtn {
-    background: #2563eb;
-    color: white;
-}
-
 #createRoomBtn {
     background: #111827;
     color: white;
@@ -994,14 +1004,6 @@ button:active {
 #joinRoomBtn {
     background: #f1f3f7;
     color: #222;
-}
-
-.divider {
-    margin: 25px 0;
-
-    color: #aaa;
-
-    font-size: 12px;
 }
 
 .join-section,
@@ -1786,7 +1788,8 @@ main {
 .tool-custom-color {
     width: 32px;
     height: 32px;
-    border-radius: 50%;
+    /* Round the visible native-picker trigger without replacing the OS dialog. */
+    border-radius: 9px;
     background: conic-gradient(#ef4444, #f59e0b, #22c55e, #3b82f6, #8b5cf6, #ef4444);
 }
 

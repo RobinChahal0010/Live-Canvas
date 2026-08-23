@@ -865,6 +865,7 @@
 
 <body>
 
+    <!-- Saved-board workspace: account navigation, project controls, and board cards. -->
     <div class="board-shell" role="main">
 
         <!-- Floating nav: no background container -->
@@ -963,12 +964,7 @@
 
         <img id="emptyGraphic" src="assets/saved.png" alt="saved graphic" class="graphic" style="display:none;">
 
-        <!-- <div id="emptyOverlay" class="graphic-overlay" style="display:none;">
-            <h1 class="overlay-title">You have no boards</h1>
-            <h1 class="overlay-title">Create your first one now</h1>
-        </div> -->
-
-        <!-- Modal -->
+        <!-- Create/join modal: collects a board name or shared board code. -->
         <div id="backdrop" class="modal-backdrop">
             <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
                 <div class="modal-top-tabs" aria-label="Create or join board options">
@@ -1032,7 +1028,6 @@
             const styleRow = document.getElementById('styleRow');
             const boardList = document.getElementById('boardList');
             const emptyGraphic = document.getElementById('emptyGraphic');
-            const emptyOverlay = document.getElementById('emptyOverlay');
             const modalTabs = document.querySelectorAll('.modal-tab');
             const modalTitle = document.getElementById('modalTitle');
             const modalHeroImage = document.getElementById('modalHeroImage');
@@ -1048,7 +1043,6 @@
             const userProfileImg = document.getElementById('userProfileImg');
             const logoutBtn = document.getElementById('logoutBtn');
             const boardSearchInput = document.getElementById('boardSearchInput');
-            const boardSearchClear = document.getElementById('boardSearchClear');
 
             let currentSearchQuery = '';
             let currentSort = 'recent';
@@ -1072,6 +1066,7 @@
                 }
             } catch (e) { }
 
+            // Stable board colours keep each saved project visually recognisable.
             const boardColorPairs = [
                 { color: '#ea9ec5', tab: '#f3b4d1', dark: '#cc598e' },
                 { color: '#97c8f4', tab: '#b5dbfa', dark: '#68a5db' },
@@ -1081,6 +1076,7 @@
                 { color: '#f5d378', tab: '#f8df9a', dark: '#cca13d' }
             ];
 
+            // Chooses a saved or deterministic colour for each project card.
             function getBoardColor(board, index) {
                 if (typeof board.colorIndex === 'number' && !isNaN(board.colorIndex)) {
                     return boardColorPairs[((board.colorIndex % boardColorPairs.length) + boardColorPairs.length) % boardColorPairs.length];
@@ -1095,6 +1091,7 @@
                 return boardColorPairs[index % boardColorPairs.length];
             }
 
+            // Formats timestamps for concise project-card metadata.
             function formatBoardDate(value) {
                 const date = new Date(value);
                 if (Number.isNaN(date.getTime())) {
@@ -1103,6 +1100,7 @@
                 return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
             }
 
+            // Generates an unused eight-character board code before creating a project.
             function createBoardId(existingBoards) {
                 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
                 let boardId = '';
@@ -1116,6 +1114,7 @@
                 return boardId;
             }
 
+            // Reads saved boards, applies search/sort, then renders the project grid or empty state.
             function renderBoardList() {
                 const boards = JSON.parse(localStorage.getItem('savedBoards') || '[]');
                 const hasBoards = Array.isArray(boards) && boards.length > 0;
@@ -1196,14 +1195,12 @@
                         document.getElementById('clearSearchBtn')?.addEventListener('click', () => {
                             currentSearchQuery = '';
                             boardSearchInput.value = '';
-                            boardSearchClear.style.display = 'none';
                             renderBoardList();
                             boardSearchInput.focus();
                         });
                     }
 
                     emptyGraphic.style.display = 'none';
-                    if (emptyOverlay) emptyOverlay.style.display = 'none';
                     return;
                 }
 
@@ -1211,9 +1208,9 @@
                 boardList.innerHTML = '';
                 document.querySelector('.board-shell').classList.remove('has-boards');
                 emptyGraphic.style.display = 'block';
-                if (emptyOverlay) emptyOverlay.style.display = 'block';
             }
 
+            // Toolbar, profile, search, and sort actions update the visible project list.
             if (newBoardBtn) {
                 newBoardBtn.addEventListener('click', openModal);
             }
@@ -1221,20 +1218,7 @@
             if (boardSearchInput) {
                 boardSearchInput.addEventListener('input', (e) => {
                     currentSearchQuery = e.target.value;
-                    if (boardSearchClear) {
-                        boardSearchClear.style.display = currentSearchQuery ? 'flex' : 'none';
-                    }
                     renderBoardList();
-                });
-            }
-
-            if (boardSearchClear) {
-                boardSearchClear.addEventListener('click', () => {
-                    currentSearchQuery = '';
-                    boardSearchInput.value = '';
-                    boardSearchClear.style.display = 'none';
-                    renderBoardList();
-                    boardSearchInput.focus();
                 });
             }
 
@@ -1271,6 +1255,7 @@
                 window.location.href = 'login.html';
             });
 
+            // Modal helpers control validation, mode-specific copy, and reset behavior.
             function updateCreateButtonState() {
                 const hasValue = boardNameInput.value.trim().length > 0;
                 createBtn.disabled = !hasValue;
@@ -1342,7 +1327,7 @@
 
             setActiveTab('create');
 
-            // options handler
+            // Canvas-style option handler keeps the selected style accessible and visible.
             optionsEl.addEventListener('click', (e) => {
                 const btn = e.target.closest('.option-btn');
                 if (!btn) return;
@@ -1363,6 +1348,7 @@
             renderBoardList();
             updateCreateButtonState();
 
+            // Creates a local board entry or opens a board shared by its code.
             createBtn.addEventListener('click', () => {
                 const name = boardNameInput.value.trim();
                 if (!name) return;

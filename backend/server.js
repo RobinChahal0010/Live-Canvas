@@ -26,23 +26,6 @@ const io = new Server(server, {
 });
 
 // ============================================================
-// BOARD STATES
-// ============================================================
-
-const boardStates = new Map();
-
-function getBoardState(boardId) {
-    if (!boardStates.has(boardId)) {
-        boardStates.set(boardId, {
-            canvasStyle: "blank"
-        });
-    }
-
-    return boardStates.get(boardId);
-}
-
-
-// ============================================================
 // MIDDLEWARE
 // ============================================================
 
@@ -612,8 +595,7 @@ socket.on("canvas-style-change", (data) => {
         return;
     }
 
-    // Keep the style on the board that is sent to clients on join. The old
-    // transient boardStates map was never included in a board-state response.
+    // Keep the style on the board that is sent to clients when they join.
     const boardState = getBoard(socket.boardId);
 
     boardState.canvasStyle = style;
@@ -1639,69 +1621,6 @@ socket.on("canvas-style-change", (data) => {
 
 
     // ========================================================
-    // CURSOR MOVEMENT
-    // ========================================================
-
-    socket.on(
-        "cursor-move",
-        (data) => {
-
-            if (!socket.boardId) {
-                return;
-            }
-
-            if (
-                !data ||
-                typeof data !== "object"
-            ) {
-                return;
-            }
-
-
-            const x =
-                Number(data.x);
-
-            const y =
-                Number(data.y);
-
-
-            if (
-                !Number.isFinite(x) ||
-                !Number.isFinite(y)
-            ) {
-
-                return;
-
-            }
-
-
-            socket.to(
-                socket.boardId
-            ).emit(
-                "cursor-move",
-                {
-
-                    x,
-
-                    y,
-
-                    visible:
-                        data.visible !== false,
-
-                    username:
-                        socket.username,
-
-                    socketId:
-                        socket.id
-
-                }
-            );
-
-        }
-    );
-
-
-    // ========================================================
     // DISCONNECTING
     // ========================================================
     //
@@ -1803,12 +1722,18 @@ socket.on("canvas-style-change", (data) => {
 
     // ========================================================
     // CURSOR MOVE & LEAVE SYNC
+    // Relays one validated cursor event per movement to collaborators.
     // ========================================================
 
     socket.on(
         "cursor-move",
         (data) => {
-            if (!socket.boardId || !data) return;
+            if (!socket.boardId || !data || typeof data !== "object") return;
+
+            const x = Number(data.x);
+            const y = Number(data.y);
+
+            if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 
             socket.to(
                 socket.boardId
@@ -1817,9 +1742,10 @@ socket.on("canvas-style-change", (data) => {
                 {
                     socketId: socket.id,
                     username: socket.username || data.username || "Collaborator",
-                    x: Number(data.x) || 0,
-                    y: Number(data.y) || 0,
-                    color: data.color || null
+                    x,
+                    y,
+                    color: data.color || null,
+                    visible: data.visible !== false
                 }
             );
         }
