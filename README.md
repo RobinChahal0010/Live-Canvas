@@ -107,16 +107,110 @@ flowchart LR
 - Board sessions live in an in-memory `Map`, keyed by board code.
 - `GET /health` reports server status, the number of active board sessions, and the current server time.
 
+## Backend implementation reference
+
+### HTTP server and runtime
+
+The backend is a Node.js application using Express and Socket.IO.
+
+- Express serves the project root as static files and sends `home.html` for `GET /`.
+- `express.json({ limit: "10mb" })` is enabled for JSON request bodies.
+- Socket.IO uses the same HTTP server as Express and accepts `GET` and `POST` origins through its current permissive CORS configuration (`origin: "*"`).
+- `GET /health` returns `{ status, service, boards, time }`, which is useful for checking that the process is alive.
+- The default port is `3000`.
+
+### In-memory board model
+
+The server holds active boards in a `Map` named `boards`. Each board is keyed by its board code and includes:
+
+```text
+boardId, title, canvasStyle, currentPage, zoom, pages, updatedAt
+```
+
+Each page contains its own `id`, `height`, optional `canvasData`, `drawings`, and `objects`. This design isolates collaborative state by board code while keeping every active board available to connected Socket.IO clients.
+
+Because this is memory-only storage, board state is **not durable**. Restarting the Node.js server clears all server-side boards and their active collaboration state.
+
+### Socket.IO rooms and synchronization
+
+When a browser emits `join-room`, the server validates its board code and display name, creates the board if necessary, and joins the socket to a Socket.IO room named after that board code. The joining client receives the current board state and collaborator list; other members receive a user-joined update.
+
+The server maintains and broadcasts collaboration events for:
+
+- drawing segments and canvas styles;
+- document and full-board state updates;
+- object creation, updates, and deletion;
+- page changes, additions, and resizing;
+- canvas clearing;
+- cursor movement and cursor departure;
+- user join, leave, and profile updates.
+
+Events are broadcast to the other sockets in the same board room, keeping separate board codes isolated from one another.
+
+### Validation and sanitization
+
+The server does not blindly store all incoming socket data. It currently performs the following checks before accepting board updates:
+
+- Board IDs must be non-empty strings of at most 100 characters.
+- Usernames are trimmed, required, and truncated to 100 characters.
+- Canvas styles are limited to `blank`, `grid`, `dots`, and `lines`.
+- Drawing coordinates must be finite numbers; tools are limited to pen, eraser, highlighter, and light pen; line width is clamped from 1 to 100.
+- Zoom is clamped from 50% to 200%.
+- Page height is clamped from 300 to 100,000 pixels.
+- Page arrays, drawing operations, and object positions are sanitized before full board state is stored.
+- Cursor coordinates must be finite numbers before they are relayed.
+
+These checks improve resilience against malformed collaboration payloads. They are not a replacement for authorization or a production security model.
+
 ## Data and persistence
 
-| Data | Where it lives | Notes |
-| --- | --- | --- |
-| Accounts and active local user | `localStorage` | Used by the browser-only authentication flow. |
-| Saved board metadata | `localStorage` | Includes board IDs, names, style choices, dates, and card colours. |
-| Current board selection | `sessionStorage` | Keeps the current board context while navigating within a browser session. |
-| Active collaborative board state | Server memory | Shared while the Node.js server is running; resets when the server restarts. |
+### Browser local storage
 
-> **Development note:** authentication is browser-local and intended for this project’s local/demo workflow. It is not a production authentication system.
+`localStorage` persists for the current browser profile until the user clears site data. LiveCanvas uses it for local/demo persistence:
+
+| Key | Value stored | Purpose |
+| --- | --- | --- |
+| `users` | Array of local user records | Stores registration name, email, and password hash. |
+| `loggedInUser` | `{ name, email }` | Indicates the current locally signed-in user. |
+| `savedBoards` | Array of board metadata | Stores board IDs, names, style choices, dates, update times, and dashboard colour indexes. |
+| `userProfilePicIdx` | Profile-image number | Keeps a consistent generated profile image for the user. |
+| `liveCanvasDocument_<boardId>` | Cached document object | Saves pages, drawings, objects, zoom, title, canvas style, current page, and save time for a board. |
+
+The document cache is a browser-side fallback and convenience layer. It is separate from the server’s live in-memory board state.
+
+### Session retention
+
+`sessionStorage` is scoped to the current browser tab/session and normally clears when that session ends. The app uses it for navigation context rather than long-term data:
+
+| Key | Purpose |
+| --- | --- |
+| `currentBoardId` | Identifies the board the user most recently opened. |
+| `currentBoardName` | Preserves the current board title while moving between pages. |
+| `currentCanvasStyle` | Carries the selected canvas style into the board flow. |
+| `roomId` | Keeps the current room context for room-based entry. |
+
+This is session retention, not a server-issued session token. No cookie session, JWT, or server-side user session store is currently implemented.
+
+### Password handling
+
+Passwords are **hashed, not encrypted**. Encryption is reversible with a key; hashing is a one-way transformation used for password comparison.
+
+1. On sign-up, the browser trims the password and uses the Web Crypto API’s `crypto.subtle.digest("SHA-256", ...)` when it is available.
+2. The resulting SHA-256 digest is stored as a hexadecimal string in the `password` field of the relevant `users` record in `localStorage`.
+3. On login, the browser hashes the entered password again and compares the result with the stored value.
+4. For older browsers without Web Crypto, the code falls back to a 32-bit FNV-1a-style hash. The login code also retains a compatibility path for an older plaintext or `passwordHash` record and rewrites a successful legacy login to the current `password` field.
+
+> **Security limitation:** SHA-256 without a unique salt and a deliberately slow password-hashing algorithm is not suitable for production password storage. The FNV fallback is also non-cryptographic. This project’s current authentication is a local/demo feature because all user records and session indicators live in browser storage. A production backend should use HTTPS, server-side accounts, a database, per-password salts, and a password hash such as Argon2id, scrypt, or bcrypt.
+
+### What is and is not persisted
+
+| Data | Persistence location | Lifecycle |
+| --- | --- | --- |
+| Local account and dashboard metadata | Browser `localStorage` | Survives page reloads and browser restarts until site data is cleared. |
+| Current navigation context | Browser `sessionStorage` | Intended for the active tab/session. |
+| Cached board document | Browser `localStorage` | Survives reloads as a local fallback. |
+| Active collaborative board | Server memory | Available to connected clients until the server process restarts. |
+| Socket connection / room membership | Socket.IO server memory | Exists only while the client connection is open. |
 
 ## Project structure
 
