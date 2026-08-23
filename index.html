@@ -237,19 +237,6 @@
 
 
 
-            <!-- LIGHT PEN -->
-
-            <button
-                class="tool"
-                id="lightPenBtn"
-                title="Light Pen">
-
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
-
-            </button>
-
-
-
             <!-- ERASER -->
 
             <button
@@ -264,101 +251,6 @@
 
 
             <div class="toolbar-divider"></div>
-
-
-
-            <!-- SHAPE MODAL -->
-             <button
-    class="tool"
-    id="shapeBtn"
-    title="Shapes">
-
-    <i class="fa-regular fa-square"></i>
-
-</button>
-
-<div id="shapePicker" class="shape-modal">
-
-    <div class="shape-modal-header">
-        <span>Shapes</span>
-
-        <button id="closeShapePicker">
-            ✕
-        </button>
-    </div>
-
-    <div class="shape-grid">
-
-        <button class="shape-option" data-shape="square">
-            <span>□</span>
-            <small>Square</small>
-        </button>
-
-        <button class="shape-option" data-shape="rectangle">
-            <span>▭</span>
-            <small>Rectangle</small>
-        </button>
-
-        <button class="shape-option" data-shape="circle">
-            <span>○</span>
-            <small>Circle</small>
-        </button>
-
-        <button class="shape-option" data-shape="triangle">
-            <span>△</span>
-            <small>Triangle</small>
-        </button>
-
-        <button class="shape-option" data-shape="diamond">
-            <span>◇</span>
-            <small>Diamond</small>
-        </button>
-
-        <button class="shape-option" data-shape="line">
-            <span>╱</span>
-            <small>Line</small>
-        </button>
-
-        <button class="shape-option" data-shape="arrow">
-            <span>→</span>
-            <small>Arrow</small>
-        </button>
-
-        <button class="shape-option" data-shape="star">
-            <span>★</span>
-            <small>Star</small>
-        </button>
-
-        <button class="shape-option" data-shape="hexagon">
-            <span>⬡</span>
-            <small>Hexagon</small>
-        </button>
-
-        <button class="shape-option" data-shape="pentagon">
-            <span>⬠</span>
-            <small>Pentagon</small>
-        </button>
-
-        <button class="shape-option" data-shape="parallelogram">
-            <span>▱</span>
-            <small>Parallelogram</small>
-        </button>
-
-        <button class="shape-option" data-shape="cloud">
-            <span>☁</span>
-            <small>Cloud</small>
-        </button>
-
-        <button class="shape-option" data-shape="heart">
-            <span>♥</span>
-            <small>Heart</small>
-        </button>
-
-    </div>
-
-</div>
-
-
 
             <!-- TEXT -->
 
@@ -394,49 +286,7 @@
 
             </button>
 
-
-
-            <!-- TABLE -->
-
-            <button
-                class="tool"
-                id="tableBtn"
-                title="Table">
-
-                <i class="fa-solid fa-table"></i>
-
-            </button>
-
-
-
             <div class="toolbar-divider"></div>
-
-
-
-            <!-- COLOR -->
-
-            <label
-                class="color-tool"
-                title="Color">
-
-                <input
-                    type="color"
-                    id="colorPicker"
-                    value="#172033">
-
-            </label>
-
-
-
-            <!-- BRUSH SIZE -->
-
-            <input
-                type="range"
-                id="brushSize"
-                min="1"
-                max="20"
-                value="4"
-                class="brush-slider">
 
 
 
@@ -513,6 +363,8 @@
         </div>
 
         <div id="toolSettingsPopover" class="tool-settings-popover" aria-hidden="true">
+            <input type="color" id="colorPicker" value="#172033" hidden>
+            <input type="range" id="brushSize" min="1" max="20" value="4" hidden>
             <div class="tool-settings-heading" id="toolSettingsTitle">Pen settings</div>
             <div class="tool-colors" id="toolColorOptions" aria-label="Stroke color">
                 <button type="button" data-color="#172033" style="--swatch:#172033" aria-label="Black"></button>
@@ -523,7 +375,7 @@
                 <button type="button" data-color="#8b5cf6" style="--swatch:#8b5cf6" aria-label="Purple"></button>
                 <label class="tool-custom-color" title="Custom color"><input id="toolColorInput" type="color" value="#172033"></label>
             </div>
-            <label class="tool-width-control">
+            <label class="tool-width-control" id="toolWidthControl">
                 <span>Width</span>
                 <input id="toolWidthInput" type="range" min="1" max="20" value="4">
                 <output id="toolWidthValue">4</output>

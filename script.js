@@ -576,8 +576,8 @@ function updateCollaborators(
                     tip.style.boxShadow = `0 6px 20px ${color}66`;
                     const r = avatar.getBoundingClientRect();
                     tip.style.left = (r.left + r.width / 2) + "px";
-                    tip.style.top = (r.top - 8) + "px";
-                    tip.style.transform = "translateX(-50%) translateY(-100%)";
+                    tip.style.top = (r.bottom + 8) + "px";
+                    tip.style.transform = "translateX(-50%)";
                     tip.classList.add("visible");
                 });
 
@@ -1354,11 +1354,6 @@ const highlighterBtn =
         "highlighterBtn"
     );
 
-const lightPenBtn =
-    document.getElementById(
-        "lightPenBtn"
-    );
-
 const selectTool =
     document.getElementById(
         "selectTool"
@@ -1383,12 +1378,6 @@ const stickyBtn =
     document.getElementById(
         "stickyBtn"
     );
-
-const tableBtn =
-    document.getElementById(
-        "tableBtn"
-    );
-
 
 // ============================================================
 // CONTROLS
@@ -1421,6 +1410,13 @@ const toolWidthInput =
 
 const toolWidthValue =
     document.getElementById("toolWidthValue");
+
+const toolWidthControl =
+    document.getElementById("toolWidthControl");
+
+document.querySelectorAll(".canvas-toolbar .tool[title]").forEach(button => {
+    button.removeAttribute("title");
+});
 
 const undoBtn =
     document.getElementById(
@@ -1986,6 +1982,7 @@ function closeToolSettings() {
 
 function openToolSettings(tool, button) {
     const isEraser = tool === "eraser";
+    const isText = tool === "text";
 
     activateTool(tool, button, "crosshair");
 
@@ -1995,10 +1992,11 @@ function openToolSettings(tool, button) {
 
     if (toolSettingsTitle) {
         toolSettingsTitle.textContent =
-            `${isEraser ? "Eraser" : tool === "highlighter" ? "Highlighter" : "Pen"} settings`;
+            `${isEraser ? "Eraser" : isText ? "Text" : tool === "highlighter" ? "Highlighter" : "Pen"} settings`;
     }
 
     toolColorOptions?.classList.toggle("is-hidden", isEraser);
+    toolWidthControl?.classList.toggle("is-hidden", isText);
 
     if (toolWidthInput && brushSize) {
         toolWidthInput.value = brushSize.value;
@@ -2011,6 +2009,8 @@ function openToolSettings(tool, button) {
     if (toolColorInput && colorPicker) {
         toolColorInput.value = colorPicker.value;
     }
+
+    updateActiveColorSwatch(colorPicker?.value);
 
     const rect = button.getBoundingClientRect();
     toolSettingsPopover.style.top =
@@ -2026,11 +2026,24 @@ toolColorOptions?.addEventListener("click", e => {
 
     colorPicker.value = swatch.dataset.color;
     toolColorInput && (toolColorInput.value = colorPicker.value);
+    updateActiveColorSwatch(colorPicker.value);
 });
 
 toolColorInput?.addEventListener("input", () => {
     if (colorPicker) colorPicker.value = toolColorInput.value;
+    updateActiveColorSwatch(toolColorInput.value);
 });
+
+function updateActiveColorSwatch(color) {
+    const normalized = color?.toLowerCase();
+    document.querySelectorAll(".tool-colors button[data-color]").forEach(swatch => {
+        swatch.classList.toggle("is-selected", swatch.dataset.color.toLowerCase() === normalized);
+    });
+
+    const isPaletteColor = [...document.querySelectorAll(".tool-colors button[data-color]")]
+        .some(swatch => swatch.dataset.color.toLowerCase() === normalized);
+    toolColorInput?.closest(".tool-custom-color")?.classList.toggle("is-selected", !isPaletteColor);
+}
 
 toolWidthInput?.addEventListener("input", () => {
     if (brushSize) brushSize.value = toolWidthInput.value;
@@ -2041,7 +2054,7 @@ document.addEventListener("pointerdown", e => {
     if (
         toolSettingsPopover?.classList.contains("show") &&
         !toolSettingsPopover.contains(e.target) &&
-        !e.target.closest("#drawBtn, #highlighterBtn, #eraserBtn")
+        !e.target.closest("#drawBtn, #highlighterBtn, #eraserBtn, #textBtn")
     ) {
         closeToolSettings();
     }
@@ -2219,16 +2232,6 @@ highlighterBtn?.addEventListener(
     () => openToolSettings("highlighter", highlighterBtn)
 );
 
-lightPenBtn?.addEventListener(
-    "click",
-    () =>
-        activateTool(
-            "lightPen",
-            lightPenBtn,
-            "crosshair"
-        )
-);
-
 selectTool?.addEventListener(
     "click",
     () =>
@@ -2241,12 +2244,7 @@ selectTool?.addEventListener(
 
 textBtn?.addEventListener(
     "click",
-    () =>
-        activateTool(
-            "text",
-            textBtn,
-            "text"
-        )
+    () => openToolSettings("text", textBtn)
 );
 
 
@@ -3168,6 +3166,26 @@ function getObjectData(
 // DRAG OBJECT
 // ============================================================
 
+let selectedCanvasObject = null;
+
+function selectCanvasObject(element) {
+    selectedCanvasObject?.classList.remove("is-selected-object");
+    selectedCanvasObject = element;
+    selectedCanvasObject?.classList.add("is-selected-object");
+}
+
+function deleteSelectedCanvasObject() {
+    if (!selectedCanvasObject || !["image", "text", "sticky"].includes(selectedCanvasObject.dataset.type)) return;
+
+    const id = selectedCanvasObject.dataset.objectId;
+    selectedCanvasObject.remove();
+    selectedCanvasObject = null;
+
+    if (socket?.connected && id) socket.emit("object-delete", { id });
+    saveLocalCache();
+    scheduleServerStateSync();
+}
+
 function makeDraggable(
     element
 ) {
@@ -3192,6 +3210,18 @@ function makeDraggable(
             ) {
                 return;
             }
+
+            // In Select mode, a sticky note is selected rather than edited so
+            // it can be removed with Delete. It remains directly editable in
+            // the other tools.
+            if (element.dataset.type === "sticky") {
+                selectCanvasObject(element);
+                e.stopPropagation();
+                e.preventDefault();
+                return;
+            }
+
+            selectCanvasObject(element);
 
             dragging =
                 true;
@@ -3329,6 +3359,17 @@ function createObjectFromData(
         return;
     }
 
+    if (data.type === "sticky") {
+        createStickyNote(
+            data.text || "",
+            Number(data.x) || 0,
+            Number(data.y) || 0,
+            sync,
+            data.id
+        );
+        return;
+    }
+
 
     const element =
         document.createElement(
@@ -3453,6 +3494,11 @@ const closeShapePicker =
         "closeShapePicker"
     );
 
+const shapeColorPicker =
+    document.getElementById(
+        "shapeColorPicker"
+    );
+
 // The picker starts in the left tool rail. Move it to the document layer so
 // the rail's scrolling cannot hide it when opened.
 if (shapePicker && shapePicker.parentElement !== document.body) {
@@ -3466,9 +3512,14 @@ shapeBtn?.addEventListener(
 
         e.stopPropagation();
 
-        shapePicker?.classList.toggle(
-            "show"
-        );
+        if (!shapePicker) return;
+
+        const opening = !shapePicker.classList.contains("show");
+        if (opening) {
+            const rect = shapeBtn.getBoundingClientRect();
+            shapePicker.style.top = `${Math.min(window.innerHeight - 250, Math.max(76, rect.top))}px`;
+        }
+        shapePicker.classList.toggle("show", opening);
 
     }
 );
@@ -3673,8 +3724,8 @@ function createShape(
         "border-box";
 
     const color =
-        colorPicker?.value ||
-        "#172033";
+        shapeColorPicker?.value ||
+        "#000000";
 
     shape.style.border =
         `2px solid ${color}`;
@@ -3947,271 +3998,47 @@ function createImageObject(
 
 
 // ============================================================
-// TABLE
-// ============================================================
-
-tableBtn?.addEventListener(
-    "click",
-    () => {
-
-        const rows =
-            Number(
-                prompt(
-                    "Number of rows:",
-                    "3"
-                )
-            );
-
-        const columns =
-            Number(
-                prompt(
-                    "Number of columns:",
-                    "3"
-                )
-            );
-
-        if (
-            !rows ||
-            !columns ||
-            rows < 1 ||
-            columns < 1
-        ) {
-            return;
-        }
-
-        createTable(
-            rows,
-            columns,
-            true
-        );
-
-    }
-);
-
-
-// ============================================================
-// CREATE TABLE
-// ============================================================
-
-function createTable(
-    rows,
-    columns,
-    sync = true
-) {
-
-    if (!objectLayer) {
-        return;
-    }
-
-    const id =
-        generateObjectId();
-
-    const table =
-        document.createElement(
-            "table"
-        );
-
-    table.style.position =
-        "absolute";
-
-    table.style.left =
-        "200px";
-
-    table.style.top =
-        "300px";
-
-    table.style.borderCollapse =
-        "collapse";
-
-    table.style.background =
-        "#ffffff";
-
-    table.style.pointerEvents =
-        "auto";
-
-    table.style.cursor =
-        "move";
-
-    table.dataset.type =
-        "table";
-
-    table.dataset.objectId =
-        id;
-
-
-    for (
-        let r = 0;
-        r < rows;
-        r++
-    ) {
-
-        const row =
-            table.insertRow();
-
-        for (
-            let c = 0;
-            c < columns;
-            c++
-        ) {
-
-            const cell =
-                row.insertCell();
-
-            cell.textContent =
-                "Cell";
-
-            cell.contentEditable =
-                "true";
-
-            cell.style.border =
-                "1px solid #999";
-
-            cell.style.padding =
-                "10px 15px";
-
-            cell.style.minWidth =
-                "70px";
-
-        }
-
-    }
-
-
-    objectLayer.appendChild(
-        table
-    );
-
-    makeDraggable(
-        table
-    );
-
-
-    if (
-        sync &&
-        socket?.connected
-    ) {
-
-        socket.emit(
-            "object-add",
-            {
-                id,
-                type: "table",
-                rows,
-                columns,
-                x: 200,
-                y: 300
-            }
-        );
-
-    }
-
-}
-
-
-// ============================================================
 // STICKY NOTE
 // ============================================================
 
-stickyBtn?.addEventListener(
-    "click",
-    () => {
+function createStickyNote(text = "", x = 20, y = 20, sync = true, id = generateObjectId()) {
+    if (!objectLayer) return null;
 
-        if (!objectLayer) {
-            return;
-        }
+    const note = document.createElement("div");
+    note.className = "sticky-note";
+    note.textContent = text;
+    note.contentEditable = "true";
+    note.spellcheck = true;
+    note.style.left = `${x}px`;
+    note.style.top = `${y}px`;
+    note.dataset.type = "sticky";
+    note.dataset.objectId = id;
+    objectLayer.appendChild(note);
 
-        const text =
-            prompt(
-                "Enter sticky note:",
-                "Write something..."
-            );
+    note.addEventListener("pointerenter", () => {
+        note.style.cursor = "text";
+    });
 
-        if (
-            !text ||
-            !text.trim()
-        ) {
-            return;
-        }
+    note.addEventListener("input", () => {
+        const data = getObjectData(note);
+        if (socket?.connected && data) socket.emit("object-update", data);
+        saveLocalCache();
+        scheduleServerStateSync();
+    });
 
-        const id =
-            generateObjectId();
+    makeDraggable(note);
 
-        const note =
-            document.createElement(
-                "div"
-            );
-
-        note.textContent =
-            text.trim();
-
-        note.style.position =
-            "absolute";
-
-        note.style.left =
-            "250px";
-
-        note.style.top =
-            "150px";
-
-        note.style.width =
-            "180px";
-
-        note.style.minHeight =
-            "120px";
-
-        note.style.padding =
-            "18px";
-
-        note.style.background =
-            "#fff3a6";
-
-        note.style.boxShadow =
-            "0 5px 15px rgba(0,0,0,0.15)";
-
-        note.style.borderRadius =
-            "8px";
-
-        note.style.cursor =
-            "move";
-
-        note.style.pointerEvents =
-            "auto";
-
-        note.dataset.type =
-            "sticky";
-
-        note.dataset.objectId =
-            id;
-
-        objectLayer.appendChild(
-            note
-        );
-
-        makeDraggable(
-            note
-        );
-
-
-        if (
-            socket?.connected
-        ) {
-
-            socket.emit(
-                "object-add",
-                {
-                    id,
-                    type: "sticky",
-                    text:
-                        text.trim(),
-                    x: 250,
-                    y: 150
-                }
-            );
-
-        }
-
+    if (sync && socket?.connected) {
+        socket.emit("object-add", { id, type: "sticky", text, x, y, width: 180, height: 120 });
     }
-);
+
+    return note;
+}
+
+stickyBtn?.addEventListener("click", () => {
+    const note = createStickyNote("", 20, 20);
+    if (note) note.focus();
+});
 
 
 // ============================================================
@@ -4324,6 +4151,7 @@ function loadLocalCache() {
 
     if (titleInput && !titleInput.value) {
         titleInput.value = getInitialBoardName();
+        resizeDocumentTitle();
     }
 
     const key =
@@ -4409,6 +4237,7 @@ function loadLocalCache() {
 
             titleInput.value =
                 data.title;
+            resizeDocumentTitle();
 
         }
 
@@ -4605,6 +4434,7 @@ function applyServerBoardState(
 
             titleInput.value =
                 state.title;
+            resizeDocumentTitle();
 
         }
 
@@ -4857,6 +4687,11 @@ document.addEventListener(
             highlighterBtn?.click();
         }
 
+        if (key === "delete" || key === "backspace") {
+            e.preventDefault();
+            deleteSelectedCanvasObject();
+        }
+
     }
 );
 
@@ -4888,11 +4723,25 @@ const documentTitle =
 documentTitle?.addEventListener(
     "input",
     () => {
-
+        resizeDocumentTitle();
         scheduleServerStateSync();
 
     }
 );
+
+function resizeDocumentTitle() {
+    const titleInput = document.getElementById("documentTitle");
+    if (!titleInput) return;
+
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    const styles = window.getComputedStyle(titleInput);
+    context.font = `${styles.fontWeight} ${styles.fontSize} ${styles.fontFamily}`;
+    const text = titleInput.value || titleInput.placeholder || "Board name";
+    titleInput.style.width = `${Math.min(260, Math.max(18, Math.ceil(context.measureText(text).width + 8)))}px`;
+}
+
+resizeDocumentTitle();
 
 
 // ============================================================
