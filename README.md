@@ -143,31 +143,41 @@ Live-Canvas/
 
 ## Screenshots
 
-Add screenshots in `docs/images/` using the filenames below. Once the files are added, replace each placeholder with a standard Markdown image link if desired.
-
 ### Home page
 
-> Add `docs/images/home.png` here — landing page, feature sections, and call to action.
+<img width="1889" height="934" alt="image" src="https://github.com/user-attachments/assets/f2e783b6-de18-4f91-810d-fa101e451bff" />
+
 
 ### Login page
 
-> Add `docs/images/login.png` here — sign-in form and illustration.
+<img width="1903" height="928" alt="image" src="https://github.com/user-attachments/assets/e285a1b2-f326-4396-ae0d-363bb3d47925" />
+
 
 ### Sign-up page
 
-> Add `docs/images/signup.png` here — registration form and illustration.
+<img width="1904" height="934" alt="image" src="https://github.com/user-attachments/assets/3edb9b08-ea34-43fb-8f83-ef235b474a64" />
 
-### Saved Boards dashboard
-
-> Add `docs/images/saved-boards.png` here — project cards, search, sort, and create/join modal.
 
 ### Room page
 
-> Add `docs/images/rooms.png` here — room creation, board code, and join controls.
+<img width="1906" height="933" alt="image" src="https://github.com/user-attachments/assets/ae7c349d-c158-4de4-b403-04698b99ba8f" />
+
+
+### Saved Boards dashboard
+
+<img width="1911" height="933" alt="image" src="https://github.com/user-attachments/assets/49b08f83-89c7-4169-ad41-9d0222366bb8" />
+
 
 ### Collaborative canvas
 
-> Add `docs/images/canvas.png` here — tools, collaborators, objects, and board navigation.
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/4776365a-3461-487f-ae31-f983095ede0b" />
+
+
+
+
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/9e330f74-6237-48d3-a4e1-b11d60757105" />
+
+
 
 ## Requirements
 
