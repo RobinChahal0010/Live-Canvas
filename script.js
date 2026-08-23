@@ -3211,16 +3211,8 @@ function makeDraggable(
                 return;
             }
 
-            // In Select mode, a sticky note is selected rather than edited so
-            // it can be removed with Delete. It remains directly editable in
-            // the other tools.
-            if (element.dataset.type === "sticky") {
-                selectCanvasObject(element);
-                e.stopPropagation();
-                e.preventDefault();
-                return;
-            }
-
+            // Select mode treats sticky notes like every other object: one
+            // press selects it and a drag repositions it on the canvas.
             selectCanvasObject(element);
 
             dragging =
@@ -3296,6 +3288,11 @@ function makeDraggable(
                 );
 
             }
+
+            // Keep a moved note available after a refresh and include it in
+            // the next full board-state synchronization.
+            saveLocalCache();
+            scheduleServerStateSync();
 
         }
     );
