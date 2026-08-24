@@ -78,7 +78,7 @@ sequenceDiagram
 ### Live collaboration
 
 - A board code identifies the shared board session.
-- The server tracks board title, canvas style, zoom level, current page, drawings, and objects in memory.
+- The server tracks board title, canvas style, current page, drawings, and objects in memory. Zoom is a local viewer preference.
 - Socket.IO broadcasts drawing, object, page, document-state, canvas-style, cursor, and collaborator updates to other users in the same board.
 - Collaborators receive a deterministic cursor colour and an avatar assignment for easier visual identification.
 
@@ -124,7 +124,7 @@ The backend is a Node.js application using Express and Socket.IO.
 The server holds active boards in a `Map` named `boards`. Each board is keyed by its board code and includes:
 
 ```text
-boardId, title, canvasStyle, currentPage, zoom, pages, updatedAt
+boardId, title, canvasStyle, currentPage, pages, updatedAt
 ```
 
 Each page contains its own `id`, `height`, optional `canvasData`, `drawings`, and `objects`. This design isolates collaborative state by board code while keeping every active board available to connected Socket.IO clients.
@@ -174,7 +174,7 @@ These checks improve resilience against malformed collaboration payloads. They a
 | `loggedInUser` | `{ name, email }` | Indicates the current locally signed-in user. |
 | `savedBoards` | Array of board metadata | Stores board IDs, names, style choices, dates, update times, and dashboard colour indexes. |
 | `userProfilePicIdx` | Profile-image number | Keeps a consistent generated profile image for the user. |
-| `liveCanvasDocument_<boardId>` | Cached document object | Saves pages, drawings, objects, zoom, title, canvas style, current page, and save time for a board. |
+| `liveCanvasDocument_<boardId>` | Cached document object | Saves pages, drawings, objects, the local zoom preference, title, canvas style, current page, and save time for a board. |
 
 The document cache is a browser-side fallback and convenience layer. It is separate from the server’s live in-memory board state.
 
