@@ -754,7 +754,6 @@ if (
                 applyServerPages(
                     data.pages,
                     data.currentPage,
-                    data.zoom,
                     data.canvasStyle
                 );
 
@@ -946,7 +945,6 @@ socket.on(
             applyServerPages(
                 data.pages,
                 data.currentPage,
-                data.zoom,
                 data.canvasStyle
             );
 
@@ -2877,7 +2875,8 @@ zoomIn?.addEventListener(
 
         updateZoom();
 
-        scheduleServerStateSync();
+        // Zoom is a viewer preference, not shared board state.
+        saveLocalCache();
 
     }
 );
@@ -2891,7 +2890,8 @@ zoomOut?.addEventListener(
 
         updateZoom();
 
-        scheduleServerStateSync();
+        // Zoom is a viewer preference, not shared board state.
+        saveLocalCache();
 
     }
 );
@@ -4277,8 +4277,6 @@ function getBoardState() {
 
         currentPage,
 
-        zoom,
-
         canvasStyle:
             currentCanvasStyle,
 
@@ -4392,22 +4390,6 @@ function applyServerBoardState(
         }
 
         if (
-            typeof state.zoom ===
-            "number"
-        ) {
-
-            zoom =
-                Math.min(
-                    200,
-                    Math.max(
-                        50,
-                        state.zoom
-                    )
-                );
-
-        }
-
-        if (
             state.canvasStyle
         ) {
 
@@ -4501,7 +4483,6 @@ function applyServerCanvasData(
 function applyServerPages(
     serverPages,
     serverCurrentPage,
-    serverZoom,
     serverStyle
 ) {
 
@@ -4532,22 +4513,6 @@ function applyServerPages(
                     0
                 ),
                 pages.length - 1
-            );
-
-    }
-
-    if (
-        typeof serverZoom ===
-        "number"
-    ) {
-
-        zoom =
-            Math.min(
-                200,
-                Math.max(
-                    50,
-                    serverZoom
-                )
             );
 
     }

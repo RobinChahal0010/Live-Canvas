@@ -119,8 +119,6 @@ function createDefaultBoard(boardId, canvasStyle = "blank") {
 
         currentPage: 0,
 
-        zoom: 100,
-
         pages: [
             {
                 id: "page-1",
@@ -833,10 +831,6 @@ socket.on("canvas-style-change", (data) => {
                 }
             }
 
-            if (typeof incomingState.zoom === "number") {
-                board.zoom = Math.max(50, Math.min(200, incomingState.zoom));
-            }
-
             if (Number.isInteger(incomingState.currentPage)) {
                 board.currentPage = Math.max(0, incomingState.currentPage);
             }
@@ -930,27 +924,6 @@ socket.on("canvas-style-change", (data) => {
                         incomingState.canvasStyle;
 
                 }
-
-            }
-
-
-            // ------------------------------------------------
-            // ZOOM
-            // ------------------------------------------------
-
-            if (
-                typeof incomingState.zoom ===
-                "number"
-            ) {
-
-                board.zoom =
-                    Math.max(
-                        50,
-                        Math.min(
-                            200,
-                            incomingState.zoom
-                        )
-                    );
 
             }
 
@@ -2052,26 +2025,6 @@ function sanitizeBoardState(
 
         board.canvasStyle =
             incoming.canvasStyle;
-
-    }
-
-
-    // --------------------------------------------------------
-    // ZOOM
-    // --------------------------------------------------------
-
-    if (
-        typeof incoming.zoom === "number"
-    ) {
-
-        board.zoom =
-            Math.max(
-                50,
-                Math.min(
-                    200,
-                    incoming.zoom
-                )
-            );
 
     }
 
