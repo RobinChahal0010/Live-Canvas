@@ -92,21 +92,25 @@
                 <!-- Password -->
 
                 <div class="input-group">
+    <label for="password">Password</label>
 
-                    <label for="password">
-                        Password
-                    </label>
+    <div class="password-container">
+        <input
+            type="password"
+            id="password"
+            placeholder="Enter your password"
+            autocomplete="current-password">
 
-                    <input
-                        type="password"
-                        id="password"
-                        placeholder="Enter your password"
-                        autocomplete="current-password">
+        <span id="togglePassword" class="eye-icon">
+            <img
+                id="eyeIcon"
+                src="assets/eye-off.png"
+                alt="Show password">
+        </span>
+    </div>
+</div>
 
-                </div>
-
-
-                <p id="formMessage" class="form-message" aria-live="polite"></p>
+<p id="formMessage" class="form-message" aria-live="polite"></p>
 
                 <!-- Login Button -->
 
@@ -156,6 +160,8 @@
         if (existingUser) {
             window.location.href = 'saved.html';
         }
+
+
     </script>
     <script src="login.js"></script>
     <script src="cursor.js"></script>

@@ -1,6 +1,20 @@
 // Signup form: validates a new account, stores it locally, and starts a session.
 const signupBtn = document.getElementById("signupBtn");
+const passwordInput = document.getElementById("password");
+const togglePassword = document.getElementById("togglePassword");
+const eyeIcon = document.getElementById("eyeIcon");
 
+togglePassword.addEventListener("click", () => {
+    if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        eyeIcon.src = "assets/eye.png";
+        eyeIcon.alt = "Hide password";
+    } else {
+        passwordInput.type = "password";
+        eyeIcon.src = "assets/eye-off.png";
+        eyeIcon.alt = "Show password";
+    }
+});
 // Displays validation feedback next to the registration form.
 function setFormMessage(message, type = "error") {
     const messageBox = document.getElementById("formMessage");
@@ -43,15 +57,26 @@ signupBtn.addEventListener("click", async function () {
         setFormMessage("Please fill all fields.");
         return;
     }
-    if (name.length < 2) {
-        setFormMessage("Name must be at least 2 characters.");
+    if (name.trim().length < 3 || !/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(name.trim())) {
+        setFormMessage("Name must be at least 3 characters and contain only alphabets and spaces.");
         return;
     }
-
-    if (password.length < 6) {
-        setFormMessage("Password must be at least 6 characters.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setFormMessage("Please enter a valid email address.");
         return;
     }
+    if (
+    password.length < 8 ||
+    !/[A-Z]/.test(password) ||
+    !/[a-z]/.test(password) ||
+    !/[0-9]/.test(password) ||
+    !/[!@#$%^&*(),.?":{}|<>]/.test(password)
+) {
+    setFormMessage(
+        "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
+    );
+    return;
+}
 
     let users = JSON.parse(localStorage.getItem("users")) || [];
 

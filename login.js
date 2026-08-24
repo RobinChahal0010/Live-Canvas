@@ -1,5 +1,20 @@
 // Login form: validates credentials stored locally and starts the user session.
 const loginBtn = document.getElementById("loginBtn");
+const passwordInput = document.getElementById("password");
+const togglePassword = document.getElementById("togglePassword");
+const eyeIcon = document.getElementById("eyeIcon");
+
+togglePassword.addEventListener("click", () => {
+    if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        eyeIcon.src = "assets/eye.png";
+        eyeIcon.alt = "Hide password";
+    } else {
+        passwordInput.type = "password";
+        eyeIcon.src = "assets/eye-off.png";
+        eyeIcon.alt = "Show password";
+    }
+});
 
 // Displays validation and authentication feedback next to the form.
 function setFormMessage(message, type = "error") {
