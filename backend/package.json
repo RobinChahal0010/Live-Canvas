@@ -1,3 +1,4 @@
+
 {
   "name": "backend",
   "version": "1.0.0",
@@ -12,8 +13,10 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "dotenv": "^18.0.9",
     "express": "^5.2.1",
     "multer": "^2.5.0",
+    "mongoose": "^9.11.4",
     "nodemon": "^3.1.14",
     "socket.io": "^4.8.3"
   }

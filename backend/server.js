@@ -8,6 +8,9 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
+const mongoose = require("mongoose");
+require("dotenv").config();
+const Board = require("./models/Board");
 
 
 // ============================================================
@@ -99,11 +102,78 @@ app.get("/health", (req, res) => {
 //         ├── drawingOperations
 //         └── objects
 //
-// This is server memory for now.
-// Later this can easily be moved to MongoDB/PostgreSQL/Redis.
+// In-memory cache for fast collaboration, backed by MongoDB persistence.
 //
 
 const boards = new Map();
+
+// Debounced MongoDB persistence prevents one database write per drawing segment.
+const boardPersistTimers = new Map();
+
+function scheduleBoardPersist(board) {
+    if (!board || !board.boardId) return;
+
+    const boardId = board.boardId;
+    const previousTimer = boardPersistTimers.get(boardId);
+    if (previousTimer) clearTimeout(previousTimer);
+
+    const timer = setTimeout(async () => {
+        boardPersistTimers.delete(boardId);
+
+        // Snapshot the current in-memory state at the time the save runs.
+        const snapshot = {
+            boardId: board.boardId,
+            title: board.title || "",
+            canvasStyle: board.canvasStyle || "blank",
+            currentPage: Number.isInteger(board.currentPage) ? board.currentPage : 0,
+            pages: Array.isArray(board.pages) ? board.pages : [],
+            updatedAt: board.updatedAt || Date.now()
+        };
+
+        try {
+            await Board.updateOne(
+                { boardId },
+                { $set: snapshot },
+                { upsert: true, runValidators: true }
+            );
+        } catch (error) {
+            console.error(`Failed to persist board ${boardId}:`, error.message);
+        }
+    }, 750);
+
+    boardPersistTimers.set(boardId, timer);
+}
+
+async function loadOrCreateBoard(boardId, initialCanvasStyle = "blank") {
+    const cachedBoard = boards.get(boardId);
+    if (cachedBoard) return cachedBoard;
+
+    const savedBoard = await Board.findOne({ boardId }).lean();
+    if (savedBoard) {
+        const board = {
+            boardId: savedBoard.boardId,
+            title: savedBoard.title || "",
+            canvasStyle: savedBoard.canvasStyle || "blank",
+            currentPage: Number.isInteger(savedBoard.currentPage) ? savedBoard.currentPage : 0,
+            pages: Array.isArray(savedBoard.pages) && savedBoard.pages.length
+                ? savedBoard.pages
+                : createDefaultBoard(boardId).pages,
+            updatedAt: savedBoard.updatedAt || Date.now()
+        };
+
+        // Guard against an invalid current page in stored data.
+        if (board.currentPage >= board.pages.length) {
+            board.currentPage = board.pages.length - 1;
+        }
+        boards.set(boardId, board);
+        console.log(`Loaded board from MongoDB: ${boardId}`);
+        return board;
+    }
+
+    const board = getBoard(boardId, initialCanvasStyle);
+    scheduleBoardPersist(board);
+    return board;
+}
 
 
 // ============================================================
@@ -373,8 +443,9 @@ io.on("connection", (socket) => {
 
     socket.on(
         "join-room",
-        (boardId, username, profileIdx, initialCanvasStyle) => {
+        async (boardId, username, profileIdx, initialCanvasStyle) => {
 
+            try {
             boardId =
                 cleanBoardId(boardId);
 
@@ -457,7 +528,7 @@ io.on("connection", (socket) => {
             // ------------------------------------------------
 
             const board =
-                getBoard(boardId, initialCanvasStyle);
+                await loadOrCreateBoard(boardId, initialCanvasStyle);
 
 
             // ------------------------------------------------
@@ -555,6 +626,12 @@ io.on("connection", (socket) => {
                 userCount
             );
 
+            } catch (error) {
+                console.error(`Failed to join board ${boardId}:`, error);
+                socket.emit("join-error", {
+                    message: "Could not load this board. Please try again."
+                });
+            }
         }
     );
 
@@ -600,6 +677,8 @@ socket.on("canvas-style-change", (data) => {
     const boardState = getBoard(socket.boardId);
 
     boardState.canvasStyle = style;
+    boardState.updatedAt = Date.now();
+    scheduleBoardPersist(boardState);
 
     console.log(
         `Canvas style changed: ${socket.boardId} -> ${style}`
@@ -693,6 +772,7 @@ socket.on("canvas-style-change", (data) => {
 
             board.updatedAt =
                 Date.now();
+            scheduleBoardPersist(board);
 
 
             // ------------------------------------------------
@@ -787,6 +867,7 @@ socket.on("canvas-style-change", (data) => {
 
             board.updatedAt =
                 Date.now();
+            scheduleBoardPersist(board);
 
 
             socket.to(
@@ -974,6 +1055,7 @@ socket.on("canvas-style-change", (data) => {
 
             board.updatedAt =
                 Date.now();
+            scheduleBoardPersist(board);
 
 
             // ------------------------------------------------
@@ -1032,6 +1114,7 @@ socket.on("canvas-style-change", (data) => {
                 socket.boardId,
                 sanitized
             );
+            scheduleBoardPersist(sanitized);
 
 
             socket.to(
@@ -1126,6 +1209,7 @@ socket.on("canvas-style-change", (data) => {
 
             board.updatedAt =
                 Date.now();
+            scheduleBoardPersist(board);
 
 
             socket.to(
@@ -1232,6 +1316,7 @@ socket.on("canvas-style-change", (data) => {
 
             board.updatedAt =
                 Date.now();
+            scheduleBoardPersist(board);
 
 
             socket.to(
@@ -1311,6 +1396,7 @@ socket.on("canvas-style-change", (data) => {
 
             board.updatedAt =
                 Date.now();
+            scheduleBoardPersist(board);
 
 
             socket.to(
@@ -1373,6 +1459,7 @@ socket.on("canvas-style-change", (data) => {
 
             board.updatedAt =
                 Date.now();
+            scheduleBoardPersist(board);
 
 
             socket.to(
@@ -1438,6 +1525,7 @@ socket.on("canvas-style-change", (data) => {
 
             board.updatedAt =
                 Date.now();
+            scheduleBoardPersist(board);
 
 
             socket.to(
@@ -1517,6 +1605,7 @@ socket.on("canvas-style-change", (data) => {
 
             board.updatedAt =
                 Date.now();
+            scheduleBoardPersist(board);
 
 
             socket.to(
@@ -1579,6 +1668,7 @@ socket.on("canvas-style-change", (data) => {
 
             board.updatedAt =
                 Date.now();
+            scheduleBoardPersist(board);
 
 
             socket.to(
@@ -2085,40 +2175,62 @@ function sanitizeBoardState(
 // START SERVER
 // ============================================================
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/livecanvas";
 
+async function startServer() {
+    try {
+        await mongoose.connect(MONGODB_URI);
+        console.log("MongoDB connected.");
 
-server.listen(
-    PORT,
-    () => {
-
-        console.log(
-            "============================================"
-        );
-
-        console.log(
-            "        LIVE CANVAS SERVER"
-        );
-
-        console.log(
-            "============================================"
-        );
-
-        console.log(
-            `Server running at: http://localhost:${PORT}`
-        );
-
-        console.log(
-            `Boards in memory: ${boards.size}`
-        );
-
-        console.log(
-            "Socket.IO: READY"
-        );
-
-        console.log(
-            "============================================"
-        );
-
+        server.listen(PORT, () => {
+            console.log("============================================");
+            console.log("        LIVE CANVAS SERVER");
+            console.log("============================================");
+            console.log(`Server running at: http://localhost:${PORT}`);
+            console.log(`Boards in memory: ${boards.size}`);
+            console.log("Socket.IO: READY");
+            console.log("MongoDB persistence: READY");
+            console.log("============================================");
+        });
+    } catch (error) {
+        console.error("Could not connect to MongoDB:", error.message);
+        process.exit(1);
     }
-);
+}
+
+startServer();
+
+// Best-effort flush of pending board saves during graceful shutdown.
+async function shutdown(signal) {
+    console.log(`${signal} received. Shutting down LiveCanvas...`);
+    for (const timer of boardPersistTimers.values()) clearTimeout(timer);
+    boardPersistTimers.clear();
+
+    try {
+        const writes = [];
+        for (const board of boards.values()) {
+            writes.push(Board.updateOne(
+                { boardId: board.boardId },
+                { $set: {
+                    boardId: board.boardId,
+                    title: board.title || "",
+                    canvasStyle: board.canvasStyle || "blank",
+                    currentPage: board.currentPage || 0,
+                    pages: board.pages || [],
+                    updatedAt: board.updatedAt || Date.now()
+                } },
+                { upsert: true }
+            ));
+        }
+        await Promise.all(writes);
+    } catch (error) {
+        console.error("Error during final board save:", error.message);
+    }
+
+    await mongoose.disconnect();
+    server.close(() => process.exit(0));
+}
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
