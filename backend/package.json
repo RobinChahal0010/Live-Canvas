@@ -13,6 +13,8 @@
   "type": "commonjs",
   "dependencies": {
     "express": "^5.2.1",
+    "multer": "^2.5.0",
+    "nodemon": "^3.1.14",
     "socket.io": "^4.8.3"
   }
 }

@@ -1956,6 +1956,8 @@ function activateTool(
     currentTool =
         tool;
 
+    updateResizeOverlay();
+
     setActiveTool(
         button
     );
@@ -2072,6 +2074,8 @@ function updateCanvasViewport() {
         objectLayer.style.transform =
             `translate(${camera.x}px, ${camera.y}px) scale(${scale})`;
     }
+
+    updateResizeOverlay();
 
     document.querySelectorAll(".remote-canvas-cursor").forEach(pointer => {
         const x = Number(pointer.dataset.worldX);
@@ -3155,7 +3159,14 @@ function getObjectData(
             element.style.color,
 
         fontSize:
-            element.style.fontSize
+            element.style.fontSize,
+
+        src:
+            element.dataset.src ||
+            (element.tagName === "IMG" ? element.getAttribute("src") : undefined),
+
+        name:
+            element.dataset.name
 
     };
 
@@ -3168,18 +3179,428 @@ function getObjectData(
 
 let selectedCanvasObject = null;
 
+// `var` on purpose: functions that run early can safely read it.
+var resizeReady = false;
+var resizeOverlay = null;
+resizeReady = true;
+
 function selectCanvasObject(element) {
     selectedCanvasObject?.classList.remove("is-selected-object");
     selectedCanvasObject = element;
     selectedCanvasObject?.classList.add("is-selected-object");
+    updateResizeOverlay();
 }
 
+
+// ============================================================
+// RESIZE HANDLES (images)
+// ============================================================
+
+const RESIZE_CURSORS = {
+    nw: "nwse-resize",
+    se: "nwse-resize",
+    ne: "nesw-resize",
+    sw: "nesw-resize"
+};
+
+function getResizeOverlay() {
+
+    if (resizeOverlay && resizeOverlay.isConnected) {
+        return resizeOverlay;
+    }
+
+    const overlay = document.createElement("div");
+    overlay.className = "resize-overlay";
+    overlay.style.position = "absolute";
+    overlay.style.border = "2px solid #3b82f6";
+    overlay.style.pointerEvents = "none";
+    overlay.style.display = "none";
+    overlay.style.zIndex = "9999";
+    overlay.style.boxSizing = "border-box";
+
+    ["nw", "ne", "sw", "se"].forEach(corner => {
+
+        const handle = document.createElement("div");
+        handle.className = "resize-handle";
+        handle.dataset.corner = corner;
+        handle.style.position = "absolute";
+        handle.style.background = "#ffffff";
+        handle.style.border = "2px solid #3b82f6";
+        handle.style.borderRadius = "50%";
+        handle.style.boxSizing = "border-box";
+        handle.style.pointerEvents = "auto";
+        handle.style.cursor = RESIZE_CURSORS[corner];
+
+        handle.addEventListener("mousedown", e => startResize(e, corner));
+
+        overlay.appendChild(handle);
+    });
+
+    objectLayer.appendChild(overlay);
+    resizeOverlay = overlay;
+
+    return overlay;
+}
+
+
+function updateResizeOverlay() {
+
+    if (!resizeReady || !objectLayer) {
+        return;
+    }
+
+    const el = selectedCanvasObject;
+
+    const visible =
+        el &&
+        el.isConnected &&
+        (el.dataset.type === "image" || el.dataset.type === "file") &&
+        currentTool === "select";
+
+    if (!visible) {
+        if (resizeOverlay) {
+            resizeOverlay.style.display = "none";
+        }
+        if (objectControls) {
+            objectControls.style.display = "none";
+        }
+        return;
+    }
+
+    const overlay = getResizeOverlay();
+    const scale = zoom / 100;
+
+    const x = parseFloat(el.style.left) || 0;
+    const y = parseFloat(el.style.top) || 0;
+
+    overlay.style.display = "block";
+    overlay.style.left = `${x}px`;
+    overlay.style.top = `${y}px`;
+    overlay.style.width = `${el.offsetWidth}px`;
+    overlay.style.height = `${el.offsetHeight}px`;
+
+    // Keep handles a constant on-screen size at any zoom level.
+    const size = 12 / scale;
+    const offset = -(size / 2) - (1 / scale);
+
+    overlay.querySelectorAll(".resize-handle").forEach(handle => {
+
+        handle.style.width = `${size}px`;
+        handle.style.height = `${size}px`;
+        handle.style.borderWidth = `${2 / scale}px`;
+
+        const c = handle.dataset.corner;
+        handle.style.left = c.includes("w") ? `${offset}px` : "auto";
+        handle.style.right = c.includes("e") ? `${offset}px` : "auto";
+        handle.style.top = c.includes("n") ? `${offset}px` : "auto";
+        handle.style.bottom = c.includes("s") ? `${offset}px` : "auto";
+    });
+
+    positionObjectControls(el);
+}
+
+
+// ============================================================
+// ZOOM IN / ZOOM OUT BUTTONS FOR THE SELECTED IMAGE
+// ============================================================
+
+var objectControls = null;
+
+// Save + broadcast the selected object's new size / position.
+function commitObjectChange(el) {
+
+    const data = getObjectData(el);
+
+    if (data && socket?.connected) {
+        socket.emit("object-update", data);
+    }
+
+    saveLocalCache();
+    scheduleServerStateSync();
+}
+
+
+// File cards scale their text and padding together with their size.
+function setFileCardScale(el, fontPx) {
+
+    const f = Math.max(4, fontPx);
+    const r = f / 14;
+
+    el.style.fontSize = `${f}px`;
+    el.style.padding = `${12 * r}px ${16 * r}px`;
+    el.style.borderRadius = `${10 * r}px`;
+}
+
+function prepareFileCardForSizing(el) {
+
+    el.style.boxSizing = "border-box";
+    el.style.maxWidth = "none";
+}
+
+// factor > 1 = zoom in, factor < 1 = zoom out (keeps the object centred)
+function scaleSelectedImage(factor) {
+
+    const el = selectedCanvasObject;
+    const isFile = el?.dataset.type === "file";
+
+    if (!el || (el.dataset.type !== "image" && !isFile)) {
+        return;
+    }
+
+    const oldW = el.offsetWidth || 1;
+    const oldH = el.offsetHeight || 1;
+
+    const minW = isFile ? 80 : 40;
+    const newW = Math.max(minW, Math.min(4000, oldW * factor));
+    const newH = newW * (oldH / oldW);
+
+    if (isFile) {
+        prepareFileCardForSizing(el);
+        setFileCardScale(el, (parseFloat(el.style.fontSize) || 14) * (newW / oldW));
+    }
+
+    const left = (parseFloat(el.style.left) || 0) - (newW - oldW) / 2;
+    const top = (parseFloat(el.style.top) || 0) - (newH - oldH) / 2;
+
+    el.style.width = `${newW}px`;
+    el.style.height = `${newH}px`;
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+    el.dataset.worldX = left;
+    el.dataset.worldY = top;
+
+    updateResizeOverlay();
+    commitObjectChange(el);
+}
+
+
+function getObjectControls() {
+
+    if (objectControls && objectControls.isConnected) {
+        return objectControls;
+    }
+
+    const bar = document.createElement("div");
+    bar.id = "objectControls";
+    bar.style.position = "fixed";
+    bar.style.display = "none";
+    bar.style.gap = "6px";
+    bar.style.padding = "6px";
+    bar.style.background = "#ffffff";
+    bar.style.border = "1px solid #d8dee9";
+    bar.style.borderRadius = "10px";
+    bar.style.boxShadow = "0 6px 20px rgba(0,0,0,0.15)";
+    bar.style.zIndex = "10000";
+
+    // Keep clicks on the bar from deselecting the image.
+    bar.addEventListener("mousedown", e => e.stopPropagation());
+
+    const addButton = (iconClass, title, onClick) => {
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.title = title;
+        button.innerHTML = `<i class="${iconClass}"></i>`;
+        button.style.width = "34px";
+        button.style.height = "34px";
+        button.style.border = "none";
+        button.style.borderRadius = "8px";
+        button.style.background = "#f1f5f9";
+        button.style.cursor = "pointer";
+        button.style.fontSize = "15px";
+
+        button.addEventListener("click", e => {
+            e.stopPropagation();
+            onClick();
+        });
+
+        bar.appendChild(button);
+    };
+
+    addButton("fa-solid fa-magnifying-glass-minus", "Zoom out", () => scaleSelectedImage(1 / 1.15));
+    addButton("fa-solid fa-magnifying-glass-plus", "Zoom in", () => scaleSelectedImage(1.15));
+    addButton("fa-solid fa-trash", "Delete", () => deleteSelectedCanvasObject());
+
+    document.body.appendChild(bar);
+    objectControls = bar;
+
+    return bar;
+}
+
+
+function positionObjectControls(el) {
+
+    const bar = getObjectControls();
+    const rect = el.getBoundingClientRect();
+
+    bar.style.display = "flex";
+
+    const barWidth = bar.offsetWidth || 130;
+    const barHeight = bar.offsetHeight || 46;
+
+    let left = rect.left + rect.width / 2 - barWidth / 2;
+    let top = rect.top - barHeight - 10;
+
+    // Not enough room above? Put the bar below the image instead.
+    if (top < 8) {
+        top = rect.bottom + 10;
+    }
+
+    left = Math.max(8, Math.min(window.innerWidth - barWidth - 8, left));
+    top = Math.max(8, Math.min(window.innerHeight - barHeight - 8, top));
+
+    bar.style.left = `${left}px`;
+    bar.style.top = `${top}px`;
+}
+
+
+function startResize(e, corner) {
+
+    const el = selectedCanvasObject;
+
+    if (!el) {
+        return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const start = getMousePosition(e);
+    const startW = el.offsetWidth || 1;
+    const startH = el.offsetHeight || 1;
+    const startLeft = parseFloat(el.style.left) || 0;
+    const startTop = parseFloat(el.style.top) || 0;
+    const aspect = startW / startH;
+
+    const isFile = el.dataset.type === "file";
+    const startFont = parseFloat(el.style.fontSize) || 14;
+
+    if (isFile) {
+        prepareFileCardForSizing(el);
+    }
+
+    const MIN_WIDTH = isFile ? 80 : 40;
+    const MAX_WIDTH = 4000;
+
+    function onMove(ev) {
+
+        const p = getMousePosition(ev);
+        const dx = p.x - start.x;
+
+        // East corners grow with +dx, west corners grow with -dx.
+        let newW = corner.includes("e") ? startW + dx : startW - dx;
+        newW = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, newW));
+
+        const newH = newW / aspect;
+
+        // West / north corners keep the opposite corner fixed.
+        const newLeft = corner.includes("w") ? startLeft + (startW - newW) : startLeft;
+        const newTop = corner.includes("n") ? startTop + (startH - newH) : startTop;
+
+        if (isFile) {
+            setFileCardScale(el, startFont * (newW / startW));
+        }
+
+        el.style.width = `${newW}px`;
+        el.style.height = `${newH}px`;
+        el.style.left = `${newLeft}px`;
+        el.style.top = `${newTop}px`;
+        el.dataset.worldX = newLeft;
+        el.dataset.worldY = newTop;
+
+        updateResizeOverlay();
+    }
+
+    function onUp() {
+
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+
+        const data = getObjectData(el);
+
+        if (data && socket?.connected) {
+            socket.emit("object-update", data);
+        }
+
+        saveLocalCache();
+        scheduleServerStateSync();
+    }
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+}
+
+
+// Click on empty canvas = deselect (objects/handles stop propagation).
+document.addEventListener("mousedown", e => {
+
+    if (!selectedCanvasObject) {
+        return;
+    }
+
+    if (!canvasViewport?.contains(e.target)) {
+        return;
+    }
+
+    selectCanvasObject(null);
+});
+
+
+// Arrow keys nudge the selected image / file (Shift = 10px steps).
+let nudgeTimer = null;
+
+document.addEventListener("keydown", e => {
+
+    const el = selectedCanvasObject;
+
+    if (!el || !el.isConnected) {
+        return;
+    }
+
+    const arrows = {
+        ArrowLeft: [-1, 0],
+        ArrowRight: [1, 0],
+        ArrowUp: [0, -1],
+        ArrowDown: [0, 1]
+    };
+
+    const move = arrows[e.key];
+
+    if (!move) {
+        return;
+    }
+
+    const t = e.target;
+
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) {
+        return;
+    }
+
+    e.preventDefault();
+
+    const step = e.shiftKey ? 10 : 1;
+    const left = (parseFloat(el.style.left) || 0) + move[0] * step;
+    const top = (parseFloat(el.style.top) || 0) + move[1] * step;
+
+    el.style.left = `${left}px`;
+    el.style.top = `${top}px`;
+    el.dataset.worldX = left;
+    el.dataset.worldY = top;
+
+    updateResizeOverlay();
+
+    // Send one update after the last key press, not one per key.
+    clearTimeout(nudgeTimer);
+    nudgeTimer = setTimeout(() => commitObjectChange(el), 250);
+});
+
 function deleteSelectedCanvasObject() {
-    if (!selectedCanvasObject || !["image", "text", "sticky"].includes(selectedCanvasObject.dataset.type)) return;
+    if (!selectedCanvasObject || !["image", "text", "sticky", "file"].includes(selectedCanvasObject.dataset.type)) return;
 
     const id = selectedCanvasObject.dataset.objectId;
     selectedCanvasObject.remove();
     selectedCanvasObject = null;
+    updateResizeOverlay();
 
     if (socket?.connected && id) socket.emit("object-delete", { id });
     saveLocalCache();
@@ -3254,6 +3675,10 @@ function makeDraggable(
             element.dataset.worldY = y;
             element.style.left = `${x}px`;
             element.style.top = `${y}px`;
+
+            if (element === selectedCanvasObject) {
+                updateResizeOverlay();
+            }
 
         }
     );
@@ -3367,6 +3792,28 @@ function createObjectFromData(
         return;
     }
 
+    if (data.type === "image") {
+        if (isSafeImageSrc(data.src)) {
+            createImageObject(data.src, false, data);
+        }
+        return;
+    }
+
+    if (data.type === "file") {
+        if (isSafeUploadUrl(data.src)) {
+            createFileObject(
+                data.src,
+                data.name || "file",
+                false,
+                data.id,
+                Number(data.x) || 0,
+                Number(data.y) || 0,
+                data
+            );
+        }
+        return;
+    }
+
 
     const element =
         document.createElement(
@@ -3450,6 +3897,19 @@ function updateObjectFromData(
         element.dataset.worldY = Number(data.y);
         element.style.top =
             `${Number(data.y)}px`;
+
+    }
+
+    if (
+        element.dataset.type === "file" &&
+        data.width !== undefined
+    ) {
+
+        prepareFileCardForSizing(element);
+
+        if (data.fontSize) {
+            setFileCardScale(element, parseFloat(data.fontSize) || 14);
+        }
 
     }
 
@@ -3854,56 +4314,242 @@ function createShape(
 // IMAGE
 // ============================================================
 
+const fileBtn =
+    document.getElementById(
+        "fileBtn"
+    );
+
+function openUploadPicker(accept) {
+
+    const input =
+        document.createElement(
+            "input"
+        );
+
+    input.type =
+        "file";
+
+    input.accept =
+        accept;
+
+    input.addEventListener(
+        "change",
+        () => {
+
+            const file =
+                input.files?.[0];
+
+            if (file) {
+                uploadAndAddFile(file);
+            }
+
+        }
+    );
+
+    input.click();
+
+}
+
+// ============================================================
+// DRAG & DROP FILES FROM THE COMPUTER ONTO THE CANVAS
+// ============================================================
+
+const hasFiles = e =>
+    Array.from(e.dataTransfer?.types || []).includes("Files");
+
+// Stop the browser from opening a file that is dropped outside the canvas.
+window.addEventListener("dragover", e => {
+    if (hasFiles(e)) {
+        e.preventDefault();
+    }
+});
+
+window.addEventListener("drop", e => {
+    if (hasFiles(e)) {
+        e.preventDefault();
+    }
+});
+
+if (canvasViewport) {
+
+    canvasViewport.addEventListener("dragover", e => {
+        if (hasFiles(e)) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "copy";
+        }
+    });
+
+    canvasViewport.addEventListener("drop", async e => {
+
+        const files = Array.from(e.dataTransfer?.files || []).slice(0, 5);
+
+        if (!files.length) {
+            return;
+        }
+
+        e.preventDefault();
+
+        const point = getMousePosition(e);
+
+        for (let i = 0; i < files.length; i++) {
+            await uploadAndAddFile(
+                files[i],
+                {
+                    x: Math.round(point.x - 125 + i * 32),
+                    y: Math.round(point.y - 90 + i * 32)
+                }
+            );
+        }
+    });
+}
+
+
+// Upload button: images AND documents
 imageBtn?.addEventListener(
     "click",
-    () => {
+    () => openUploadPicker(".png,.jpg,.jpeg,.gif,.webp,.pdf,.txt")
+);
 
-        const input =
-            document.createElement(
-                "input"
-            );
+// File button: documents (PDF / TXT)
+fileBtn?.addEventListener(
+    "click",
+    () => openUploadPicker(".pdf,.txt")
+);
 
-        input.type =
-            "file";
 
-        input.accept =
-            "image/*";
+// ============================================================
+// UPLOAD FILE TO SERVER (multer) AND ADD TO BOARD
+// ============================================================
 
-        input.addEventListener(
-            "change",
-            () => {
+async function uploadAndAddFile(file, position = null) {
 
-                const file =
-                    input.files?.[0];
+    const form = new FormData();
+    form.append("files", file);
 
-                if (!file) {
-                    return;
-                }
+    try {
 
-                const reader =
-                    new FileReader();
-
-                reader.onload =
-                    event => {
-
-                        createImageObject(
-                            event.target.result,
-                            true
-                        );
-
-                    };
-
-                reader.readAsDataURL(
-                    file
-                );
-
+        const res = await fetch(
+            "/api/upload",
+            {
+                method: "POST",
+                body: form
             }
         );
 
-        input.click();
+        const data = await res.json();
+
+        if (!data.success) {
+            alert(data.error || "Upload failed.");
+            return;
+        }
+
+        const f = data.files[0];
+
+        if (f.isImage) {
+            createImageObject(
+                f.url,
+                true,
+                position ? { x: position.x, y: position.y } : {}
+            );
+        } else {
+            createFileObject(
+                f.url,
+                f.originalName,
+                true,
+                undefined,
+                position ? position.x : null,
+                position ? position.y : null
+            );
+        }
+
+        // Switch to the Select tool and select the new object so it can be
+        // dragged, resized and zoomed right away.
+        const created = Array.from(objectLayer.children)
+            .filter(el => el.dataset && el.dataset.objectId)
+            .pop();
+
+        activateTool("select", selectTool, "default");
+
+        if (created) {
+            selectCanvasObject(created);
+        }
+
+        saveLocalCache();
+        scheduleServerStateSync();
+
+    } catch (error) {
+
+        console.error("Upload failed:", error);
+        alert("Upload failed. Please try again.");
 
     }
-);
+
+}
+
+
+// ============================================================
+// SAFE SOURCES
+// ============================================================
+// Only accept our own uploads (or legacy base64 images) coming
+// from other users.
+
+function isSafeUploadUrl(src) {
+
+    return typeof src === "string" &&
+        src.startsWith("/uploads/");
+
+}
+
+function isSafeImageSrc(src) {
+
+    return isSafeUploadUrl(src) ||
+        (typeof src === "string" && src.startsWith("data:image/"));
+
+}
+
+
+// ============================================================
+// FIND A FREE SPOT FOR A NEW OBJECT
+// ============================================================
+// Starts at the centre of what the user is currently looking at,
+// then cascades down-right until it no longer sits on top of
+// another object.
+
+function getFreeObjectPosition(width = 250, height = 190) {
+
+    const scale = zoom / 100;
+
+    const centerX = (canvas.width / 2 - camera.x) / scale;
+    const centerY = (canvas.height / 2 - camera.y) / scale;
+
+    let x = Math.round(centerX - width / 2);
+    let y = Math.round(centerY - height / 2);
+
+    const taken = Array.from(objectLayer.children)
+        .filter(el => el.dataset && el.dataset.objectId)
+        .map(el => ({
+            x: parseFloat(el.style.left) || 0,
+            y: parseFloat(el.style.top) || 0
+        }));
+
+    const STEP = 32;
+
+    for (let i = 0; i < 100; i++) {
+
+        const overlapping = taken.some(
+            t => Math.abs(t.x - x) < STEP / 2 && Math.abs(t.y - y) < STEP / 2
+        );
+
+        if (!overlapping) {
+            break;
+        }
+
+        x += STEP;
+        y += STEP;
+    }
+
+    return { x, y };
+}
 
 
 // ============================================================
@@ -3912,7 +4558,8 @@ imageBtn?.addEventListener(
 
 function createImageObject(
     src,
-    sync = true
+    sync = true,
+    data = {}
 ) {
 
     if (!objectLayer) {
@@ -3920,7 +4567,29 @@ function createImageObject(
     }
 
     const id =
+        data.id ||
         generateObjectId();
+
+    const width =
+        Number(data.width) || 250;
+
+    // Saved / remote objects keep their own position. Brand-new objects get
+    // a free spot so they never land exactly on top of an existing one.
+    const hasPosition =
+        data.x !== undefined &&
+        data.x !== null &&
+        data.y !== undefined &&
+        data.y !== null &&
+        Number.isFinite(Number(data.x)) &&
+        Number.isFinite(Number(data.y));
+
+    const spot =
+        hasPosition
+            ? { x: Number(data.x), y: Number(data.y) }
+            : getFreeObjectPosition(width, width * 0.75);
+
+    const x = spot.x;
+    const y = spot.y;
 
     const image =
         document.createElement(
@@ -3930,20 +4599,23 @@ function createImageObject(
     image.src =
         src;
 
+    image.draggable =
+        false;
+
     image.style.position =
         "absolute";
 
     image.style.left =
-        "150px";
+        `${x}px`;
 
     image.style.top =
-        "200px";
+        `${y}px`;
 
     image.style.width =
-        "250px";
+        `${width}px`;
 
     image.style.maxWidth =
-        "400px";
+        "none";
 
     image.style.borderRadius =
         "10px";
@@ -3983,9 +4655,112 @@ function createImageObject(
                 id,
                 type: "image",
                 src,
-                x: 150,
-                y: 200,
-                width: 250
+                x,
+                y,
+                width
+            }
+        );
+
+    }
+
+}
+
+
+// ============================================================
+// CREATE FILE CARD (PDF / TXT)
+// ============================================================
+
+function createFileObject(
+    url,
+    name,
+    sync = true,
+    id = generateObjectId(),
+    x = null,
+    y = null,
+    data = {}
+) {
+
+    if (!objectLayer) {
+        return;
+    }
+
+    if (x === null || y === null) {
+        const spot = getFreeObjectPosition(220, 44);
+        x = spot.x;
+        y = spot.y;
+    }
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+    // textContent keeps the file name safe from HTML injection
+    card.textContent =
+        `\u{1F4C4} ${name}`;
+
+    card.title =
+        "Double-click to open";
+
+    card.style.position = "absolute";
+    card.style.left = `${x}px`;
+    card.style.top = `${y}px`;
+    card.style.padding = "12px 16px";
+    card.style.background = "#ffffff";
+    card.style.border = "1px solid #d8dee9";
+    card.style.borderRadius = "10px";
+    card.style.boxShadow = "0 5px 20px rgba(0,0,0,0.12)";
+    card.style.cursor = "move";
+    card.style.pointerEvents = "auto";
+    card.style.maxWidth = "260px";
+    card.style.overflow = "hidden";
+    card.style.textOverflow = "ellipsis";
+    card.style.whiteSpace = "nowrap";
+    card.style.fontSize = "14px";
+
+    card.dataset.type = "file";
+    card.dataset.objectId = id;
+    card.dataset.src = url;
+    card.dataset.name = name;
+
+    card.addEventListener(
+        "dblclick",
+        () => {
+            window.open(url, "_blank", "noopener");
+        }
+    );
+
+    if (Number(data.width) > 0 && Number(data.height) > 0) {
+        prepareFileCardForSizing(card);
+        if (data.fontSize) {
+            setFileCardScale(card, parseFloat(data.fontSize) || 14);
+        }
+        card.style.width = `${Number(data.width)}px`;
+        card.style.height = `${Number(data.height)}px`;
+    }
+
+    objectLayer.appendChild(
+        card
+    );
+
+    makeDraggable(
+        card
+    );
+
+    if (
+        sync &&
+        socket?.connected
+    ) {
+
+        socket.emit(
+            "object-add",
+            {
+                id,
+                type: "file",
+                src: url,
+                name,
+                x,
+                y
             }
         );
 
@@ -4353,6 +5128,11 @@ function applyServerBoardState(
     isApplyingRemoteState =
         true;
 
+    // Declared outside the `if` so the check at the end of this function
+    // (after loadPage) can still read them.
+    let serverHasContent = false;
+    let localHasContent = false;
+
     try {
 
         if (
@@ -4362,8 +5142,8 @@ function applyServerBoardState(
             state.pages.length
         ) {
 
-            const serverHasContent = state.pages.some(p => Boolean(p && (p.canvasData || (p.drawings && p.drawings.length) || (p.objects && p.objects.length))));
-            const localHasContent = pages.some(
+            serverHasContent = state.pages.some(p => Boolean(p && (p.canvasData || (p.drawings && p.drawings.length) || (p.objects && p.objects.length))));
+            localHasContent = pages.some(
                 p => Boolean(p && (p.canvasData || (p.drawings && p.drawings.length) || (p.objects && p.objects.length)))
             );
 

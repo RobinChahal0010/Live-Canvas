@@ -33,6 +33,9 @@ app.use(express.json({
     limit: "10mb"
 }));
 
+const uploadRoutes = require("./upload");
+app.use(uploadRoutes);
+
 
 // ============================================================
 // SERVE FRONTEND
