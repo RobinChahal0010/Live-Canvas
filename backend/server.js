@@ -36,7 +36,7 @@ app.use(express.json({
     limit: "10mb"
 }));
 
-const uploadRoutes = require("./upload");
+const uploadRoutes = require("./Upload");
 app.use(uploadRoutes);
 
 

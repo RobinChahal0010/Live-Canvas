@@ -3134,41 +3134,35 @@ function getObjectData(
         element.dataset.worldY ?? parseFloat(element.style.top) ?? 0
     );
 
+    
     return {
+        id: element.dataset.objectId,
+        type: element.dataset.type || "object",
 
-        id:
-            element.dataset.objectId,
+        x: Number(element.dataset.worldX ?? parseFloat(element.style.left) ?? 0),
+        y: Number(element.dataset.worldY ?? parseFloat(element.style.top) ?? 0),
 
-        type:
-            element.dataset.type ||
-            "object",
+        width: element.offsetWidth,
+        height: element.offsetHeight,
 
-        x: Number.isFinite(x) ? x : 0,
-        y: Number.isFinite(y) ? y : 0,
+        text: element.dataset.type === "sticky"
+            ? element.textContent
+            : "",
 
-        width:
-            element.offsetWidth,
+        color: element.style.color || "",
+        fontSize: element.style.fontSize || "",
 
-        height:
-            element.offsetHeight,
+        src: element.dataset.src || null,
 
-        text:
-            element.textContent,
-
-        color:
-            element.style.color,
-
-        fontSize:
-            element.style.fontSize,
-
-        src:
-            element.dataset.src ||
-            (element.tagName === "IMG" ? element.getAttribute("src") : undefined),
-
-        name:
-            element.dataset.name
-
+        annotations: (() => {
+            try {
+                return JSON.parse(element.dataset.annotations || "[]");
+            } catch {
+                return [];
+            }
+        })()
     };
+
 
 }
 
@@ -3747,6 +3741,19 @@ function createObjectFromData(
         return;
     }
 
+    
+    if (data.type === "image" && data.src) {
+        createImageObject(
+            data.src,
+            false,
+            Number(data.x) || 150,
+            Number(data.y) || 200,
+            data.id,
+            Array.isArray(data.annotations) ? data.annotations : []
+        );
+
+        return;
+    }
 
     if (
         data.type ===
@@ -3930,6 +3937,15 @@ function updateObjectFromData(
             `${Number(data.height)}px`;
 
     }
+            
+    if (data.annotations !== undefined) {
+        element.dataset.annotations = JSON.stringify(
+            Array.isArray(data.annotations) ? data.annotations : []
+        );
+
+        redrawFileAnnotations(element);
+    }
+
 
 }
 
@@ -4556,113 +4572,235 @@ function getFreeObjectPosition(width = 250, height = 190) {
 // CREATE IMAGE
 // ============================================================
 
+
 function createImageObject(
     src,
     sync = true,
-    data = {}
+    x = 150,
+    y = 200,
+    id = generateObjectId(),
+    annotations = []
 ) {
+    if (!objectLayer) return null;
 
-    if (!objectLayer) {
-        return;
+    const wrapper = document.createElement("div");
+
+    wrapper.dataset.type = "image";
+    wrapper.dataset.objectId = id;
+    wrapper.dataset.src = src;
+    wrapper.dataset.annotations = JSON.stringify(annotations);
+
+    wrapper.style.position = "absolute";
+    wrapper.style.left = `${x}px`;
+    wrapper.style.top = `${y}px`;
+    wrapper.style.width = "250px";
+    wrapper.style.height = "auto";
+    wrapper.style.cursor = "move";
+    wrapper.style.boxSizing = "border-box";
+
+    const image = document.createElement("img");
+    image.src = src;
+    image.draggable = false;
+    image.style.display = "block";
+    image.style.width = "100%";
+    image.style.height = "auto";
+    image.style.borderRadius = "10px";
+    image.style.boxShadow = "0 5px 20px rgba(0,0,0,0.12)";
+    image.style.pointerEvents = "none";
+
+    const annotationCanvas = document.createElement("canvas");
+    annotationCanvas.className = "file-annotation-canvas";
+
+    annotationCanvas.style.position = "absolute";
+    annotationCanvas.style.left = "0";
+    annotationCanvas.style.top = "0";
+    annotationCanvas.style.width = "100%";
+    annotationCanvas.style.height = "100%";
+    annotationCanvas.style.pointerEvents = "auto";
+    annotationCanvas.style.touchAction = "none";
+
+    wrapper.appendChild(image);
+    wrapper.appendChild(annotationCanvas);
+    objectLayer.appendChild(wrapper);
+
+    image.onload = () => {
+        wrapper.style.height = `${image.offsetHeight}px`;
+
+        annotationCanvas.width = image.naturalWidth || image.offsetWidth;
+        annotationCanvas.height = image.naturalHeight || image.offsetHeight;
+
+        redrawFileAnnotations(wrapper);
+    };
+
+    image.onerror = () => {
+        console.error("Could not load image.");
+    };
+
+    setupFileAnnotation(wrapper);
+    makeDraggable(wrapper);
+
+    if (sync && socket?.connected) {
+        socket.emit("object-add", {
+            id,
+            type: "image",
+            src,
+            x,
+            y,
+            width: 250,
+            annotations
+        });
     }
 
-    const id =
-        data.id ||
-        generateObjectId();
+    saveLocalCache();
+    scheduleServerStateSync();
 
-    const width =
-        Number(data.width) || 250;
+    return wrapper;
+}
 
-    // Saved / remote objects keep their own position. Brand-new objects get
-    // a free spot so they never land exactly on top of an existing one.
-    const hasPosition =
-        data.x !== undefined &&
-        data.x !== null &&
-        data.y !== undefined &&
-        data.y !== null &&
-        Number.isFinite(Number(data.x)) &&
-        Number.isFinite(Number(data.y));
 
-    const spot =
-        hasPosition
-            ? { x: Number(data.x), y: Number(data.y) }
-            : getFreeObjectPosition(width, width * 0.75);
 
-    const x = spot.x;
-    const y = spot.y;
+function redrawFileAnnotations(wrapper) {
+    const canvas = wrapper?.querySelector(".file-annotation-canvas");
+    if (!canvas) return;
 
-    const image =
-        document.createElement(
-            "img"
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let annotations = [];
+
+    try {
+        annotations = JSON.parse(
+            wrapper.dataset.annotations || "[]"
         );
+    } catch {
+        annotations = [];
+    }
 
-    image.src =
-        src;
+    for (const stroke of annotations) {
+        if (!Array.isArray(stroke.points) || stroke.points.length < 2) {
+            continue;
+        }
 
-    image.draggable =
-        false;
+        ctx.save();
+        ctx.beginPath();
+        ctx.strokeStyle = stroke.color || "#172033";
+        ctx.lineWidth = stroke.width || 3;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.globalAlpha = stroke.tool === "highlighter" ? 0.3 : 1;
+        ctx.globalCompositeOperation =
+            stroke.tool === "eraser" ? "destination-out" : "source-over";
 
-    image.style.position =
-        "absolute";
+        stroke.points.forEach((point, index) => {
+            const px = point.x * canvas.width;
+            const py = point.y * canvas.height;
 
-    image.style.left =
-        `${x}px`;
-
-    image.style.top =
-        `${y}px`;
-
-    image.style.width =
-        `${width}px`;
-
-    image.style.maxWidth =
-        "none";
-
-    image.style.borderRadius =
-        "10px";
-
-    image.style.boxShadow =
-        "0 5px 20px rgba(0,0,0,0.12)";
-
-    image.style.cursor =
-        "move";
-
-    image.style.pointerEvents =
-        "auto";
-
-    image.dataset.type =
-        "image";
-
-    image.dataset.objectId =
-        id;
-
-    objectLayer.appendChild(
-        image
-    );
-
-    makeDraggable(
-        image
-    );
-
-
-    if (
-        sync &&
-        socket?.connected
-    ) {
-
-        socket.emit(
-            "object-add",
-            {
-                id,
-                type: "image",
-                src,
-                x,
-                y,
-                width
+            if (index === 0) {
+                ctx.moveTo(px, py);
+            } else {
+                ctx.lineTo(px, py);
             }
+        });
+
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+
+function setupFileAnnotation(wrapper) {
+    const canvas = wrapper.querySelector(".file-annotation-canvas");
+    if (!canvas || canvas.dataset.annotationReady === "true") return;
+
+    canvas.dataset.annotationReady = "true";
+
+    let activeStroke = null;
+
+    canvas.addEventListener("pointerdown", event => {
+        if (!["pen", "eraser", "highlighter", "lightPen"].includes(currentTool)) {
+            return;
+        }
+
+        if (event.button !== 0) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const rect = canvas.getBoundingClientRect();
+
+        activeStroke = {
+            tool: currentTool,
+            color: colorPicker?.value || "#172033",
+            width: Number(toolWidthInput?.value || 3),
+            points: [{
+                x: (event.clientX - rect.left) / rect.width,
+                y: (event.clientY - rect.top) / rect.height
+            }]
+        };
+
+        canvas.setPointerCapture(event.pointerId);
+
+        const strokes = JSON.parse(wrapper.dataset.annotations || "[]");
+        strokes.push(activeStroke);
+        wrapper.dataset.annotations = JSON.stringify(strokes);
+
+        redrawFileAnnotations(wrapper);
+    });
+
+    canvas.addEventListener("pointermove", event => {
+        if (!activeStroke) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const rect = canvas.getBoundingClientRect();
+
+        activeStroke.points.push({
+            x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
+            y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height))
+        });
+
+        wrapper.dataset.annotations = JSON.stringify(
+            JSON.parse(wrapper.dataset.annotations || "[]")
         );
 
+        redrawFileAnnotations(wrapper);
+    });
+
+    function finishStroke() {
+        if (!activeStroke) return;
+
+        activeStroke = null;
+
+        saveLocalCache();
+        scheduleServerStateSync();
+
+        const data = getObjectData(wrapper);
+
+        if (socket?.connected && data) {
+            socket.emit("object-update", data);
+        }
     }
 
+    canvas.addEventListener("pointerup", finishStroke);
+    canvas.addEventListener("pointercancel", finishStroke);
+}
+
+
+function clearFileAnnotations(wrapper) {
+    if (!wrapper) return;
+
+    wrapper.dataset.annotations = "[]";
+    redrawFileAnnotations(wrapper);
+
+    const data = getObjectData(wrapper);
+
+    if (socket?.connected && data) {
+        socket.emit("object-update", data);
+    }
+
+    saveLocalCache();
+    scheduleServerStateSync();
 }
 
 
