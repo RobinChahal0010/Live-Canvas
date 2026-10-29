@@ -1,4 +1,4 @@
-// Login form: validates credentials stored locally and starts the user session.
+// Login form: authenticates against the backend API and starts a server-verified session.
 const loginBtn = document.getElementById("loginBtn");
 const passwordInput = document.getElementById("password");
 const togglePassword = document.getElementById("togglePassword");
@@ -25,25 +25,6 @@ function setFormMessage(message, type = "error") {
     messageBox.className = `form-message ${type}`;
 }
 
-// Hashes a password before comparison, with a small fallback for older browsers.
-async function hashPassword(password) {
-    const text = password.trim();
-    if (typeof crypto !== "undefined" && crypto.subtle) {
-        const buffer = new TextEncoder().encode(text);
-        const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
-        return Array.from(new Uint8Array(hashBuffer))
-            .map((byte) => byte.toString(16).padStart(2, "0"))
-            .join("");
-    }
-
-    let hash = 2166136261;
-    for (let i = 0; i < text.length; i++) {
-        hash ^= text.charCodeAt(i);
-        hash = Math.imul(hash, 16777619);
-    }
-    return (hash >>> 0).toString(16);
-}
-
 // Submits the login form only when the page includes its button.
 if (loginBtn) {
 
@@ -60,43 +41,23 @@ if (loginBtn) {
             return;
         }
 
-        const users = JSON.parse(localStorage.getItem("users")) || [];
-
-        const inputHash = await hashPassword(password);
-        const user = users.find(function (user) {
-            return user.email.toLowerCase() === email.toLowerCase();
-        });
-
-        if (!user) {
-            setFormMessage("No account exists. Create a new one.");
-            return;
+        try {
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await response.json();
+            if (response.ok) {
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("loggedInUser", JSON.stringify(data.user)); // display cache only
+                window.location.href = "saved.html";
+            } else {
+                setFormMessage(data.error || "Login failed.");
+            }
+        } catch (_) {
+            setFormMessage("Could not connect to server. Please try again.");
         }
-
-        const storedPassword = user.password || user.passwordHash || "";
-        const isPasswordValid = storedPassword === inputHash || storedPassword === password;
-
-        if (!isPasswordValid) {
-            setFormMessage("Invalid email or password.");
-            return;
-        }
-
-        if (storedPassword !== inputHash) {
-            user.password = inputHash;
-            delete user.passwordHash;
-            localStorage.setItem("users", JSON.stringify(users));
-        }
-
-        const loggedInUser = {
-            name: user.name,
-            email: user.email
-        };
-
-        localStorage.setItem(
-            "loggedInUser",
-            JSON.stringify(loggedInUser)
-        );
-
-        window.location.href = "saved.html";
 
     });
 

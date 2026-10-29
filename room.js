@@ -35,52 +35,37 @@ const enterRoomBtn =
 
 
 // ============================================================
-// AUTH
+// REQUIRE LOGIN (server-verified)
 // ============================================================
 
-function getLoggedInUser() {
-
-    try {
-
-        return JSON.parse(
-            localStorage.getItem("loggedInUser")
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Could not read loggedInUser:",
-            error
-        );
-
-        return null;
-    }
-}
-
-
-// ============================================================
-// REQUIRE LOGIN
-// ============================================================
-
-function requireLogin() {
-
-    const user =
-        getLoggedInUser();
-
-    if (!user) {
-
+async function requireLogin() {
+    const token = localStorage.getItem("token");
+    if (!token) {
         const redirect =
             window.location.pathname +
             window.location.search;
-
         window.location.href =
             "login.html?redirect=" +
             encodeURIComponent(redirect);
-
         return false;
     }
-
-    return true;
+    try {
+        const response = await fetch("/api/auth/me", {
+            headers: { Authorization: "Bearer " + token }
+        });
+        if (response.ok) return true;
+        localStorage.removeItem("token");
+        localStorage.removeItem("loggedInUser");
+        const redirect =
+            window.location.pathname +
+            window.location.search;
+        window.location.href =
+            "login.html?redirect=" +
+            encodeURIComponent(redirect);
+        return false;
+    } catch (_) {
+        return false;
+    }
 }
 
 
@@ -105,9 +90,9 @@ if (createRoomBtn) {
 
     createRoomBtn.addEventListener(
         "click",
-        () => {
+        async () => {
 
-            if (!requireLogin()) {
+            if (!await requireLogin()) {
                 return;
             }
 
@@ -152,9 +137,9 @@ if (joinRoomBtn) {
 
     joinRoomBtn.addEventListener(
         "click",
-        () => {
+        async () => {
 
-            if (!requireLogin()) {
+            if (!await requireLogin()) {
                 return;
             }
 
@@ -184,9 +169,9 @@ if (joinBtn) {
 
     joinBtn.addEventListener(
         "click",
-        () => {
+        async () => {
 
-            if (!requireLogin()) {
+            if (!await requireLogin()) {
                 return;
             }
 
@@ -310,9 +295,9 @@ if (enterRoomBtn) {
 
     enterRoomBtn.addEventListener(
         "click",
-        () => {
+        async () => {
 
-            if (!requireLogin()) {
+            if (!await requireLogin()) {
                 return;
             }
 

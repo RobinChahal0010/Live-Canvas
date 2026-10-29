@@ -10,6 +10,8 @@ const { Server } = require("socket.io");
 const path = require("path");
 const mongoose = require("mongoose");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
+const authRoutes = require("./routes/auth");
 const Board = require("./models/Board");
 
 
@@ -38,6 +40,7 @@ app.use(express.json({
 
 const uploadRoutes = require("./Upload");
 app.use(uploadRoutes);
+app.use("/api/auth", authRoutes);
 
 
 // ============================================================
@@ -429,6 +432,24 @@ function sanitizeDrawing(data) {
 // SOCKET CONNECTION
 // ============================================================
 
+// ============================================================
+// SOCKET.IO AUTH MIDDLEWARE
+// ============================================================
+
+io.use((socket, next) => {
+    const token = socket.handshake.auth && socket.handshake.auth.token;
+    if (!token) {
+        return next(new Error("Authentication required"));
+    }
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        socket.user = decoded;
+        next();
+    } catch (err) {
+        return next(new Error("Invalid token"));
+    }
+});
+
 io.on("connection", (socket) => {
 
     console.log(
@@ -515,6 +536,9 @@ io.on("connection", (socket) => {
 
             socket.boardId =
                 boardId;
+
+            // Use the verified identity from JWT, not the client-claimed username
+            username = socket.user.name;
 
             socket.username =
                 username;

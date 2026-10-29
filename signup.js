@@ -1,4 +1,4 @@
-// Signup form: validates a new account, stores it locally, and starts a session.
+// Signup form: validates a new account, registers it via the backend API, and starts a session.
 const signupBtn = document.getElementById("signupBtn");
 const passwordInput = document.getElementById("password");
 const togglePassword = document.getElementById("togglePassword");
@@ -15,6 +15,7 @@ togglePassword.addEventListener("click", () => {
         eyeIcon.alt = "Show password";
     }
 });
+
 // Displays validation feedback next to the registration form.
 function setFormMessage(message, type = "error") {
     const messageBox = document.getElementById("formMessage");
@@ -24,26 +25,7 @@ function setFormMessage(message, type = "error") {
     messageBox.className = `form-message ${type}`;
 }
 
-// Hashes a password before it is persisted, with a small fallback for older browsers.
-async function hashPassword(password) {
-    const text = password.trim();
-    if (typeof crypto !== "undefined" && crypto.subtle) {
-        const buffer = new TextEncoder().encode(text);
-        const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
-        return Array.from(new Uint8Array(hashBuffer))
-            .map((byte) => byte.toString(16).padStart(2, "0"))
-            .join("");
-    }
-
-    let hash = 2166136261;
-    for (let i = 0; i < text.length; i++) {
-        hash ^= text.charCodeAt(i);
-        hash = Math.imul(hash, 16777619);
-    }
-    return (hash >>> 0).toString(16);
-}
-
-// Validates and stores the account when the registration form is submitted.
+// Validates and registers the account when the registration form is submitted.
 signupBtn.addEventListener("click", async function () {
     const name =
             document.getElementById("name")
@@ -53,7 +35,7 @@ signupBtn.addEventListener("click", async function () {
 
     const password = document.getElementById("password").value.trim();
 
-    if (name ==="" || email === "" || password === "") {
+    if (name === "" || email === "" || password === "") {
         setFormMessage("Please fill all fields.");
         return;
     }
@@ -66,48 +48,35 @@ signupBtn.addEventListener("click", async function () {
         return;
     }
     if (
-    password.length < 8 ||
-    !/[A-Z]/.test(password) ||
-    !/[a-z]/.test(password) ||
-    !/[0-9]/.test(password) ||
-    !/[!@#$%^&*(),.?":{}|<>]/.test(password)
-) {
-    setFormMessage(
-        "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
-    );
-    return;
-}
-
-    let users = JSON.parse(localStorage.getItem("users")) || [];
-
-    const existingUser = users.find(function(user) {
-        return user.email.toLowerCase() === email.toLowerCase();
-    });
-
-    if (existingUser) {
-        setFormMessage("Account already exists.");
+        password.length < 8 ||
+        !/[A-Z]/.test(password) ||
+        !/[a-z]/.test(password) ||
+        !/[0-9]/.test(password) ||
+        !/[!@#$%^&*(),.?":{}|<>]/.test(password)
+    ) {
+        setFormMessage(
+            "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
+        );
         return;
     }
 
-    const passwordHash = await hashPassword(password);
-    const newUser = {
-        name: name,
-        email: email,
-        password: passwordHash
-    };
-
-    users.push(newUser);
-    localStorage.setItem(
-        "users",
-        JSON.stringify(users)
-    );
-
-    const loggedInUser = {
-        name: newUser.name,
-        email: newUser.email
-    };
-    localStorage.setItem('loggedInUser', JSON.stringify(loggedInUser));
-    const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect') || 'saved.html';
-    window.location.href = redirect;
+    try {
+        const response = await fetch("/api/auth/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("loggedInUser", JSON.stringify(data.user)); // display cache only
+            const params = new URLSearchParams(window.location.search);
+            const redirect = params.get("redirect") || "saved.html";
+            window.location.href = redirect;
+        } else {
+            setFormMessage(data.error || "Signup failed.");
+        }
+    } catch (_) {
+        setFormMessage("Could not connect to server. Please try again.");
+    }
 });

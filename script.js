@@ -275,7 +275,11 @@ signupHeaderBtn?.addEventListener(
     }
 );
 
-function handleCanvasLogout() {
+async function handleCanvasLogout() {
+    try {
+        await fetch("/api/auth/logout", { method: "POST" });
+    } catch (_) { /* ignore */ }
+    localStorage.removeItem("token");
     localStorage.removeItem(
         "loggedInUser"
     );
@@ -633,6 +637,7 @@ if (
         boardId
     );
 
+    const _socketToken = localStorage.getItem("token");
     socket =
         io(
             window.location.origin,
@@ -640,11 +645,10 @@ if (
                 transports: [
                     "websocket",
                     "polling"
-                ]
+                ],
+                auth: { token: _socketToken }
             }
         );
-
-
     // ========================================================
     // CONNECT
     // ========================================================
