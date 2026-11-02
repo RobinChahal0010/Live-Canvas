@@ -791,6 +791,15 @@ if (
     );
 
 
+    socket.on(
+        "document-state",
+        data => {
+            if (!data) return;
+            applyServerBoardState(data);
+        }
+    );
+
+
     // ========================================================
     // USER JOINED
     // ========================================================
@@ -1210,6 +1219,35 @@ const boardCodeElement =
     );
 
 
+async function copyTextToClipboard(text) {
+    try {
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(text);
+            return true;
+        }
+    } catch (error) {
+        console.warn("Clipboard API unavailable; using the browser fallback.", error);
+    }
+
+    const input = document.createElement("textarea");
+    input.value = text;
+    input.setAttribute("readonly", "");
+    input.style.position = "fixed";
+    input.style.opacity = "0";
+    document.body.appendChild(input);
+    input.select();
+
+    let copied = false;
+    try {
+        copied = document.execCommand("copy");
+    } finally {
+        input.remove();
+    }
+
+    return copied;
+}
+
+
 if (boardCodeElement) {
 
     boardCodeElement.textContent =
@@ -1228,9 +1266,7 @@ boardCodeBtn?.addEventListener(
 
         try {
 
-            await navigator.clipboard.writeText(
-                boardId
-            );
+            await copyTextToClipboard(boardId);
 
             boardCodeBtn.textContent =
                 "Copied";
@@ -1277,6 +1313,21 @@ shareBtn?.addEventListener(
         const shareMessage =
             `You have been invited to collaborate\nBoard code: ${boardId}\n${shareUrl}`;
 
+        const boardSynced = await new Promise(resolve => {
+            if (!socket?.connected) {
+                resolve(false);
+                return;
+            }
+
+            socket.timeout(2000).emit(
+                "board-state-update",
+                getBoardState(),
+                (error, response) => resolve(!error && response?.success === true)
+            );
+        });
+
+        const copied = await copyTextToClipboard(shareMessage);
+
         try {
 
             if (
@@ -1296,23 +1347,21 @@ shareBtn?.addEventListener(
                     }
                 );
 
-            } else {
-
-                await navigator.clipboard.writeText(
-                    shareMessage
-                );
-
-                alert(
-                    "Share link copied!"
-                );
-
+                    return;
             }
 
         } catch (error) {
+                if (error.name !== "AbortError") {
+                    console.warn("Native sharing failed; using the copied link.", error);
+                }
+            }
 
-            console.log(
-                "Share cancelled."
-            );
+            if (copied) {
+                alert(boardSynced
+                    ? "Share link copied! Live board state is synced."
+                    : "Share link copied. Live sync will resume when the board reconnects.");
+            } else {
+                window.prompt("Copy this board link:", shareUrl);
 
         }
 
@@ -2079,6 +2128,8 @@ function updateCanvasViewport() {
             `translate(${camera.x}px, ${camera.y}px) scale(${scale})`;
     }
 
+    refreshImageAnnotationResolution();
+
     updateResizeOverlay();
 
     document.querySelectorAll(".remote-canvas-cursor").forEach(pointer => {
@@ -2092,6 +2143,23 @@ function updateCanvasViewport() {
 
     updateInfiniteBackground();
     renderWorld();
+}
+
+
+function refreshImageAnnotationResolution() {
+    const pixelRatio = Math.max(window.devicePixelRatio || 1, 1);
+
+    objectLayer?.querySelectorAll('[data-type="image"] .file-annotation-canvas').forEach(canvas => {
+        const rect = canvas.getBoundingClientRect();
+        const width = Math.max(1, Math.round(rect.width * pixelRatio));
+        const height = Math.max(1, Math.round(rect.height * pixelRatio));
+
+        if (canvas.width === width && canvas.height === height) return;
+
+        canvas.width = width;
+        canvas.height = height;
+        redrawFileAnnotations(canvas.closest('[data-type="image"]'), canvas);
+    });
 }
 
 
@@ -3149,14 +3217,17 @@ function getObjectData(
         width: element.offsetWidth,
         height: element.offsetHeight,
 
-        text: element.dataset.type === "sticky"
+        text: ["sticky", "text"].includes(element.dataset.type)
             ? element.textContent
             : "",
 
         color: element.style.color || "",
         fontSize: element.style.fontSize || "",
+        fontFamily: element.style.fontFamily || "",
 
         src: element.dataset.src || null,
+        name: element.dataset.name || "",
+        mimetype: element.dataset.mimetype || "",
 
         annotations: (() => {
             try {
@@ -3787,6 +3858,11 @@ function createObjectFromData(
                     data.fontSize;
             }
 
+            if (data.fontFamily) {
+                element.style.fontFamily =
+                    data.fontFamily;
+            }
+
         }
 
         return;
@@ -3948,6 +4024,13 @@ function updateObjectFromData(
         );
 
         redrawFileAnnotations(element);
+    }
+
+    if (element.dataset.type === "text") {
+        if (data.text !== undefined) element.textContent = data.text;
+        if (data.color) element.style.color = data.color;
+        if (data.fontSize) element.style.fontSize = data.fontSize;
+        if (data.fontFamily) element.style.fontFamily = data.fontFamily;
     }
 
 
@@ -4445,13 +4528,17 @@ async function uploadAndAddFile(file, position = null) {
 
     const form = new FormData();
     form.append("files", file);
+    form.append("boardId", boardId || "");
 
     try {
+
+        const token = localStorage.getItem("token");
 
         const res = await fetch(
             "/api/upload",
             {
                 method: "POST",
+                headers: { Authorization: `Bearer ${token || ""}` },
                 body: form
             }
         );
@@ -4464,12 +4551,14 @@ async function uploadAndAddFile(file, position = null) {
         }
 
         const f = data.files[0];
+        const objectPosition = position || getFreeObjectPosition();
 
         if (f.isImage) {
             createImageObject(
                 f.url,
                 true,
-                position ? { x: position.x, y: position.y } : {}
+                objectPosition.x,
+                objectPosition.y
             );
         } else {
             createFileObject(
@@ -4477,8 +4566,9 @@ async function uploadAndAddFile(file, position = null) {
                 f.originalName,
                 true,
                 undefined,
-                position ? position.x : null,
-                position ? position.y : null
+                objectPosition.x,
+                objectPosition.y,
+                { mimetype: f.mimetype }
             );
         }
 
@@ -4629,11 +4719,7 @@ function createImageObject(
 
     image.onload = () => {
         wrapper.style.height = `${image.offsetHeight}px`;
-
-        annotationCanvas.width = image.naturalWidth || image.offsetWidth;
-        annotationCanvas.height = image.naturalHeight || image.offsetHeight;
-
-        redrawFileAnnotations(wrapper);
+        refreshImageAnnotationResolution();
     };
 
     image.onerror = () => {
@@ -4663,8 +4749,7 @@ function createImageObject(
 
 
 
-function redrawFileAnnotations(wrapper) {
-    const canvas = wrapper?.querySelector(".file-annotation-canvas");
+function redrawFileAnnotations(wrapper, canvas = wrapper?.querySelector(".file-annotation-canvas"), pageIndex = 0) {
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
@@ -4681,6 +4766,7 @@ function redrawFileAnnotations(wrapper) {
     }
 
     for (const stroke of annotations) {
+        if ((stroke.pageIndex || 0) !== pageIndex) continue;
         if (!Array.isArray(stroke.points) || stroke.points.length < 2) {
             continue;
         }
@@ -4688,7 +4774,8 @@ function redrawFileAnnotations(wrapper) {
         ctx.save();
         ctx.beginPath();
         ctx.strokeStyle = stroke.color || "#172033";
-        ctx.lineWidth = stroke.width || 3;
+        const displayWidth = canvas.getBoundingClientRect().width || canvas.width;
+        ctx.lineWidth = (stroke.width || 3) * canvas.width / displayWidth;
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.globalAlpha = stroke.tool === "highlighter" ? 0.3 : 1;
@@ -4712,8 +4799,7 @@ function redrawFileAnnotations(wrapper) {
 }
 
 
-function setupFileAnnotation(wrapper) {
-    const canvas = wrapper.querySelector(".file-annotation-canvas");
+function setupFileAnnotation(wrapper, canvas = wrapper.querySelector(".file-annotation-canvas"), getPageIndex = () => 0) {
     if (!canvas || canvas.dataset.annotationReady === "true") return;
 
     canvas.dataset.annotationReady = "true";
@@ -4736,6 +4822,7 @@ function setupFileAnnotation(wrapper) {
             tool: currentTool,
             color: colorPicker?.value || "#172033",
             width: Number(toolWidthInput?.value || 3),
+            pageIndex: getPageIndex(),
             points: [{
                 x: (event.clientX - rect.left) / rect.width,
                 y: (event.clientY - rect.top) / rect.height
@@ -4748,27 +4835,32 @@ function setupFileAnnotation(wrapper) {
         strokes.push(activeStroke);
         wrapper.dataset.annotations = JSON.stringify(strokes);
 
-        redrawFileAnnotations(wrapper);
+        redrawFileAnnotations(wrapper, canvas, getPageIndex());
     });
 
     canvas.addEventListener("pointermove", event => {
         if (!activeStroke) return;
 
         event.preventDefault();
-        event.stopPropagation();
 
         const rect = canvas.getBoundingClientRect();
 
-        activeStroke.points.push({
-            x: Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)),
-            y: Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height))
-        });
+        const strokes = JSON.parse(wrapper.dataset.annotations || "[]");
+        const storedStroke = strokes[strokes.length - 1];
+        if (!storedStroke) return;
 
-        wrapper.dataset.annotations = JSON.stringify(
-            JSON.parse(wrapper.dataset.annotations || "[]")
-        );
+        const samples = event.getCoalescedEvents?.() || [event];
+        for (const sample of samples) {
+            storedStroke.points.push({
+                x: Math.max(0, Math.min(1, (sample.clientX - rect.left) / rect.width)),
+                y: Math.max(0, Math.min(1, (sample.clientY - rect.top) / rect.height))
+            });
+        }
 
-        redrawFileAnnotations(wrapper);
+        activeStroke = storedStroke;
+        wrapper.dataset.annotations = JSON.stringify(strokes);
+
+        redrawFileAnnotations(wrapper, canvas, getPageIndex());
     });
 
     function finishStroke() {
@@ -4864,6 +4956,8 @@ function createFileObject(
     card.dataset.objectId = id;
     card.dataset.src = url;
     card.dataset.name = name;
+    card.dataset.mimetype = data.mimetype || "";
+    card.dataset.annotations = JSON.stringify(Array.isArray(data.annotations) ? data.annotations : []);
 
     card.addEventListener(
         "dblclick",
@@ -4901,8 +4995,10 @@ function createFileObject(
                 type: "file",
                 src: url,
                 name,
+                mimetype: card.dataset.mimetype,
                 x,
-                y
+                y,
+                annotations: []
             }
         );
 

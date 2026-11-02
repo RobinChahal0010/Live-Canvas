@@ -9,8 +9,8 @@ const http = require("http");
 const { Server } = require("socket.io");
 const path = require("path");
 const mongoose = require("mongoose");
-require("dotenv").config();
 const jwt = require("jsonwebtoken");
+const { JWT_SECRET } = require("./config");
 const authRoutes = require("./routes/auth");
 const Board = require("./models/Board");
 
@@ -442,7 +442,7 @@ io.use((socket, next) => {
         return next(new Error("Authentication required"));
     }
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET);
         socket.user = decoded;
         next();
     } catch (err) {
@@ -948,6 +948,7 @@ socket.on("canvas-style-change", (data) => {
             }
 
             board.updatedAt = Date.now();
+            scheduleBoardPersist(board);
 
             socket.to(socket.boardId).emit("board-state", board);
         }
@@ -1107,9 +1108,14 @@ socket.on("canvas-style-change", (data) => {
 
     socket.on(
         "board-state-update",
-        (incomingState) => {
+        (incomingState, acknowledge) => {
+
+            const respond = typeof acknowledge === "function"
+                ? acknowledge
+                : () => {};
 
             if (!socket.boardId) {
+                respond({ success: false });
                 return;
             }
 
@@ -1117,6 +1123,7 @@ socket.on("canvas-style-change", (data) => {
                 !incomingState ||
                 typeof incomingState !== "object"
             ) {
+                respond({ success: false });
                 return;
             }
 
@@ -1147,6 +1154,8 @@ socket.on("canvas-style-change", (data) => {
                 "board-state",
                 sanitized
             );
+
+            respond({ success: true, boardId: socket.boardId });
 
         }
     );

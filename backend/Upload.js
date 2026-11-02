@@ -6,6 +6,7 @@ const fs = require("fs");
 const crypto = require("crypto");
 
 const FileMetadata = require("./models/FileMetadata");
+const { verifyToken } = require("./middleware/auth");
 
 const router = express.Router();
 
@@ -103,7 +104,7 @@ function formatFile(file) {
 // Optional text field: boardId
 // ------------------------------------------------------------
 
-router.post("/api/upload", (req, res) => {
+router.post("/api/upload", verifyToken, (req, res) => {
     upload.array("files", MAX_FILES)(req, res, async (error) => {
         if (error) {
             if (error instanceof multer.MulterError) {
@@ -159,6 +160,7 @@ router.post("/api/upload", (req, res) => {
                 return {
                     ...formatted,
                     boardId,
+                    uploadedBy: req.user.userId,
                     uploadedAt: new Date()
                 };
             });
@@ -201,9 +203,9 @@ router.post("/api/upload", (req, res) => {
 // Optional: /api/files?boardId=YOUR_BOARD_ID
 // ------------------------------------------------------------
 
-router.get("/api/files", async (req, res) => {
+router.get("/api/files", verifyToken, async (req, res) => {
     try {
-        const filter = {};
+        const filter = { uploadedBy: req.user.userId };
 
         if (
             typeof req.query.boardId === "string" &&
@@ -275,7 +277,7 @@ router.use(
 // Deletes the disk file and its MongoDB metadata.
 // ------------------------------------------------------------
 
-router.delete("/api/upload/:filename", async (req, res) => {
+router.delete("/api/upload/:filename", verifyToken, async (req, res) => {
     const { filename } = req.params;
 
     if (!SAFE_NAME.test(filename)) {
@@ -288,11 +290,23 @@ router.delete("/api/upload/:filename", async (req, res) => {
     const filePath = path.join(UPLOAD_DIR, filename);
 
     try {
+        const metadata = await FileMetadata.findOne({
+            filename,
+            uploadedBy: req.user.userId
+        });
+
+        if (!metadata) {
+            return res.status(404).json({
+                success: false,
+                error: "File not found."
+            });
+        }
+
         // Remove the actual file from disk.
         await fs.promises.unlink(filePath);
 
         // Remove its metadata from MongoDB.
-        await FileMetadata.deleteOne({ filename });
+        await FileMetadata.deleteOne({ filename, uploadedBy: req.user.userId });
 
         return res.json({
             success: true,

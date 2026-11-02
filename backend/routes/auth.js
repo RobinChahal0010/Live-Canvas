@@ -1,6 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { JWT_SECRET } = require("../config");
 const User = require("../models/User");
 const { verifyToken } = require("../middleware/auth");
 
@@ -48,7 +49,7 @@ router.post("/signup", async (req, res) => {
         // Issue JWT
         const token = jwt.sign(
             { userId: user._id, email: user.email, name: user.name },
-            process.env.JWT_SECRET,
+            JWT_SECRET,
             { expiresIn: "7d" }
         );
 
@@ -76,16 +77,14 @@ router.post("/login", async (req, res) => {
             return res.status(401).json({ error: "Invalid credentials." });
         }
 
-        // Need to get password field (excluded by toJSON)
-        const userWithPassword = await User.findOne({ email: email.toLowerCase() }).lean();
-        const isMatch = await bcrypt.compare(password, userWithPassword.password);
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({ error: "Invalid credentials." });
         }
 
         const token = jwt.sign(
             { userId: user._id, email: user.email, name: user.name },
-            process.env.JWT_SECRET,
+            JWT_SECRET,
             { expiresIn: "7d" }
         );
 

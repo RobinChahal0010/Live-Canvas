@@ -104,7 +104,9 @@ flowchart LR
 ### Backend
 
 - `backend/server.js` serves the static frontend and exposes the Socket.IO server.
-- Board sessions live in an in-memory `Map`, keyed by board code.
+- Board sessions are cached in memory and persisted to MongoDB.
+- Signup, login, upload management, and Socket.IO connections are authenticated by the backend with bcrypt-hashed passwords and JWTs.
+- Multer stores uploaded files in `backend/uploads/`; MongoDB stores their metadata.
 - `GET /health` reports server status, the number of active board sessions, and the current server time.
 
 ## Backend implementation reference
@@ -129,7 +131,7 @@ boardId, title, canvasStyle, currentPage, pages, updatedAt
 
 Each page contains its own `id`, `height`, optional `canvasData`, `drawings`, and `objects`. This design isolates collaborative state by board code while keeping every active board available to connected Socket.IO clients.
 
-Because this is memory-only storage, board state is **not durable**. Restarting the Node.js server clears all server-side boards and their active collaboration state.
+MongoDB stores board pages and object state, including normalized image annotation strokes. The in-memory map is a cache; boards are loaded from MongoDB when users join and writes are debounced. Uploaded file bytes remain on disk in `backend/uploads/`.
 
 ### Socket.IO rooms and synchronization
 
@@ -160,18 +162,18 @@ The server does not blindly store all incoming socket data. It currently perform
 - Page arrays, drawing operations, and object positions are sanitized before full board state is stored.
 - Cursor coordinates must be finite numbers before they are relayed.
 
-These checks improve resilience against malformed collaboration payloads. They are not a replacement for authorization or a production security model.
+Socket.IO requires a valid backend-issued JWT before accepting a connection. A valid room code grants access to that collaborative room. Upload, file-list, and file-delete APIs also require a JWT; file metadata listing and deletion are scoped to the authenticated uploader.
 
 ## Data and persistence
 
 ### Browser local storage
 
-`localStorage` persists for the current browser profile until the user clears site data. LiveCanvas uses it for local/demo persistence:
+`localStorage` persists for the current browser profile until the user clears site data. LiveCanvas uses it for client-side display and cache state:
 
 | Key | Value stored | Purpose |
 | --- | --- | --- |
-| `users` | Array of local user records | Stores registration name, email, and password hash. |
-| `loggedInUser` | `{ name, email }` | Indicates the current locally signed-in user. |
+| `token` | Backend-issued JWT | Sent to protected HTTP and Socket.IO endpoints; the backend verifies it. |
+| `loggedInUser` | `{ name, email }` | Display cache only; it is not an authorization credential. |
 | `savedBoards` | Array of board metadata | Stores board IDs, names, style choices, dates, update times, and dashboard colour indexes. |
 | `userProfilePicIdx` | Profile-image number | Keeps a consistent generated profile image for the user. |
 | `liveCanvasDocument_<boardId>` | Cached document object | Saves pages, drawings, objects, the local zoom preference, title, canvas style, current page, and save time for a board. |
@@ -189,18 +191,11 @@ The document cache is a browser-side fallback and convenience layer. It is separ
 | `currentCanvasStyle` | Carries the selected canvas style into the board flow. |
 | `roomId` | Keeps the current room context for room-based entry. |
 
-This is session retention, not a server-issued session token. No cookie session, JWT, or server-side user session store is currently implemented.
+Authentication is enforced by backend routes and Socket.IO middleware. The browser’s saved user object is only presentation data; protected operations require a valid bearer JWT.
 
 ### Password handling
 
-Passwords are **hashed, not encrypted**. Encryption is reversible with a key; hashing is a one-way transformation used for password comparison.
-
-1. On sign-up, the browser trims the password and uses the Web Crypto API’s `crypto.subtle.digest("SHA-256", ...)` when it is available.
-2. The resulting SHA-256 digest is stored as a hexadecimal string in the `password` field of the relevant `users` record in `localStorage`.
-3. On login, the browser hashes the entered password again and compares the result with the stored value.
-4. For older browsers without Web Crypto, the code falls back to a 32-bit FNV-1a-style hash. The login code also retains a compatibility path for an older plaintext or `passwordHash` record and rewrites a successful legacy login to the current `password` field.
-
-> **Security limitation:** SHA-256 without a unique salt and a deliberately slow password-hashing algorithm is not suitable for production password storage. The FNV fallback is also non-cryptographic. This project’s current authentication is a local/demo feature because all user records and session indicators live in browser storage. A production backend should use HTTPS, server-side accounts, a database, per-password salts, and a password hash such as Argon2id, scrypt, or bcrypt.
+Passwords are hashed on the backend with bcrypt. Signup and login issue a JWT that expires after seven days; `/api/auth/me`, protected file APIs, and Socket.IO verify that token server-side. The JWT is stored by the current browser client in `localStorage`, so production deployments should use HTTPS and consider an httpOnly cookie-based session if protection from script access is required.
 
 ### What is and is not persisted
 
@@ -275,8 +270,9 @@ Live-Canvas/
 
 ## Requirements
 
-- [Node.js](https://nodejs.org/) 18 or later
+- [Node.js](https://nodejs.org/) 20.19 or later
 - npm (installed with Node.js)
+- MongoDB, available at `MONGODB_URI` (defaults to `mongodb://127.0.0.1:27017/livecanvas`)
 - A modern browser with JavaScript enabled
 
 ## Run locally
@@ -288,6 +284,8 @@ Live-Canvas/
    cd backend
    npm install
    ```
+
+    For local development, the backend creates and persists a random JWT secret in the ignored `backend/.jwt-secret` file when `JWT_SECRET` is not set. Production must provide `JWT_SECRET` explicitly. Set `MONGODB_URI` in `backend/.env` to use a non-default MongoDB instance.
 
 3. Start LiveCanvas:
 

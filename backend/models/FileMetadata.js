@@ -35,6 +35,11 @@ const fileMetadataSchema = new mongoose.Schema(
             default: null,
             index: true
         },
+        uploadedBy: {
+            type: String,
+            required: true,
+            index: true
+        },
         uploadedAt: {
             type: Date,
             default: Date.now
